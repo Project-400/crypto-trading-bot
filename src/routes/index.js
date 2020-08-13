@@ -1,7 +1,7 @@
 import express from 'express';
-import { indexPage } from '../controllers';
+import { priceChanges } from '../controllers';
 const indexRouter = express.Router();
 
-indexRouter.get('/', indexPage);
+indexRouter.get('/price-changes', priceChanges);
 
 export default indexRouter;
