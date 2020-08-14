@@ -28,25 +28,37 @@ export class Socket {
       
       const interval = setInterval(() => {
         this.updatePrices();
-        this.batches++;
+        // this.batches++;
 
-        console.log('Updated Prices');
+        // console.log('Updated Prices');
 
-        if (this.batches === 7) {
-          this.ws.close();
+        // if (this.batches === 7) {
+          // this.ws.close();
 
-          Object.keys(this.symbols).map((s: string) => {
-            const symbol: SymbolPriceData = this.symbols[s];
-            console.log(symbol);
-          });
+          // Object.keys(this.symbols).map((s: string) => {
+          //   const symbol: SymbolPriceData = this.symbols[s];
+          //   console.log(symbol);
+          // });
 
-          console.log(this.symbols['ASTBTC']);
-          console.log(Object.keys(this.symbols).length);
-          console.log('BEST PERFORMER');
-          console.log(this.findBestPerformer());
+          // console.log(this.symbols['ASTBTC']);
+          // console.log(Object.keys(this.symbols).length);
+        console.log('------------------------------');
+        console.log('BEST PERFORMER');
+        
+        const best = this.findBestPerformer();
 
-          clearInterval(interval);
+        console.log(best)
+        console.log('*******************');
+        
+        if (best) {
+          console.log(`----------- ${best?.symbol} ---------------`);
+          console.log(`----------- +${best?.pricePercentageChanges.sixtySeconds}% ---------------`);
+        } else {
+          console.log(`----------- NONE ---------------`);
         }
+        
+        // clearInterval(interval);
+        // }
       }, 10000);
     };
 
@@ -83,7 +95,15 @@ export class Socket {
       const symbol: SymbolPriceData = this.symbols[s];
       if (!best) return best = symbol;
       
-      if (symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds) best = symbol;
+      if (
+        symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
+        symbol.prices.now >= symbol.prices.tenSeconds &&
+        symbol.prices.tenSeconds >= symbol.prices.twentySeconds &&
+        symbol.prices.twentySeconds >= symbol.prices.thirtySeconds &&
+        symbol.prices.thirtySeconds >= symbol.prices.fortySeconds &&
+        symbol.prices.fortySeconds >= symbol.prices.fiftySeconds &&
+        symbol.prices.fiftySeconds >= symbol.prices.sixtySeconds
+      ) best = symbol;
     });
     
     return best;

@@ -22,20 +22,30 @@ class Socket {
             this.ws.send(JSON.stringify(data));
             const interval = setInterval(() => {
                 this.updatePrices();
-                this.batches++;
-                console.log('Updated Prices');
-                if (this.batches === 7) {
-                    this.ws.close();
-                    Object.keys(this.symbols).map((s) => {
-                        const symbol = this.symbols[s];
-                        console.log(symbol);
-                    });
-                    console.log(this.symbols['ASTBTC']);
-                    console.log(Object.keys(this.symbols).length);
-                    console.log('BEST PERFORMER');
-                    console.log(this.findBestPerformer());
-                    clearInterval(interval);
+                // this.batches++;
+                // console.log('Updated Prices');
+                // if (this.batches === 7) {
+                // this.ws.close();
+                // Object.keys(this.symbols).map((s: string) => {
+                //   const symbol: SymbolPriceData = this.symbols[s];
+                //   console.log(symbol);
+                // });
+                // console.log(this.symbols['ASTBTC']);
+                // console.log(Object.keys(this.symbols).length);
+                console.log('------------------------------');
+                console.log('BEST PERFORMER');
+                const best = this.findBestPerformer();
+                console.log(best);
+                console.log('*******************');
+                if (best) {
+                    console.log(`----------- ${best?.symbol} ---------------`);
+                    console.log(`----------- +${best?.pricePercentageChanges.sixtySeconds}% ---------------`);
                 }
+                else {
+                    console.log(`----------- NONE ---------------`);
+                }
+                // clearInterval(interval);
+                // }
             }, 10000);
         };
         this.ws.onclose = () => {
@@ -68,7 +78,13 @@ class Socket {
             const symbol = this.symbols[s];
             if (!best)
                 return best = symbol;
-            if (symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds)
+            if (symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
+                symbol.prices.now >= symbol.prices.tenSeconds &&
+                symbol.prices.tenSeconds >= symbol.prices.twentySeconds &&
+                symbol.prices.twentySeconds >= symbol.prices.thirtySeconds &&
+                symbol.prices.thirtySeconds >= symbol.prices.fortySeconds &&
+                symbol.prices.fortySeconds >= symbol.prices.fiftySeconds &&
+                symbol.prices.fiftySeconds >= symbol.prices.sixtySeconds)
                 best = symbol;
         });
         return best;
