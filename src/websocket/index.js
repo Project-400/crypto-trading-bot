@@ -11,7 +11,7 @@ class Socket {
     static start() {
         console.log('Opening Connection to Binance WebSocket');
         this.ws = new isomorphic_ws_1.default(settings_1.BinanceWS);
-        this.symbols['BTCUSDT'] = new symbol_price_data_1.SymbolPriceData('BTCUSDT', 0);
+        this.symbols['ASTBTC'] = new symbol_price_data_1.SymbolPriceData('ASTBTC', 0);
         const data = {
             method: 'SUBSCRIBE',
             params: ['!bookTicker'],
@@ -21,7 +21,6 @@ class Socket {
             console.log('Connected to Binance WebSocket');
             this.ws.send(JSON.stringify(data));
             const interval = setInterval(() => {
-                // console.log(Socket.prices);
                 this.updatePrices();
                 this.batches++;
                 console.log('Updated Prices');
@@ -31,8 +30,10 @@ class Socket {
                         const symbol = this.symbols[s];
                         console.log(symbol);
                     });
-                    console.log(this.symbols['BTCUSDT']);
+                    console.log(this.symbols['ASTBTC']);
                     console.log(Object.keys(this.symbols).length);
+                    console.log('BEST PERFORMER');
+                    console.log(this.findBestPerformer());
                     clearInterval(interval);
                 }
             }, 10000);
@@ -41,19 +42,10 @@ class Socket {
             console.log('Connection to Binance Disconnected');
         };
         this.ws.onmessage = (msg) => {
-            // console.log(msg.data);
             const data = JSON.parse(msg.data);
             if (data.result === null)
                 return;
-            // if (data.s.startsWith('A')) {
             this.prices[data.s] = data.a;
-            // }
-            // const updatedPrice = JSON.parse(msg.data as string)['a'];
-            // if (updatedPrice > price) console.log("\x1b[41m", updatedPrice);
-            // if (updatedPrice < price) console.log("\x1b[42m", updatedPrice);
-            // else console.log(updatedPrice);
-            // price = updatedPrice;
-            // console.log(updatedPrice)
         };
     }
     static stop() {
@@ -61,7 +53,6 @@ class Socket {
         this.ws.close();
     }
     static updatePrices() {
-        console.log(this.prices);
         Object.keys(this.prices).map((symbol) => {
             const price = this.prices[symbol];
             const existingSymbol = this.symbols[symbol];
@@ -70,6 +61,17 @@ class Socket {
             else
                 this.symbols[symbol] = new symbol_price_data_1.SymbolPriceData(symbol, price);
         });
+    }
+    static findBestPerformer() {
+        let best = null;
+        Object.keys(this.symbols).map((s) => {
+            const symbol = this.symbols[s];
+            if (!best)
+                return best = symbol;
+            if (symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds)
+                best = symbol;
+        });
+        return best;
     }
 }
 exports.Socket = Socket;
