@@ -78,7 +78,8 @@ class Socket {
             const symbol = this.symbols[s];
             if (!best)
                 return best = symbol;
-            if (symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
+            if (symbol.prices.now - symbol.prices.sixtySeconds > 0.00000005 &&
+                symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
                 symbol.prices.now >= symbol.prices.tenSeconds &&
                 symbol.prices.tenSeconds >= symbol.prices.twentySeconds &&
                 symbol.prices.twentySeconds >= symbol.prices.thirtySeconds &&

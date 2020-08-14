@@ -96,6 +96,7 @@ export class Socket {
       if (!best) return best = symbol;
       
       if (
+        symbol.prices.now - symbol.prices.sixtySeconds > 0.00000005 &&
         symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
         symbol.prices.now >= symbol.prices.tenSeconds &&
         symbol.prices.tenSeconds >= symbol.prices.twentySeconds &&
