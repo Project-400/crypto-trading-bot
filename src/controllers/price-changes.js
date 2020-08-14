@@ -1,6 +1,11 @@
 import { Socket } from '../websocket';
 
-export const priceChanges = (req, res) => {
+export const startBot = (req, res) => {
   Socket.start();
-  res.status(200).json({ message: 'Connected' });
+  res.status(200).json({ message: 'Started Bot' });
+}
+
+export const stopBot = (req, res) => {
+  Socket.stop();
+  res.status(200).json({ message: 'Stopped Bot' });
 }

@@ -1,7 +1,8 @@
 import express from 'express';
-import { priceChanges } from '../controllers';
+import { startBot, stopBot } from '../controllers';
 const indexRouter = express.Router();
 
-indexRouter.get('/price-changes', priceChanges);
+indexRouter.get('/start-bot', startBot);
+indexRouter.get('/stop-bot', stopBot);
 
 export default indexRouter;

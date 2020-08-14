@@ -1,10 +1,13 @@
 import WebSocket from 'isomorphic-ws';
-import {BinanceWS} from "../settings";
+import { BinanceWS } from "../settings";
 
 export class Socket {
-  
+
+  static ws;
+
   static start() {
     console.log('Opening Connection to Binance WebSocket')
+    Socket.ws = new WebSocket(BinanceWS);
 
     const data = {
       method: 'SUBSCRIBE',
@@ -12,20 +15,24 @@ export class Socket {
       id: 1
     }
 
-    const ws = new WebSocket(BinanceWS);
-
-    ws.onopen = () => {
+    Socket.ws.onopen = () => {
       console.log('Connected to Binance WebSocket');
-      ws.send(JSON.stringify(data));
+      this.ws.send(JSON.stringify(data));
     };
 
-    ws.onclose = () => {
-      console.log('disconnected');
+    Socket.ws.onclose = () => {
+      console.log('Connection to Binance Disconnected');
     };
 
-    ws.onmessage = (msg) => {
+    Socket.ws.onmessage = (msg) => {
       console.log(msg.data);
     };
+  }
+  
+  static stop() {
+    console.log('Closing Connection to Binance WebSocket')
+
+    Socket.ws.close();
   }
   
 }
