@@ -1,10 +1,10 @@
 import express, { Router } from 'express';
-import { startBot, stopBot, buyCurrency } from '../controllers';
+import { startBot, stopBot, sellCurrency } from '../controllers';
 
 const indexRouter: Router = express.Router();
 
 indexRouter.get('/start-bot', startBot);
 indexRouter.get('/stop-bot', stopBot);
-indexRouter.get('/currency/buy', buyCurrency);
+indexRouter.get('/currency/sell', sellCurrency);
 
 export default indexRouter;

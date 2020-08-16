@@ -73,4 +73,28 @@ export class TraderBot {
     
     return response;
   }
+  
+  static async sellCurrency(symbol: string, base: string, quote: string, quantity: number) {
+    const response: string = await new Promise((resolve: any, reject: any): void => {
+      const postData = {
+        symbol,
+        base,
+        quote,
+        quantity,
+        isTest: true
+      };
+
+      axios.post('http://localhost:3001/transactions/sell', postData)
+        .then((res: AxiosResponse) => {
+          if (res.status === 200) resolve(res.data);
+          else reject(res);
+        })
+        .catch((error: AxiosError) => {
+          console.error(error);
+          reject(error);
+        });
+    });
+    
+    return response;
+  }
 }

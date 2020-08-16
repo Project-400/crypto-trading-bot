@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SymbolTraderData = void 0;
 class SymbolTraderData {
     constructor(symbol) {
         this.prices = [];

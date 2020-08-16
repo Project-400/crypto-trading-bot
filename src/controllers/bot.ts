@@ -12,7 +12,7 @@ export const stopBot = (req: Request, res: Response): void => {
   res.status(200).json({ message: 'Stopped Bot' });
 }
 
-export const buyCurrency = async (req: Request, res: Response): Promise<void> => {
-  const response = await TraderBot.buyCurrency('ASTBTC', 'AST', 'BTC', 0.0001);
+export const sellCurrency = async (req: Request, res: Response): Promise<void> => {
+  const response = await TraderBot.sellCurrency('ASTBTC', 'AST', 'BTC', 0.0001);
   res.status(200).json({ response });
 }

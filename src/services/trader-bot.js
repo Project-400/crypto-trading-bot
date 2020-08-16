@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TraderBot = void 0;
 const isomorphic_ws_1 = __importDefault(require("isomorphic-ws"));
 const settings_1 = require("../settings");
 const symbol_trader_data_1 = require("../models/symbol-trader-data");
@@ -50,6 +51,29 @@ class TraderBot {
                 isTest: true
             };
             axios_1.default.post('http://localhost:3001/transactions/buy', postData)
+                .then((res) => {
+                if (res.status === 200)
+                    resolve(res.data);
+                else
+                    reject(res);
+            })
+                .catch((error) => {
+                console.error(error);
+                reject(error);
+            });
+        });
+        return response;
+    }
+    static async sellCurrency(symbol, base, quote, quantity) {
+        const response = await new Promise((resolve, reject) => {
+            const postData = {
+                symbol,
+                base,
+                quote,
+                quantity,
+                isTest: true
+            };
+            axios_1.default.post('http://localhost:3001/transactions/sell', postData)
                 .then((res) => {
                 if (res.status === 200)
                     resolve(res.data);
