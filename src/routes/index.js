@@ -9,4 +9,5 @@ const indexRouter = express_1.default.Router();
 indexRouter.get('/start-bot', controllers_1.startBot);
 indexRouter.get('/stop-bot', controllers_1.stopBot);
 indexRouter.get('/currency/sell', controllers_1.sellCurrency);
+indexRouter.get('/bot/trade', controllers_1.trade);
 exports.default = indexRouter;

@@ -8,6 +8,7 @@ export class MarketBot {
   static prices: { [s: string]: number } = { };
   static symbols: { [s: string]: SymbolPriceData } = { };
   static batches: number = 0;
+  static interval: NodeJS.Timeout;
 
   static start() {
     console.log('Opening Connection to Binance WebSocket')
@@ -26,7 +27,7 @@ export class MarketBot {
       
       this.ws.send(JSON.stringify(data));
       
-      const interval = setInterval(() => {
+      this.interval = setInterval(() => {
         this.updatePrices();
         // this.batches++;
 
@@ -76,6 +77,7 @@ export class MarketBot {
   static stop() {
     console.log('Closing Connection to Binance WebSocket')
 
+    clearInterval(this.interval);
     this.ws.close();
   }
   
