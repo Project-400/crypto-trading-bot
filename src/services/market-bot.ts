@@ -2,7 +2,7 @@ import WebSocket, { MessageEvent } from 'isomorphic-ws';
 import { BinanceWS } from '../settings';
 import { SymbolPriceData } from '../models/symbol-price-data';
 
-export class Socket {
+export class MarketBot {
 
   static ws: WebSocket;
   static prices: { [s: string]: number } = { };
@@ -56,10 +56,7 @@ export class Socket {
         } else {
           console.log(`----------- NONE ---------------`);
         }
-        
-        // clearInterval(interval);
-        // }
-      }, 10000);
+        }, 10000);
     };
 
     this.ws.onclose = () => {
@@ -72,6 +69,9 @@ export class Socket {
       this.prices[data.s] = data.a;
     };
   }
+
+  // echo -n "symbol=ASTBTC&side=SELL&quantity=12&type=MARKET&timestamp=1597528311458&recvWindow=60000" | openssl dgst -sha256 -hmac "PXxkSDbB86BKWlNOQYaQ1uujRQHBFoXiDjEUes2mNXAbsI07teWmVei8JPchIIoD"
+  // echo -n "timestamp=1597483587626&recvWindow=60000" | openssl dgst -sha256 -hmac "5EEJO4BQMHaVTVMZFHyBTEPBWSYAwt1va0rbuo9hrL1o6p7ls4xDHsSILCu4DANj"
   
   static stop() {
     console.log('Closing Connection to Binance WebSocket')

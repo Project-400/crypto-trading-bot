@@ -3,11 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Socket = void 0;
 const isomorphic_ws_1 = __importDefault(require("isomorphic-ws"));
 const settings_1 = require("../settings");
 const symbol_price_data_1 = require("../models/symbol-price-data");
-class Socket {
+class MarketBot {
     static start() {
         console.log('Opening Connection to Binance WebSocket');
         this.ws = new isomorphic_ws_1.default(settings_1.BinanceWS);
@@ -44,8 +43,6 @@ class Socket {
                 else {
                     console.log(`----------- NONE ---------------`);
                 }
-                // clearInterval(interval);
-                // }
             }, 10000);
         };
         this.ws.onclose = () => {
@@ -58,6 +55,8 @@ class Socket {
             this.prices[data.s] = data.a;
         };
     }
+    // echo -n "symbol=ASTBTC&side=SELL&quantity=12&type=MARKET&timestamp=1597528311458&recvWindow=60000" | openssl dgst -sha256 -hmac "PXxkSDbB86BKWlNOQYaQ1uujRQHBFoXiDjEUes2mNXAbsI07teWmVei8JPchIIoD"
+    // echo -n "timestamp=1597483587626&recvWindow=60000" | openssl dgst -sha256 -hmac "5EEJO4BQMHaVTVMZFHyBTEPBWSYAwt1va0rbuo9hrL1o6p7ls4xDHsSILCu4DANj"
     static stop() {
         console.log('Closing Connection to Binance WebSocket');
         this.ws.close();
@@ -91,7 +90,7 @@ class Socket {
         return best;
     }
 }
-exports.Socket = Socket;
-Socket.prices = {};
-Socket.symbols = {};
-Socket.batches = 0;
+exports.MarketBot = MarketBot;
+MarketBot.prices = {};
+MarketBot.symbols = {};
+MarketBot.batches = 0;

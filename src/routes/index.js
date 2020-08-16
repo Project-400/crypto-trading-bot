@@ -8,4 +8,5 @@ const controllers_1 = require("../controllers");
 const indexRouter = express_1.default.Router();
 indexRouter.get('/start-bot', controllers_1.startBot);
 indexRouter.get('/stop-bot', controllers_1.stopBot);
+indexRouter.get('/currency/buy', controllers_1.buyCurrency);
 exports.default = indexRouter;
