@@ -20,7 +20,7 @@ class MarketBot {
         this.ws.onopen = () => {
             console.log('Connected to Binance WebSocket');
             this.ws.send(JSON.stringify(data));
-            const interval = setInterval(() => {
+            this.interval = setInterval(() => {
                 this.updatePrices();
                 // this.batches++;
                 // console.log('Updated Prices');
@@ -60,6 +60,7 @@ class MarketBot {
     // echo -n "timestamp=1597483587626&recvWindow=60000" | openssl dgst -sha256 -hmac "5EEJO4BQMHaVTVMZFHyBTEPBWSYAwt1va0rbuo9hrL1o6p7ls4xDHsSILCu4DANj"
     static stop() {
         console.log('Closing Connection to Binance WebSocket');
+        clearInterval(this.interval);
         this.ws.close();
     }
     static updatePrices() {
