@@ -7,7 +7,6 @@ exports.PositionState = exports.SymbolTraderData = void 0;
 const axios_1 = __importDefault(require("axios"));
 class SymbolTraderData {
     constructor(symbol, base, quote) {
-        // public prices: number[] = [];
         this.baseQty = 0;
         this.quoteQty = 0;
         this.profit = 0;
@@ -17,10 +16,9 @@ class SymbolTraderData {
         this.percentageDifference = 0;
         this.commissions = [];
         this.state = PositionState.BUY;
-        this.quoteMinQty = 0;
-        this.quoteStepSize = 0;
+        this.baseMinQty = 0;
+        this.baseStepSize = 0;
         this.updatePrice = (price) => {
-            // this.prices.push(price);
             if (this.currentPrice)
                 this.calculatePriceChanges(price);
             else
@@ -87,16 +85,21 @@ class SymbolTraderData {
                     reject(error);
                 });
             });
+            console.log(this.exchangeInfo);
             if (!this.exchangeInfo)
                 return;
             const lotSizeFilter = this.exchangeInfo?.filters.find((f) => f.filterType === 'LOT_SIZE');
             if (lotSizeFilter) {
-                this.quoteMinQty = lotSizeFilter.minQty;
-                this.quoteStepSize = lotSizeFilter.stepSize;
+                this.baseMinQty = lotSizeFilter.minQty;
+                this.baseStepSize = lotSizeFilter.stepSize;
             }
-            console.log(this.exchangeInfo);
-            console.log(this.quoteMinQty);
-            console.log(this.quoteStepSize);
+        };
+        this.getSellQuantity = () => {
+            if (this.baseStepSize) {
+                const trim = this.baseQty % this.baseStepSize;
+                return this.baseQty - trim;
+            }
+            return this.baseQty;
         };
         this.symbol = symbol;
         this.base = base;

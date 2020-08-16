@@ -1,7 +1,6 @@
 import { MarketBot } from '../services/market-bot';
 import { TraderBot } from '../services/trader-bot';
 import { Request, Response } from 'express';
-import BigNumber from 'bignumber.js';
 
 export const startBot = (req: Request, res: Response): void => {
   MarketBot.start();
@@ -13,12 +12,7 @@ export const stopBot = (req: Request, res: Response): void => {
   res.status(200).json({ message: 'Stopped Bot' });
 }
 
-export const sellCurrency = async (req: Request, res: Response): Promise<void> => {
-  const response = await TraderBot.sellCurrency('ASTBTC', 'AST', 'BTC', 0.0001);
-  res.status(200).json({ response });
-}
-
 export const trade = async (req: Request, res: Response): Promise<void> => {
-  const response = await TraderBot.watchPriceChanges('YFIBTC', 'YFI', 'BTC');
+  const response = await TraderBot.watchPriceChanges('SANDBTC', 'SAND', 'BTC');
   res.status(200).json({ response });
 }

@@ -7,7 +7,6 @@ export class SymbolTraderData {
   public base: string;
   public quote: string;
   public lowercaseSymbol: string;
-  // public prices: number[] = [];
   public baseQty: number = 0;
   public quoteQty: number = 0;
   public profit: number = 0;
@@ -18,8 +17,8 @@ export class SymbolTraderData {
   public commissions: TransactionFillCommission[] = [];
   public state: PositionState = PositionState.BUY;
   public exchangeInfo?: ExchangeInfoSymbol;
-  public quoteMinQty: number = 0;
-  public quoteStepSize: number = 0;
+  public baseMinQty: number = 0;
+  public baseStepSize: number = 0;
 
   constructor(
     symbol: string,
@@ -33,7 +32,6 @@ export class SymbolTraderData {
   }
 
   public updatePrice = (price: number) => {
-    // this.prices.push(price);
     if (this.currentPrice) this.calculatePriceChanges(price);
     else this.currentPrice = price
     
@@ -102,18 +100,25 @@ export class SymbolTraderData {
           reject(error);
         });
     });
+
+    console.log(this.exchangeInfo)
     
     if (!this.exchangeInfo) return;
     
     const lotSizeFilter: any = this.exchangeInfo?.filters.find((f: any) => f.filterType === 'LOT_SIZE');
     if (lotSizeFilter) {
-      this.quoteMinQty = lotSizeFilter.minQty;
-      this.quoteStepSize = lotSizeFilter.stepSize;
+      this.baseMinQty = lotSizeFilter.minQty;
+      this.baseStepSize = lotSizeFilter.stepSize;
     }
-
-    console.log(this.exchangeInfo)
-    console.log(this.quoteMinQty)
-    console.log(this.quoteStepSize)
+  }
+  
+  public getSellQuantity = (): number => {
+    if (this.baseStepSize) {
+      const trim: number = this.baseQty % this.baseStepSize;
+      return this.baseQty - trim;
+    }
+    
+    return this.baseQty;
   }
 
 }
