@@ -1,13 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PositionState = exports.SymbolTraderData = void 0;
+const axios_1 = __importDefault(require("axios"));
 class SymbolTraderData {
     constructor(symbol, base, quote) {
-        this.prices = [];
+        // public prices: number[] = [];
         this.baseQty = 0;
         this.quoteQty = 0;
-        // public quoteQtyUsed: number = 0;
-        // public quoteQtyReceived: number = 0;
         this.profit = 0;
         this.startPrice = 0;
         this.currentPrice = 0;
@@ -15,6 +17,8 @@ class SymbolTraderData {
         this.percentageDifference = 0;
         this.commissions = [];
         this.state = PositionState.BUY;
+        this.quoteMinQty = 0;
+        this.quoteStepSize = 0;
         this.updatePrice = (price) => {
             // this.prices.push(price);
             if (this.currentPrice)
@@ -70,6 +74,29 @@ class SymbolTraderData {
             const avgPrice = fills[0].price;
             this.startPrice = avgPrice;
             this.currentPrice = avgPrice;
+        };
+        this.getExchangeInfo = async () => {
+            this.exchangeInfo = await new Promise((resolve, reject) => {
+                axios_1.default.get(`http://localhost:3001/exchange-info/single/${this.symbol}/${this.quote}`)
+                    .then((res) => {
+                    if (res.status === 200 && res.data.success)
+                        resolve(res.data.info);
+                })
+                    .catch((error) => {
+                    console.error(error);
+                    reject(error);
+                });
+            });
+            if (!this.exchangeInfo)
+                return;
+            const lotSizeFilter = this.exchangeInfo?.filters.find((f) => f.filterType === 'LOT_SIZE');
+            if (lotSizeFilter) {
+                this.quoteMinQty = lotSizeFilter.minQty;
+                this.quoteStepSize = lotSizeFilter.stepSize;
+            }
+            console.log(this.exchangeInfo);
+            console.log(this.quoteMinQty);
+            console.log(this.quoteStepSize);
         };
         this.symbol = symbol;
         this.base = base;

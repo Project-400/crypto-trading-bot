@@ -37,7 +37,7 @@ export class TraderBot {
 
       const interval = setInterval(async () => {
         this.updatePrice();
-        await this.makeDecision();
+        // await this.makeDecision();
       }, 2000);
     };
 
@@ -51,7 +51,7 @@ export class TraderBot {
       this.currentPrice = data.a;
     };
 
-    return {trading: true};
+    return { trading: true };
   }
 
   static stop() {

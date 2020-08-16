@@ -18,6 +18,8 @@ export class SymbolTraderData {
   public commissions: TransactionFillCommission[] = [];
   public state: PositionState = PositionState.BUY;
   public exchangeInfo?: ExchangeInfoSymbol;
+  public quoteMinQty: number = 0;
+  public quoteStepSize: number = 0;
 
   constructor(
     symbol: string,
@@ -90,7 +92,7 @@ export class SymbolTraderData {
   }
   
   public getExchangeInfo = async () => {
-    const response: string = await new Promise((resolve: any, reject: any): void => {
+    this.exchangeInfo = await new Promise((resolve: any, reject: any): void => {
       axios.get(`http://localhost:3001/exchange-info/single/${this.symbol}/${this.quote}`)
         .then((res: AxiosResponse) => {
           if (res.status === 200 && res.data.success) resolve(res.data.info);
@@ -101,11 +103,17 @@ export class SymbolTraderData {
         });
     });
     
-    const data: any = JSON.parse(response);
+    if (!this.exchangeInfo) return;
+    
+    const lotSizeFilter: any = this.exchangeInfo?.filters.find((f: any) => f.filterType === 'LOT_SIZE');
+    if (lotSizeFilter) {
+      this.quoteMinQty = lotSizeFilter.minQty;
+      this.quoteStepSize = lotSizeFilter.stepSize;
+    }
 
-    if (data.success) this.exchangeInfo = data.info;
-    console.log('SET EXCHANGE INFO')
     console.log(this.exchangeInfo)
+    console.log(this.quoteMinQty)
+    console.log(this.quoteStepSize)
   }
 
 }

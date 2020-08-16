@@ -16,22 +16,22 @@ var BotState;
     BotState["FINISHED"] = "FINISHED";
 })(BotState || (BotState = {}));
 class TraderBot {
-    static watchPriceChanges(symbol, base, quote) {
+    static async watchPriceChanges(symbol, base, quote) {
         console.log('Trader Bot opening connection to Binance');
         this.ws = new isomorphic_ws_1.default(settings_1.BinanceWS);
         this.tradeData = new symbol_trader_data_1.SymbolTraderData(symbol, base, quote);
+        await this.tradeData.getExchangeInfo();
         const data = {
             method: 'SUBSCRIBE',
             params: [`${this.tradeData.lowercaseSymbol}@bookTicker`],
             id: 1
         };
-        console.log(data);
         this.ws.onopen = () => {
             console.log('Trader Bot connected to Binance');
             this.ws.send(JSON.stringify(data));
             const interval = setInterval(async () => {
                 this.updatePrice();
-                await this.makeDecision();
+                // await this.makeDecision();
             }, 2000);
         };
         this.ws.onclose = () => {
