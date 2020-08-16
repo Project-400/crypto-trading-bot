@@ -1,7 +1,12 @@
-import { ExchangeInfoSymbol } from '@crypto-tracker/common-types';
+import {
+  ExchangeInfoSymbol,
+  ISymbolTraderData,
+  PositionState,
+  TransactionFillCommission
+} from '@crypto-tracker/common-types';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
-export class SymbolTraderData {
+export class SymbolTraderData implements ISymbolTraderData {
 
   public symbol: string;
   public base: string;
@@ -19,6 +24,10 @@ export class SymbolTraderData {
   public exchangeInfo?: ExchangeInfoSymbol;
   public baseMinQty: number = 0;
   public baseStepSize: number = 0;
+  public times = {
+    createdAt: '',
+    finishedAt: ''
+  };
 
   constructor(
     symbol: string,
@@ -29,6 +38,7 @@ export class SymbolTraderData {
     this.base = base;
     this.quote = quote;
     this.lowercaseSymbol = symbol.toLowerCase();
+    this.times.createdAt = new Date().toISOString();
   }
 
   public updatePrice = (price: number) => {
@@ -82,16 +92,16 @@ export class SymbolTraderData {
   }
 
   private logPrice = (fills: any[]): void => {
-    // let total: number = 0;
-    // fills.map((c: any) => total += c.price);
-    const avgPrice = fills[0].price;
+    let total: number = 0;
+    fills.map((c: any) => total += c.price);
+    const avgPrice = total / fills.length;
     this.startPrice = avgPrice;
     this.currentPrice = avgPrice;
   }
   
   public getExchangeInfo = async () => {
     this.exchangeInfo = await new Promise((resolve: any, reject: any): void => {
-      axios.get(`http://localhost:3001/exchange-info/single/${this.symbol}/${this.quote}`)
+      axios.get(`https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/exchange-info/single/${this.symbol}/${this.quote}`)
         .then((res: AxiosResponse) => {
           if (res.status === 200 && res.data.success) resolve(res.data.info);
         })
@@ -103,10 +113,11 @@ export class SymbolTraderData {
 
     console.log(this.exchangeInfo)
     
-    if (!this.exchangeInfo) return;
+    if (!this.exchangeInfo) console.error(`No exchange info for ${this.symbol}`);
     
     const lotSizeFilter: any = this.exchangeInfo?.filters.find((f: any) => f.filterType === 'LOT_SIZE');
     if (lotSizeFilter) {
+      console.log(`${this.symbol} has a step size limit of ${lotSizeFilter.stepSize}`)
       this.baseMinQty = lotSizeFilter.minQty;
       this.baseStepSize = lotSizeFilter.stepSize;
     }
@@ -120,17 +131,9 @@ export class SymbolTraderData {
     
     return this.baseQty;
   }
+  
+  public finish = () => {
+    this.times.finishedAt = new Date().toISOString();
+  }
 
-}
-
-interface TransactionFillCommission {
-  commission: number;
-  commissionAsset: string;
-}
-
-export enum PositionState {
-  BUY = 'BUY',
-  HOLD = 'HOLD',
-  SELL = 'SELL',
-  SOLD = 'SOLD'
 }

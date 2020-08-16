@@ -8,6 +8,7 @@ const isomorphic_ws_1 = __importDefault(require("isomorphic-ws"));
 const settings_1 = require("../settings");
 const symbol_trader_data_1 = require("../models/symbol-trader-data");
 const axios_1 = __importDefault(require("axios"));
+const common_types_1 = require("@crypto-tracker/common-types");
 var BotState;
 (function (BotState) {
     BotState["WAITING"] = "WAITING";
@@ -20,7 +21,7 @@ class TraderBot {
         console.log('Trader Bot opening connection to Binance');
         this.ws = new isomorphic_ws_1.default(settings_1.BinanceWS);
         this.tradeData = new symbol_trader_data_1.SymbolTraderData(symbol, base, quote);
-        // await this.tradeData.getExchangeInfo();
+        await this.tradeData.getExchangeInfo();
         // this.tradeData.exchangeInfo = {
         //   pk: 'exchangeInfo#SANDBTC',
         //   sk: 'exchangeInfo#BTC',
@@ -84,59 +85,66 @@ class TraderBot {
         //     updatedAt: '2020-08-16T17:51:18.431Z'
         //   }
         // } as ExchangeInfoSymbol;
-        await this.tradeData.getExchangeInfo();
-        this.tradeData.logBuy({
-            "transaction": {
-                "pk": "transaction#54558dc0-5fd6-4ef8-933f-227e408056b4",
-                "sk": "createdAt#2020-08-16T18:55:37.708Z",
-                "sk2": "buy#createdAt#2020-08-16T18:55:37.708Z",
-                "sk3": "buy#completed#createdAt#2020-08-16T18:55:37.708Z",
-                "entity": "transaction",
-                "request": {
-                    "symbol": "SANDBTC",
-                    "side": "BUY",
-                    "quoteOrderQty": 0.0001,
-                    "type": "MARKET",
-                    "timestamp": 1597604137351,
-                    "recvWindow": 10000
-                },
-                "response": {
-                    "symbol": "SANDBTC",
-                    "orderId": 920707,
-                    "orderListId": -1,
-                    "clientOrderId": "h12urqPnjbrnFoSMojIGO2",
-                    "transactTime": 1597604137586,
-                    "price": "0.00000000",
-                    "origQty": "19.00000000",
-                    "executedQty": "19.00000000",
-                    "cummulativeQuoteQty": "0.00009538",
-                    "status": "FILLED",
-                    "timeInForce": "GTC",
-                    "type": "MARKET",
-                    "side": "BUY",
-                    "fills": [
-                        {
-                            "price": "0.00000502",
-                            "qty": "19.00000000",
-                            "commission": "0.00003580",
-                            "commissionAsset": "BNB",
-                            "tradeId": 246058
-                        }
-                    ]
-                },
-                "symbol": "SANDBTC",
-                "base": "SAND",
-                "quote": "BTC",
-                "completed": true,
-                "times": {
-                    "createdAt": "2020-08-16T18:55:37.708Z"
-                }
-            },
-            "success": true
-        });
-        this.tradeData.updatePrice(0.00000480);
-        console.log(this.tradeData.getSellQuantity());
-        console.log(this.tradeData);
+        //
+        // // await this.tradeData.getExchangeInfo();
+        //
+        // this.tradeData.logBuy(
+        //   {
+        //     "transaction": {
+        //       "pk": "transaction#54558dc0-5fd6-4ef8-933f-227e408056b4",
+        //       "sk": "createdAt#2020-08-16T18:55:37.708Z",
+        //       "sk2": "buy#createdAt#2020-08-16T18:55:37.708Z",
+        //       "sk3": "buy#completed#createdAt#2020-08-16T18:55:37.708Z",
+        //       "entity": "transaction",
+        //       "request": {
+        //         "symbol": "SANDBTC",
+        //         "side": "BUY",
+        //         "quoteOrderQty": 0.0001,
+        //         "type": "MARKET",
+        //         "timestamp": 1597604137351,
+        //         "recvWindow": 10000
+        //       },
+        //       "response": {
+        //         "symbol": "SANDBTC",
+        //         "orderId": 920707,
+        //         "orderListId": -1,
+        //         "clientOrderId": "h12urqPnjbrnFoSMojIGO2",
+        //         "transactTime": 1597604137586,
+        //         "price": "0.00000000",
+        //         "origQty": "19.00000000",
+        //         "executedQty": "19.00000000",
+        //         "cummulativeQuoteQty": "0.00009538",
+        //         "status": "FILLED",
+        //         "timeInForce": "GTC",
+        //         "type": "MARKET",
+        //         "side": "BUY",
+        //         "fills": [
+        //           {
+        //             "price": "0.00000502",
+        //             "qty": "19.00000000",
+        //             "commission": "0.00003580",
+        //             "commissionAsset": "BNB",
+        //             "tradeId": 246058
+        //           }
+        //         ]
+        //       },
+        //       "symbol": "SANDBTC",
+        //       "base": "SAND",
+        //       "quote": "BTC",
+        //       "completed": true,
+        //       "times": {
+        //         "createdAt": "2020-08-16T18:55:37.708Z"
+        //       }
+        //     },
+        //     "success": true
+        //   }
+        // );
+        //
+        // this.tradeData.updatePrice(0.00000480);
+        // this.tradeData.updatePrice(0.00000478);
+        // this.tradeData.finish();
+        //
+        // await this.saveTradeData();
         const data = {
             method: 'SUBSCRIBE',
             params: [`${this.tradeData.lowercaseSymbol}@bookTicker`],
@@ -145,9 +153,9 @@ class TraderBot {
         this.ws.onopen = () => {
             console.log('Trader Bot connected to Binance');
             this.ws.send(JSON.stringify(data));
-            const interval = setInterval(async () => {
+            this.interval = setInterval(async () => {
                 this.updatePrice();
-                // await this.makeDecision();
+                await this.makeDecision();
             }, 2000);
         };
         this.ws.onclose = () => {
@@ -163,6 +171,7 @@ class TraderBot {
     }
     static stop() {
         console.log('Trader Bot closing connection to Binance');
+        clearInterval(this.interval);
         this.ws.close();
     }
     static updatePrice() {
@@ -183,7 +192,7 @@ class TraderBot {
                 this.currentPrice = this.tradeData.currentPrice;
             }
         }
-        if (this.state === BotState.TRADING && this.tradeData.state === symbol_trader_data_1.PositionState.SELL) {
+        if (this.state === BotState.TRADING && this.tradeData.state === common_types_1.PositionState.SELL) {
             console.log('SELL SELL SELL');
             const sell = await this.sellCurrency();
             this.updateState(BotState.PAUSED);
@@ -195,6 +204,26 @@ class TraderBot {
                 console.log(this.tradeData.commissions);
             }
         }
+        if (this.state === BotState.FINISHED) {
+            this.tradeData.finish();
+            await this.saveTradeData();
+        }
+    }
+    static async saveTradeData() {
+        const response = await new Promise((resolve, reject) => {
+            axios_1.default.post('https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/bots/trade/save', { tradeData: this.tradeData })
+                .then((res) => {
+                if (res.status === 200)
+                    resolve(res.data);
+                else
+                    reject(res);
+            })
+                .catch((error) => {
+                console.error(error);
+                reject(error);
+            });
+        });
+        console.log(response);
     }
     static updateState(state) {
         this.state = state;
@@ -208,7 +237,7 @@ class TraderBot {
                 quantity,
                 isTest: false
             };
-            axios_1.default.post('http://localhost:3001/transactions/buy', postData)
+            axios_1.default.post('https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/transactions/buy', postData)
                 .then((res) => {
                 if (res.status === 200)
                     resolve(res.data);
@@ -232,7 +261,7 @@ class TraderBot {
             };
             console.log('SELLING: ');
             console.log(postData);
-            axios_1.default.post('http://localhost:3001/transactions/sell', postData)
+            axios_1.default.post('https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/transactions/sell', postData)
                 .then((res) => {
                 if (res.status === 200)
                     resolve(res.data);

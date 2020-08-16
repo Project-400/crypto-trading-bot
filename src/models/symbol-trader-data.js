@@ -3,7 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PositionState = exports.SymbolTraderData = void 0;
+exports.SymbolTraderData = void 0;
+const common_types_1 = require("@crypto-tracker/common-types");
 const axios_1 = __importDefault(require("axios"));
 class SymbolTraderData {
     constructor(symbol, base, quote) {
@@ -15,20 +16,24 @@ class SymbolTraderData {
         this.priceDifference = 0;
         this.percentageDifference = 0;
         this.commissions = [];
-        this.state = PositionState.BUY;
+        this.state = common_types_1.PositionState.BUY;
         this.baseMinQty = 0;
         this.baseStepSize = 0;
+        this.times = {
+            createdAt: '',
+            finishedAt: ''
+        };
         this.updatePrice = (price) => {
             if (this.currentPrice)
                 this.calculatePriceChanges(price);
             else
                 this.currentPrice = price;
             if (this.percentageDifference < -0.4)
-                this.state = PositionState.SELL;
+                this.state = common_types_1.PositionState.SELL;
             else if (this.percentageDifference > 1)
-                this.state = PositionState.SELL;
+                this.state = common_types_1.PositionState.SELL;
             else
-                this.state = PositionState.HOLD;
+                this.state = common_types_1.PositionState.HOLD;
         };
         this.calculatePriceChanges = (newPrice) => {
             this.priceDifference = this.currentPrice - newPrice;
@@ -48,7 +53,7 @@ class SymbolTraderData {
                 this.logPrice(transaction.response.fills);
                 this.baseQty += transaction.response.executedQty - commission;
                 this.quoteQty -= transaction.response.cummulativeQuoteQty;
-                this.state = PositionState.HOLD;
+                this.state = common_types_1.PositionState.HOLD;
             }
         };
         this.logSell = (sell) => {
@@ -57,7 +62,7 @@ class SymbolTraderData {
                 const commission = this.logCommissions(transaction.response.fills);
                 this.baseQty -= transaction.response.executedQty;
                 this.quoteQty += transaction.response.cummulativeQuoteQty - commission;
-                this.state = PositionState.SOLD;
+                this.state = common_types_1.PositionState.SOLD;
             }
         };
         this.logCommissions = (fills) => {
@@ -67,15 +72,15 @@ class SymbolTraderData {
             return total;
         };
         this.logPrice = (fills) => {
-            // let total: number = 0;
-            // fills.map((c: any) => total += c.price);
-            const avgPrice = fills[0].price;
+            let total = 0;
+            fills.map((c) => total += c.price);
+            const avgPrice = total / fills.length;
             this.startPrice = avgPrice;
             this.currentPrice = avgPrice;
         };
         this.getExchangeInfo = async () => {
             this.exchangeInfo = await new Promise((resolve, reject) => {
-                axios_1.default.get(`http://localhost:3001/exchange-info/single/${this.symbol}/${this.quote}`)
+                axios_1.default.get(`https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/exchange-info/single/${this.symbol}/${this.quote}`)
                     .then((res) => {
                     if (res.status === 200 && res.data.success)
                         resolve(res.data.info);
@@ -87,9 +92,10 @@ class SymbolTraderData {
             });
             console.log(this.exchangeInfo);
             if (!this.exchangeInfo)
-                return;
+                console.error(`No exchange info for ${this.symbol}`);
             const lotSizeFilter = this.exchangeInfo?.filters.find((f) => f.filterType === 'LOT_SIZE');
             if (lotSizeFilter) {
+                console.log(`${this.symbol} has a step size limit of ${lotSizeFilter.stepSize}`);
                 this.baseMinQty = lotSizeFilter.minQty;
                 this.baseStepSize = lotSizeFilter.stepSize;
             }
@@ -101,17 +107,14 @@ class SymbolTraderData {
             }
             return this.baseQty;
         };
+        this.finish = () => {
+            this.times.finishedAt = new Date().toISOString();
+        };
         this.symbol = symbol;
         this.base = base;
         this.quote = quote;
         this.lowercaseSymbol = symbol.toLowerCase();
+        this.times.createdAt = new Date().toISOString();
     }
 }
 exports.SymbolTraderData = SymbolTraderData;
-var PositionState;
-(function (PositionState) {
-    PositionState["BUY"] = "BUY";
-    PositionState["HOLD"] = "HOLD";
-    PositionState["SELL"] = "SELL";
-    PositionState["SOLD"] = "SOLD";
-})(PositionState = exports.PositionState || (exports.PositionState = {}));
