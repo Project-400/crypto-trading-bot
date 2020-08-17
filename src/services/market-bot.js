@@ -22,27 +22,25 @@ class MarketBot {
             this.ws.send(JSON.stringify(data));
             this.interval = setInterval(() => {
                 this.updatePrices();
-                // this.batches++;
-                // console.log('Updated Prices');
-                // if (this.batches === 7) {
-                // this.ws.close();
-                // Object.keys(this.symbols).map((s: string) => {
-                //   const symbol: SymbolPriceData = this.symbols[s];
-                //   console.log(symbol);
-                // });
-                // console.log(this.symbols['ASTBTC']);
-                // console.log(Object.keys(this.symbols).length);
-                console.log('------------------------------');
-                console.log('BEST PERFORMER');
-                const best = this.findBestPerformer();
-                console.log(best);
-                console.log('*******************');
-                if (best) {
-                    console.log(`----------- ${best?.symbol} ---------------`);
-                    console.log(`----------- +${best?.pricePercentageChanges.sixtySeconds}% ---------------`);
+                this.checks++;
+                if (!this.inStartup) {
+                    console.log('------------------------------');
+                    console.log('BEST PERFORMER');
+                    const best = this.findBestPerformer();
+                    console.log(best);
+                    console.log('*******************');
+                    if (best) {
+                        console.log(`----------- ${best?.symbol} ---------------`);
+                        console.log(`----------- +${best?.pricePercentageChanges.sixtySeconds}% ---------------`);
+                    }
+                    else {
+                        console.log(`----------- NONE ---------------`);
+                    }
                 }
                 else {
-                    console.log(`----------- NONE ---------------`);
+                    if (this.checks >= 6)
+                        this.inStartup = false;
+                    console.log(`Starting up.. Gathering Data for ${60 - (this.checks * 10)} seconds.`);
                 }
             }, 10000);
         };
@@ -56,8 +54,6 @@ class MarketBot {
             this.prices[data.s] = data.a;
         };
     }
-    // echo -n "symbol=ASTBTC&side=SELL&quantity=12&type=MARKET&timestamp=1597528311458&recvWindow=60000" | openssl dgst -sha256 -hmac "PXxkSDbB86BKWlNOQYaQ1uujRQHBFoXiDjEUes2mNXAbsI07teWmVei8JPchIIoD"
-    // echo -n "timestamp=1597483587626&recvWindow=60000" | openssl dgst -sha256 -hmac "5EEJO4BQMHaVTVMZFHyBTEPBWSYAwt1va0rbuo9hrL1o6p7ls4xDHsSILCu4DANj"
     static stop() {
         console.log('Closing Connection to Binance WebSocket');
         clearInterval(this.interval);
@@ -79,7 +75,9 @@ class MarketBot {
             const symbol = this.symbols[s];
             if (!best)
                 return best = symbol;
-            if (symbol.prices.now - symbol.prices.sixtySeconds > 0.00000005 &&
+            if (!this.isLeveraged(symbol.symbol) &&
+                this.isMainQuote(symbol.symbol) &&
+                symbol.prices.now - symbol.prices.sixtySeconds > 0.00000005 &&
                 symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
                 symbol.prices.now >= symbol.prices.tenSeconds &&
                 symbol.prices.tenSeconds >= symbol.prices.twentySeconds &&
@@ -91,8 +89,16 @@ class MarketBot {
         });
         return best;
     }
+    static isLeveraged(symbol) {
+        return symbol.includes('UP') || symbol.includes('DOWN');
+    }
+    static isMainQuote(symbol) {
+        return symbol.endsWith('BTC') || symbol.endsWith('ETH') || symbol.endsWith('USDT');
+    }
 }
 exports.MarketBot = MarketBot;
 MarketBot.prices = {};
 MarketBot.symbols = {};
 MarketBot.batches = 0;
+MarketBot.inStartup = true;
+MarketBot.checks = 0;

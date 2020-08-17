@@ -26,31 +26,6 @@ exports.WebsocketProducer = void 0;
 const http_1 = __importDefault(require("http"));
 const WebSocket = __importStar(require("ws"));
 class WebsocketProducer {
-    // constructor(app: express.Application) {
-    //   this.server = http.createServer(app);
-    //   this.wss = new WebSocket.Server({ server: this.server });
-    //
-    //   this.wss.on('connection', (ws: WebSocket) => {
-    //     this.webS = ws;
-    //
-    //     ws.on('message', (message: string) => {
-    //       console.log('received: %s', message);
-    //       ws.send(`Hello, you sent -> ${message}`);
-    //     });
-    //
-    //     ws.send('Hi there, I am a WebSocket server');
-    //   });
-    //
-    //   this.wss.on('close', (ws: WebSocket) => {
-    //     console.log('Connection closed')
-    //   });
-    //
-    //   this.server.listen(process.env.PORT || 8999, () => {
-    //     // @ts-ignore
-    //     if (this.server.address() && this.server.address().port) console.log(`Server started on port ${this.server.address().port} :)`);
-    //     else console.log('Server not started');
-    //   });
-    // }
     static setup(app) {
         WebsocketProducer.server = http_1.default.createServer(app);
         WebsocketProducer.wss = new WebSocket.Server({ server: WebsocketProducer.server });

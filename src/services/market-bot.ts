@@ -9,6 +9,8 @@ export class MarketBot {
   static symbols: { [s: string]: SymbolPriceData } = { };
   static batches: number = 0;
   static interval: NodeJS.Timeout;
+  static inStartup: boolean = true;
+  static checks: number = 0;
 
   static start() {
     console.log('Opening Connection to Binance WebSocket')
@@ -24,40 +26,34 @@ export class MarketBot {
 
     this.ws.onopen = () => {
       console.log('Connected to Binance WebSocket');
-      
+      console.log(`Starting up.. Gathering Data for 60 seconds.`)
+
       this.ws.send(JSON.stringify(data));
       
       this.interval = setInterval(() => {
         this.updatePrices();
-        // this.batches++;
-
-        // console.log('Updated Prices');
-
-        // if (this.batches === 7) {
-          // this.ws.close();
-
-          // Object.keys(this.symbols).map((s: string) => {
-          //   const symbol: SymbolPriceData = this.symbols[s];
-          //   console.log(symbol);
-          // });
-
-          // console.log(this.symbols['ASTBTC']);
-          // console.log(Object.keys(this.symbols).length);
-        console.log('------------------------------');
-        console.log('BEST PERFORMER');
+        this.checks++;
         
-        const best = this.findBestPerformer();
+        if (!this.inStartup) {
+          console.log('------------------------------');
+          console.log('BEST PERFORMER');
 
-        console.log(best)
-        console.log('*******************');
-        
-        if (best) {
-          console.log(`----------- ${best?.symbol} ---------------`);
-          console.log(`----------- +${best?.pricePercentageChanges.sixtySeconds}% ---------------`);
+          const best = this.findBestPerformer();
+
+          console.log(best)
+          console.log('*******************');
+
+          if (best) {
+            console.log(`----------- ${best?.symbol} ---------------`);
+            console.log(`----------- +${best?.pricePercentageChanges.sixtySeconds}% ---------------`);
+          } else {
+            console.log(`----------- NONE ---------------`);
+          }
         } else {
-          console.log(`----------- NONE ---------------`);
+          if (this.checks >= 6) this.inStartup = false;
+          console.log(`Starting up.. Gathering Data for ${60 - (this.checks * 10)} seconds.`)
         }
-        }, 10000);
+      }, 10000);
     };
 
     this.ws.onclose = () => {
@@ -70,9 +66,6 @@ export class MarketBot {
       this.prices[data.s] = data.a;
     };
   }
-
-  // echo -n "symbol=ASTBTC&side=SELL&quantity=12&type=MARKET&timestamp=1597528311458&recvWindow=60000" | openssl dgst -sha256 -hmac "PXxkSDbB86BKWlNOQYaQ1uujRQHBFoXiDjEUes2mNXAbsI07teWmVei8JPchIIoD"
-  // echo -n "timestamp=1597483587626&recvWindow=60000" | openssl dgst -sha256 -hmac "5EEJO4BQMHaVTVMZFHyBTEPBWSYAwt1va0rbuo9hrL1o6p7ls4xDHsSILCu4DANj"
   
   static stop() {
     console.log('Closing Connection to Binance WebSocket')
@@ -98,6 +91,8 @@ export class MarketBot {
       if (!best) return best = symbol;
       
       if (
+        !this.isLeveraged(symbol.symbol) &&
+        this.isMainQuote(symbol.symbol) &&
         symbol.prices.now - symbol.prices.sixtySeconds > 0.00000005 &&
         symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
         symbol.prices.now >= symbol.prices.tenSeconds &&
@@ -110,6 +105,14 @@ export class MarketBot {
     });
     
     return best;
+  }
+  
+  private static isLeveraged(symbol: string): boolean {
+    return symbol.includes('UP') || symbol.includes('DOWN');
+  }
+  
+  private static isMainQuote(symbol: string): boolean {
+    return symbol.endsWith('BTC') || symbol.endsWith('ETH') || symbol.endsWith('USDT');
   }
   
 }
