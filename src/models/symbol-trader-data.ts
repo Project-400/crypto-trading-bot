@@ -45,8 +45,8 @@ export class SymbolTraderData implements ISymbolTraderData {
     if (this.currentPrice) this.calculatePriceChanges(price);
     else this.currentPrice = price
     
-    if (this.percentageDifference < -0.4) this.state = PositionState.SELL;
-    else if (this.percentageDifference > 1) this.state = PositionState.SELL;
+    if (this.percentageDifference < -1) this.state = PositionState.SELL;
+    else if (this.percentageDifference > 2) this.state = PositionState.SELL;
     else this.state = PositionState.HOLD;
   }
   

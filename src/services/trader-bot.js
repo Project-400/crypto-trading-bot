@@ -184,7 +184,7 @@ class TraderBot {
         console.log(`The bot is: ${this.state}`);
         console.log(`Trade position state: ${this.tradeData.state}`);
         if (this.state === BotState.WAITING) {
-            const qty = 0.0002;
+            const qty = 0.0003;
             const buy = await this.buyCurrency(qty);
             this.updateState(BotState.TRADING);
             if (buy.success && buy.transaction) {
@@ -202,11 +202,13 @@ class TraderBot {
                 console.log(this.tradeData.baseQty);
                 console.log(this.tradeData.baseQty);
                 console.log(this.tradeData.commissions);
+                this.updateState(BotState.FINISHED); // TEMPORARY
             }
         }
         if (this.state === BotState.FINISHED) {
             this.tradeData.finish();
             await this.saveTradeData();
+            this.stop();
         }
     }
     static async saveTradeData() {

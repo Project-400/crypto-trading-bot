@@ -13,6 +13,6 @@ export const stopBot = (req: Request, res: Response): void => {
 }
 
 export const trade = async (req: Request, res: Response): Promise<void> => {
-  const response = await TraderBot.watchPriceChanges('RENBTC', 'REN', 'BTC');
+  const response = await TraderBot.watchPriceChanges('FETBTC', 'FET', 'BTC');
   res.status(200).json({ response });
 }

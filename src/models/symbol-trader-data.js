@@ -28,9 +28,9 @@ class SymbolTraderData {
                 this.calculatePriceChanges(price);
             else
                 this.currentPrice = price;
-            if (this.percentageDifference < -0.4)
+            if (this.percentageDifference < -1)
                 this.state = common_types_1.PositionState.SELL;
-            else if (this.percentageDifference > 1)
+            else if (this.percentageDifference > 2)
                 this.state = common_types_1.PositionState.SELL;
             else
                 this.state = common_types_1.PositionState.HOLD;

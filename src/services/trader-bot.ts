@@ -3,6 +3,7 @@ import { BinanceWS } from '../settings';
 import { SymbolTraderData } from '../models/symbol-trader-data';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { PositionState } from '@crypto-tracker/common-types';
+import {CryptoApi} from "../api/crypto-api";
 
 enum BotState {
   WAITING = 'WAITING',
@@ -199,7 +200,7 @@ export class TraderBot {
     console.log(`Trade position state: ${this.tradeData.state}`)
     
     if (this.state === BotState.WAITING) {
-      const qty: number = 0.0002;
+      const qty: number = 0.0003;
       
       const buy: any = await this.buyCurrency(qty);
       
@@ -224,12 +225,16 @@ export class TraderBot {
         console.log(this.tradeData.baseQty)
         console.log(this.tradeData.baseQty)
         console.log(this.tradeData.commissions)
+        
+        this.updateState(BotState.FINISHED); // TEMPORARY
       }
     }
 
     if (this.state === BotState.FINISHED) {
       this.tradeData.finish();
       await this.saveTradeData();
+      
+      this.stop();
     }
   }
   
@@ -254,49 +259,22 @@ export class TraderBot {
   }
   
   static async buyCurrency(quantity: number) {
-    return await new Promise((resolve: any, reject: any): void => {
-      const postData = {
-        symbol: this.tradeData.symbol,
-        base: this.tradeData.base,
-        quote: this.tradeData.quote,
-        quantity,
-        isTest: false
-      };
-
-      axios.post('https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/transactions/buy', postData)
-        .then((res: AxiosResponse) => {
-          if (res.status === 200) resolve(res.data);
-          else reject(res);
-        })
-        .catch((error: AxiosError) => {
-          console.error(error);
-          reject(error);
-        });
+    return await CryptoApi.post('https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/transactions/buy', {
+      symbol: this.tradeData.symbol,
+      base: this.tradeData.base,
+      quote: this.tradeData.quote,
+      quantity,
+      isTest: false
     });
   }
   
   static async sellCurrency() {
-    return await new Promise((resolve: any, reject: any): void => {
-      const postData = {
-        symbol: this.tradeData.symbol,
-        base: this.tradeData.base,
-        quote: this.tradeData.quote,
-        quantity: this.tradeData.getSellQuantity(),
-        isTest: false
-      };
-
-      console.log('SELLING: ')
-      console.log(postData)
-
-      axios.post('https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/transactions/sell', postData)
-        .then((res: AxiosResponse) => {
-          if (res.status === 200) resolve(res.data);
-          else reject(res);
-        })
-        .catch((error: AxiosError) => {
-          console.error(error);
-          reject(error);
-        });
+    return await CryptoApi.post('https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/transactions/sell', {
+      symbol: this.tradeData.symbol,
+      base: this.tradeData.base,
+      quote: this.tradeData.quote,
+      quantity: this.tradeData.getSellQuantity(),
+      isTest: false
     });
   }
 }
