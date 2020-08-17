@@ -4,7 +4,7 @@ import {
   PositionState,
   TransactionFillCommission
 } from '@crypto-tracker/common-types';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import { CryptoApi } from '../api/crypto-api';
 
 export class SymbolTraderData implements ISymbolTraderData {
 
@@ -100,17 +100,9 @@ export class SymbolTraderData implements ISymbolTraderData {
   }
   
   public getExchangeInfo = async () => {
-    this.exchangeInfo = await new Promise((resolve: any, reject: any): void => {
-      axios.get(`https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/exchange-info/single/${this.symbol}/${this.quote}`)
-        .then((res: AxiosResponse) => {
-          if (res.status === 200 && res.data.success) resolve(res.data.info);
-        })
-        .catch((error: AxiosError) => {
-          console.error(error);
-          reject(error);
-        });
-    });
-
+    const response: any = await CryptoApi.get(`/exchange-info/single/${this.symbol}/${this.quote}`);
+    if (response.success) this.exchangeInfo = response.info;
+    
     console.log(this.exchangeInfo)
     
     if (!this.exchangeInfo) console.error(`No exchange info for ${this.symbol}`);
