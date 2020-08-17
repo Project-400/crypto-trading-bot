@@ -12,6 +12,6 @@ exports.stopBot = (req, res) => {
     res.status(200).json({ message: 'Stopped Bot' });
 };
 exports.trade = async (req, res) => {
-    const response = await trader_bot_1.TraderBot.watchPriceChanges('VIBEBTC', 'VIBE', 'BTC');
+    const response = await trader_bot_1.TraderBot.watchPriceChanges('FETBTC', 'FET', 'BTC');
     res.status(200).json({ response });
 };

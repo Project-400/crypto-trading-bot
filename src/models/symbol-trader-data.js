@@ -1,11 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SymbolTraderData = void 0;
 const common_types_1 = require("@crypto-tracker/common-types");
-const axios_1 = __importDefault(require("axios"));
+const crypto_api_1 = require("../api/crypto-api");
 class SymbolTraderData {
     constructor(symbol, base, quote) {
         this.baseQty = 0;
@@ -79,17 +76,9 @@ class SymbolTraderData {
             this.currentPrice = avgPrice;
         };
         this.getExchangeInfo = async () => {
-            this.exchangeInfo = await new Promise((resolve, reject) => {
-                axios_1.default.get(`https://w0sizekdyd.execute-api.eu-west-1.amazonaws.com/dev/exchange-info/single/${this.symbol}/${this.quote}`)
-                    .then((res) => {
-                    if (res.status === 200 && res.data.success)
-                        resolve(res.data.info);
-                })
-                    .catch((error) => {
-                    console.error(error);
-                    reject(error);
-                });
-            });
+            const response = await crypto_api_1.CryptoApi.get(`/exchange-info/single/${this.symbol}/${this.quote}`);
+            if (response.success)
+                this.exchangeInfo = response.info;
             console.log(this.exchangeInfo);
             if (!this.exchangeInfo)
                 console.error(`No exchange info for ${this.symbol}`);
