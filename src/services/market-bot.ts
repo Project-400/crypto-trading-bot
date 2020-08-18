@@ -1,7 +1,7 @@
 import WebSocket, {MessageEvent} from 'isomorphic-ws';
 import {BinanceWS} from '../settings';
 import {SymbolPriceData} from '../models/symbol-price-data';
-import {BotState, TraderBot} from './trader-bot';
+import {BotState, SymbolType, TraderBot} from './trader-bot';
 import {CryptoApi} from '../api/crypto-api';
 
 export class MarketBot {
@@ -15,6 +15,9 @@ export class MarketBot {
   static checks: number = 0;
   static deployedTraderBots: TraderBot[] = [];
   static limitedQuote: string = 'USDT';
+  static hasClimber: boolean = false;
+  static hasLeaper: boolean = false;
+  static hasHighestGainer: boolean = false;
 
   static start() {
     console.log('Opening Connection to Binance WebSocket')
@@ -95,26 +98,24 @@ export class MarketBot {
     let highestGain: number = 0;
     let highestAvg: number = 0;
 
-    filteredSymbols.map((symbol: SymbolPriceData) => {
-      // climber = this.findBestClimber(symbol, climber);
+    if (this.deployedTraderBots.length <= 3) filteredSymbols.map((symbol: SymbolPriceData) => {
+      climber = this.findBestClimber(symbol, climber);
       leaper = this.findHighestRecentLeaper(symbol, leaper);
       //
-      // const highestGainData: { symbol: SymbolPriceData, highestGain: number } = this.findHighestGainer(symbol, highestGain);
-      // highestGain = highestGainData.highestGain;
-      // highestGainer = highestGainData.symbol;
+      const highestGainData: { symbol: SymbolPriceData, highestGain: number } = this.findHighestGainer(symbol, highestGain);
+      highestGain = highestGainData.highestGain;
+      highestGainer = highestGainData.symbol;
       //
       // const avgGainData = this.findHighestAverageGainer(symbol, highestAvg);
       // highestAvg = avgGainData.highestAvg;
       // avgGainer = avgGainData.symbol;
     });
-
-    // if (climber) {
-    //   console.log(`************* CLIMBER **************`);
-    //   console.log(`----------- ${climber?.symbol} ---------------`);
-    //   console.log(`----------- +${climber?.pricePercentageChanges.sixtySeconds}% ---------------`);
-    // } else {
-    //   console.log(`----------- NO CLIMBER ---------------`);
-    // }
+    
+    if (climber) {
+      console.log(`************* CLIMBER **************`);
+      console.log(`----------- ${climber?.symbol} ---------------`);
+      // console.log(`----------- +${climber?.pricePercentageChanges.sixtySeconds}% ---------------`);
+    }
     //
     // if (highestGainer) {
     //   console.log(`************* HIGHEST GAINER **************`);
@@ -142,28 +143,84 @@ export class MarketBot {
     if (leaper) {
       console.log(`************* LEAPER **************`);
       console.log(`----------- ${leaper?.symbol} ---------------`);
-      console.log(`----------- +${leaper.pricePercentageChanges.now}% ---------------`);
-    } else {
-      console.log(`----------- NO LEAPER ---------------`);
-    }
-    
-    if (this.deployedTraderBots[0].state === BotState.FINISHED) {
-      delete this.deployedTraderBots[0];
-      this.deployedTraderBots = []; // TEMP
+      // console.log(`----------- +${leaper.pricePercentageChanges.now}% ---------------`);
     }
 
-    if (leaper && this.deployedTraderBots.length === 0) {
+    console.log(`Currently trading with ${this.deployedTraderBots.length} bots / symbols`)
+
+    if (this.deployedTraderBots.length && this.deployedTraderBots[2] && this.deployedTraderBots[2].state === BotState.FINISHED) {
+      if (this.deployedTraderBots[2].symbolType === SymbolType.LEAPER) this.hasLeaper = false;
+      if (this.deployedTraderBots[2].symbolType === SymbolType.CLIMBER) this.hasClimber = false;
+      if (this.deployedTraderBots[2].symbolType === SymbolType.HIGHEST_GAINER) this.hasHighestGainer = false;
+      delete this.deployedTraderBots[2];
+      // this.deployedTraderBots = []; // TEMP
+    }
+
+    if (this.deployedTraderBots.length && this.deployedTraderBots[1] && this.deployedTraderBots[1].state === BotState.FINISHED) {
+      if (this.deployedTraderBots[1].symbolType === SymbolType.LEAPER) this.hasLeaper = false;
+      if (this.deployedTraderBots[1].symbolType === SymbolType.CLIMBER) this.hasClimber = false;
+      if (this.deployedTraderBots[1].symbolType === SymbolType.HIGHEST_GAINER) this.hasHighestGainer = false;
+      delete this.deployedTraderBots[1];
+      // this.deployedTraderBots = []; // TEMP
+    }
+
+    if (this.deployedTraderBots.length && this.deployedTraderBots[0] && this.deployedTraderBots[0].state === BotState.FINISHED) {
+      if (this.deployedTraderBots[0].symbolType === SymbolType.LEAPER) this.hasLeaper = false;
+      if (this.deployedTraderBots[0].symbolType === SymbolType.CLIMBER) this.hasClimber = false;
+      if (this.deployedTraderBots[0].symbolType === SymbolType.HIGHEST_GAINER) this.hasHighestGainer = false;
+
+      delete this.deployedTraderBots[0];
+      // this.deployedTraderBots = []; // TEMP
+    }
+    
+    if (climber?.symbol === leaper?.symbol) leaper = undefined; // TEMP - Figure out if symbols are repeated
+    
+    if (highestGainer && highestGain >= 8 && this.deployedTraderBots.length <= 2) {
+      console.log(`PREPPING TO TRADE ${highestGainer?.symbol}`);
+      const pairData = await this.getSymbolPairData(highestGainer?.symbol);
+      let bot: TraderBot;
+      if (pairData) {
+        bot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 12, SymbolType.HIGHEST_GAINER);
+        await bot.startTrading();
+        this.deployedTraderBots.push(bot);
+      } else {
+        console.log('No Pair Data 3 - SKIPPING')
+      }
+    }
+
+    if (leaper && this.deployedTraderBots.length <= 2) {
       console.log(`PREPPING TO TRADE ${leaper?.symbol}`);
       const pairData = await this.getSymbolPairData(leaper?.symbol);
-      const bot: TraderBot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 12);
-      await bot.startTrading();
-      this.deployedTraderBots.push(bot);
+      let bot: TraderBot;
+      if (pairData) {
+        bot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 12, SymbolType.LEAPER);
+        await bot.startTrading();
+        this.deployedTraderBots.push(bot);
+      } else {
+        console.log('No Pair Data 1 - SKIPPING')
+      }
+    }
+
+    if (climber && this.deployedTraderBots.length <= 2) {
+      this.hasClimber = true;
+
+      console.log(`PREPPING TO TRADE ${climber?.symbol}`);
+      const pairData = await this.getSymbolPairData(climber?.symbol);
+      let bot: TraderBot;
+      if (pairData) {
+        bot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 12, SymbolType.CLIMBER);
+        await bot.startTrading();
+        this.deployedTraderBots.push(bot);
+      } else {
+        console.log('No Pair Data 2 - SKIPPING')
+      }
     }
   }
   
   private static async getSymbolPairData(symbol: string) {
     const response: any = await CryptoApi.get(`/exchange-pairs/single/${symbol}/${this.limitedQuote}`);
-    return response.info;
+    if (response && response.success && response.info) return response.info;
+    else return false;
   }
   
   private static findBestClimber(symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData {
@@ -248,7 +305,8 @@ export class MarketBot {
   }
 
   private static isMainQuote(symbol: string): boolean {
-    return symbol.endsWith('BTC') || symbol.endsWith('ETH') || symbol.endsWith('USDT');
+    // return symbol.endsWith('BTC') || symbol.endsWith('ETH') || symbol.endsWith('USDT');
+    return symbol.endsWith('USDT'); // Temp
   }
 
 }

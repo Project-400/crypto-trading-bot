@@ -11,20 +11,30 @@ export enum BotState {
   FINISHED = 'FINISHED'
 }
 
+export enum SymbolType {
+  NONE = 'NONE',
+  CLIMBER = 'CLIMBER',
+  LEAPER = 'LEAPER',
+  HIGHEST_GAINER = 'HIGHEST_GAINER',
+  AVERAGE_GAINER = 'AVERAGE_GAINER'
+}
+
 export class TraderBot {
 
   public state: BotState = BotState.WAITING;
+  public symbolType: SymbolType = SymbolType.NONE;
   private readonly ws: WebSocket;
   private currentPrice: number = 0;
   private readonly tradeData: SymbolTraderData;
   private interval: NodeJS.Timeout | undefined;
   private readonly quoteQty: number = 0;
   
-  constructor(symbol: string, base: string, quote: string, quoteQty: number) {
+  constructor(symbol: string, base: string, quote: string, quoteQty: number, symbolType: SymbolType) {
     console.log('Trader Bot opening connection to Binance')
     this.ws = new WebSocket(BinanceWS);
     this.tradeData = new SymbolTraderData(symbol, base, quote);
     this.quoteQty = quoteQty;
+    this.symbolType = symbolType;
   }
   
   async startTrading() {
@@ -73,6 +83,7 @@ export class TraderBot {
 
   private async makeDecision() {
     console.log('-------------------------------')
+    console.log(`Symbol: ${this.tradeData.symbol}`)
     console.log(`Price is: ${this.tradeData.currentPrice}`)
     console.log(`Price diff: ${this.tradeData.percentageDifference}%`)
     console.log(`The bot is: ${this.state}`)

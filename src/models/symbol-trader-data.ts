@@ -50,10 +50,10 @@ export class SymbolTraderData implements ISymbolTraderData {
       this.highestPriceReached = price
     }
     
-    if (this.percentageDifference < -1) {
+    if (this.percentageDroppedFromHigh < -1) {
       this.state = PositionState.SELL;
     }
-    else if (this.percentageDifference > 2) {
+    else if (this.percentageDifference > 10) {
       this.state = PositionState.SELL;
     }
     else this.state = PositionState.HOLD;
