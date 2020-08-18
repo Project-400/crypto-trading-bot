@@ -1,8 +1,8 @@
-import WebSocket, { MessageEvent } from 'isomorphic-ws';
-import { BinanceWS } from '../settings';
-import { SymbolPriceData } from '../models/symbol-price-data';
-import { TraderBot } from './trader-bot';
-import { CryptoApi } from '../api/crypto-api';
+import WebSocket, {MessageEvent} from 'isomorphic-ws';
+import {BinanceWS} from '../settings';
+import {SymbolPriceData} from '../models/symbol-price-data';
+import {BotState, TraderBot} from './trader-bot';
+import {CryptoApi} from '../api/crypto-api';
 
 export class MarketBot {
 
@@ -146,8 +146,13 @@ export class MarketBot {
     } else {
       console.log(`----------- NO LEAPER ---------------`);
     }
+    
+    if (this.deployedTraderBots[0].state === BotState.FINISHED) {
+      this.deployedTraderBots = []; // TEMP
+    }
 
-    if (leaper) {
+    if (leaper && this.deployedTraderBots.length === 0) {
+      console.log(`PREPPING TO TRADE ${leaper?.symbol}`);
       const pairData = await this.getSymbolPairData(leaper?.symbol);
       const bot: TraderBot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 12);
       await bot.startTrading();

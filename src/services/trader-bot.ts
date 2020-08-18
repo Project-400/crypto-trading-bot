@@ -13,10 +13,10 @@ export enum BotState {
 
 export class TraderBot {
 
+  public state: BotState = BotState.WAITING;
   private readonly ws: WebSocket;
   private currentPrice: number = 0;
   private readonly tradeData: SymbolTraderData;
-  private state: BotState = BotState.WAITING;
   private interval: NodeJS.Timeout | undefined;
   private readonly quoteQty: number = 0;
   
