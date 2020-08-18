@@ -1,6 +1,6 @@
 import WebSocket, { MessageEvent } from 'isomorphic-ws';
 import { BinanceWS } from '../settings';
-import {PriceTimes, SymbolPriceData} from '../models/symbol-price-data';
+import { SymbolPriceData } from '../models/symbol-price-data';
 
 export class MarketBot {
 
@@ -16,7 +16,7 @@ export class MarketBot {
     console.log('Opening Connection to Binance WebSocket')
     this.ws = new WebSocket(BinanceWS);
     
-    this.symbols['ASTBTC'] = new SymbolPriceData('ASTBTC', 0);
+    // this.symbols['ASTBTC'] = new SymbolPriceData('ASTBTC', 0);
     
     const data = {
       method: 'SUBSCRIBE',
