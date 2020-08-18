@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MarketBot = void 0;
 const isomorphic_ws_1 = __importDefault(require("isomorphic-ws"));
 const settings_1 = require("../settings");
 const symbol_price_data_1 = require("../models/symbol-price-data");
@@ -11,7 +10,7 @@ class MarketBot {
     static start() {
         console.log('Opening Connection to Binance WebSocket');
         this.ws = new isomorphic_ws_1.default(settings_1.BinanceWS);
-        this.symbols['ASTBTC'] = new symbol_price_data_1.SymbolPriceData('ASTBTC', 0);
+        // this.symbols['ASTBTC'] = new SymbolPriceData('ASTBTC', 0);
         const data = {
             method: 'SUBSCRIBE',
             params: ['!bookTicker'],

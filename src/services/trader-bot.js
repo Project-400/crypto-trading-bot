@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TraderBot = void 0;
 const isomorphic_ws_1 = __importDefault(require("isomorphic-ws"));
 const settings_1 = require("../settings");
 const symbol_trader_data_1 = require("../models/symbol-trader-data");

@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SymbolTraderData = void 0;
 const common_types_1 = require("@crypto-tracker/common-types");
 const crypto_api_1 = require("../api/crypto-api");
 class SymbolTraderData {

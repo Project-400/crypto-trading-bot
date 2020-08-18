@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.test = exports.trade = exports.stopBot = exports.startBot = void 0;
 const market_bot_1 = require("../services/market-bot");
 const trader_bot_1 = require("../services/trader-bot");
 const websocket_1 = require("../websocket/websocket");
