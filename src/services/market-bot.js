@@ -19,23 +19,13 @@ class MarketBot {
         };
         this.ws.onopen = () => {
             console.log('Connected to Binance WebSocket');
+            console.log(`Starting up.. Gathering Data for 60 seconds.`);
             this.ws.send(JSON.stringify(data));
             this.interval = setInterval(() => {
                 this.updatePrices();
                 this.checks++;
                 if (!this.inStartup) {
-                    console.log('------------------------------');
-                    console.log('BEST PERFORMER');
-                    const best = this.findBestPerformer();
-                    console.log(best);
-                    console.log('*******************');
-                    if (best) {
-                        console.log(`----------- ${best?.symbol} ---------------`);
-                        console.log(`----------- +${best?.pricePercentageChanges.sixtySeconds}% ---------------`);
-                    }
-                    else {
-                        console.log(`----------- NONE ---------------`);
-                    }
+                    this.evaluateChanges();
                 }
                 else {
                     if (this.checks >= 6)
@@ -69,16 +59,63 @@ class MarketBot {
                 this.symbols[symbol] = new symbol_price_data_1.SymbolPriceData(symbol, price);
         });
     }
-    static findBestPerformer() {
+    static evaluateChanges() {
+        const allSymbols = Object.values(this.symbols);
+        const filteredSymbols = allSymbols.filter((s) => {
+            return !this.isLeveraged(s.symbol) &&
+                !this.isTinyCurrency(s.symbol, s.prices.now - s.prices.sixtySeconds) &&
+                this.isMainQuote(s.symbol);
+        });
+        console.log('------------------------------');
+        console.log('BEST PERFORMERS');
+        const climber = this.findBestClimber(filteredSymbols);
+        const highestGainer = this.findHighestGainer(filteredSymbols);
+        const avgGainer = this.findHighestAverageGainer(filteredSymbols);
+        const leaper = this.findHighestRecentLeaper(filteredSymbols);
+        if (climber) {
+            console.log(`************* CLIMBER **************`);
+            console.log(`----------- ${climber?.symbol} ---------------`);
+            console.log(`----------- +${climber?.pricePercentageChanges.sixtySeconds}% ---------------`);
+        }
+        else {
+            console.log(`----------- NO CLIMBER ---------------`);
+        }
+        if (highestGainer) {
+            console.log(`************* HIGHEST GAINER **************`);
+            console.log(`----------- ${highestGainer?.symbol} ---------------`);
+            console.log(`----------- +${Math.max(...Object.values(highestGainer.pricePercentageChanges))}% ---------------`);
+        }
+        else {
+            console.log(`----------- NO HIGHEST GAINER ---------------`);
+        }
+        if (avgGainer) {
+            console.log(`************* AVERAGE GAINER **************`);
+            console.log(`----------- ${avgGainer?.symbol} ---------------`);
+            console.log(`----------- +${(avgGainer.pricePercentageChanges.now +
+                avgGainer.pricePercentageChanges.tenSeconds +
+                avgGainer.pricePercentageChanges.twentySeconds +
+                avgGainer.pricePercentageChanges.thirtySeconds +
+                avgGainer.pricePercentageChanges.fortySeconds +
+                avgGainer.pricePercentageChanges.sixtySeconds) / 6}% ---------------`);
+        }
+        else {
+            console.log(`----------- NO AVERAGE GAINER ---------------`);
+        }
+        if (leaper) {
+            console.log(`************* LEAPER **************`);
+            console.log(`----------- ${leaper?.symbol} ---------------`);
+            console.log(`----------- +${leaper.pricePercentageChanges.now}% ---------------`);
+        }
+        else {
+            console.log(`----------- NO LEAPER ---------------`);
+        }
+    }
+    static findBestClimber(symbols) {
         let best = null;
-        Object.keys(this.symbols).map((s) => {
-            const symbol = this.symbols[s];
+        symbols.map((symbol) => {
             if (!best)
                 return best = symbol;
-            if (!this.isLeveraged(symbol.symbol) &&
-                this.isMainQuote(symbol.symbol) &&
-                symbol.prices.now - symbol.prices.sixtySeconds > 0.00000005 &&
-                symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
+            if (symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
                 symbol.prices.now >= symbol.prices.tenSeconds &&
                 symbol.prices.tenSeconds >= symbol.prices.twentySeconds &&
                 symbol.prices.twentySeconds >= symbol.prices.thirtySeconds &&
@@ -89,8 +126,65 @@ class MarketBot {
         });
         return best;
     }
+    static findHighestGainer(symbols) {
+        let best = null;
+        let highestGain = 0;
+        symbols.map((symbol) => {
+            if (!best)
+                return best = symbol;
+            if (symbol.pricePercentageChanges.now > highestGain ||
+                symbol.pricePercentageChanges.tenSeconds > highestGain ||
+                symbol.pricePercentageChanges.twentySeconds > highestGain ||
+                symbol.pricePercentageChanges.thirtySeconds > highestGain ||
+                symbol.pricePercentageChanges.fortySeconds > highestGain ||
+                symbol.pricePercentageChanges.sixtySeconds > highestGain) {
+                best = symbol;
+                highestGain = Math.max(...Object.values(symbol.pricePercentageChanges));
+            }
+        });
+        return best;
+    }
+    static findHighestAverageGainer(symbols) {
+        let best = null;
+        let highestAvg = 0;
+        symbols.map((symbol) => {
+            if (!best)
+                return best = symbol;
+            const avg = (symbol.pricePercentageChanges.now +
+                symbol.pricePercentageChanges.tenSeconds +
+                symbol.pricePercentageChanges.twentySeconds +
+                symbol.pricePercentageChanges.thirtySeconds +
+                symbol.pricePercentageChanges.fortySeconds +
+                symbol.pricePercentageChanges.sixtySeconds) / 6;
+            if (avg > highestAvg) {
+                best = symbol;
+                highestAvg = avg;
+            }
+        });
+        return best;
+    }
+    static findHighestRecentLeaper(symbols) {
+        let best = null;
+        symbols.map((symbol) => {
+            if (!best)
+                return best = symbol;
+            if (symbol.pricePercentageChanges.now > best.pricePercentageChanges.now) {
+                best = symbol;
+            }
+        });
+        return best;
+    }
     static isLeveraged(symbol) {
         return symbol.includes('UP') || symbol.includes('DOWN');
+    }
+    static isTinyCurrency(symbol, priceChange) {
+        if (symbol.endsWith('BTC') && priceChange < 0.00000005)
+            return true;
+        if (symbol.endsWith('ETH') && priceChange < 0.0000015)
+            return true;
+        if (symbol.endsWith('USDT') && priceChange < 0.0006)
+            return true;
+        return false;
     }
     static isMainQuote(symbol) {
         return symbol.endsWith('BTC') || symbol.endsWith('ETH') || symbol.endsWith('USDT');

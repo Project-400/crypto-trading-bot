@@ -59,7 +59,7 @@ export class SymbolPriceData {
   
 }
 
-interface PriceTimes {
+export interface PriceTimes {
   now: number;
   tenSeconds: number;
   twentySeconds: number;
