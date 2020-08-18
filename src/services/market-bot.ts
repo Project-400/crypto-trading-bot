@@ -148,6 +148,7 @@ export class MarketBot {
     }
     
     if (this.deployedTraderBots[0].state === BotState.FINISHED) {
+      delete this.deployedTraderBots[0];
       this.deployedTraderBots = []; // TEMP
     }
 
