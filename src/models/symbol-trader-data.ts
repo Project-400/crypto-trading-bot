@@ -24,6 +24,8 @@ export class SymbolTraderData implements ISymbolTraderData {
   public exchangeInfo?: ExchangeInfoSymbol;
   public baseMinQty: number = 0;
   public baseStepSize: number = 0;
+  public highestPriceReached: number = 0;
+  public percentageDroppedFromHigh: number = 0;
   public times = {
     createdAt: '',
     finishedAt: ''
@@ -43,24 +45,39 @@ export class SymbolTraderData implements ISymbolTraderData {
 
   public updatePrice = (price: number) => {
     if (this.currentPrice) this.calculatePriceChanges(price);
-    else this.currentPrice = price
+    else {
+      this.currentPrice = price
+      this.highestPriceReached = price
+    }
     
-    if (this.percentageDifference < -1) this.state = PositionState.SELL;
-    else if (this.percentageDifference > 2) this.state = PositionState.SELL;
+    if (this.percentageDifference < -1) {
+      this.state = PositionState.SELL;
+    }
+    else if (this.percentageDifference > 2) {
+      this.state = PositionState.SELL;
+    }
     else this.state = PositionState.HOLD;
   }
   
   private calculatePriceChanges = (newPrice: number) => {
     this.priceDifference = this.currentPrice - newPrice;
-    
-    const tempNewPrice = newPrice * 1000;
-    const tempStartPrice = this.startPrice * 1000;
-    const tempPriceDifference = tempNewPrice - tempStartPrice;
 
+    if (newPrice > this.highestPriceReached) this.highestPriceReached = newPrice;
     this.currentPrice = newPrice;
 
+    const tempStartPrice = this.startPrice * 1000;
+
+    const tempNewPrice = newPrice * 1000;
+    const tempPriceDifference = tempNewPrice - tempStartPrice;
+    
     if (tempNewPrice !== tempStartPrice) this.percentageDifference = (tempPriceDifference / tempStartPrice) * 100;
     else this.percentageDifference = 0;
+
+    const tempHighPrice = this.highestPriceReached * 1000;
+    const tempHighPriceDifference = tempNewPrice - tempHighPrice;
+
+    if (tempNewPrice < tempHighPrice) this.percentageDroppedFromHigh = (tempHighPriceDifference / tempHighPrice) * 100;
+    else this.percentageDroppedFromHigh = 0;
   }
   
   public logBuy = (buy: any) => {
@@ -103,10 +120,12 @@ export class SymbolTraderData implements ISymbolTraderData {
     const response: any = await CryptoApi.get(`/exchange-info/single/${this.symbol}/${this.quote}`);
     if (response.success) this.exchangeInfo = response.info;
     
-    console.log(this.exchangeInfo)
-    
     if (!this.exchangeInfo) console.error(`No exchange info for ${this.symbol}`);
     
+    this.getLotSize();
+  }
+  
+  private getLotSize = () => {
     const lotSizeFilter: any = this.exchangeInfo?.filters.find((f: any) => f.filterType === 'LOT_SIZE');
     if (lotSizeFilter) {
       console.log(`${this.symbol} has a step size limit of ${lotSizeFilter.stepSize}`)
@@ -115,13 +134,17 @@ export class SymbolTraderData implements ISymbolTraderData {
     }
   }
   
-  public getSellQuantity = (): number => {
+  public getSellQuantity = (): string => {
+    let qty: number = 0;
+    
     if (this.baseStepSize) {
       const trim: number = this.baseQty % this.baseStepSize;
-      return this.baseQty - trim;
+      qty = this.baseQty - trim;
+    } else {
+      qty = this.baseQty;
     }
     
-    return this.baseQty;
+    return qty.toFixed(this.exchangeInfo?.quotePrecision);
   }
   
   public finish = () => {

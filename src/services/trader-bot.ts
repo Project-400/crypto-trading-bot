@@ -4,7 +4,7 @@ import { SymbolTraderData } from '../models/symbol-trader-data';
 import { PositionState } from '@crypto-tracker/common-types';
 import { CryptoApi } from '../api/crypto-api';
 
-enum BotState {
+export enum BotState {
   WAITING = 'WAITING',
   TRADING = 'TRADING',
   PAUSED = 'PAUSED',
@@ -13,17 +13,21 @@ enum BotState {
 
 export class TraderBot {
 
-  static ws: WebSocket;
-  static currentPrice: number = 0;
-  static tradeData: SymbolTraderData;
-  static state: BotState = BotState.WAITING;
-  static interval: NodeJS.Timeout;
-
-  static async watchPriceChanges(symbol: string, base: string, quote: string) {
+  private readonly ws: WebSocket;
+  private currentPrice: number = 0;
+  private readonly tradeData: SymbolTraderData;
+  private state: BotState = BotState.WAITING;
+  private interval: NodeJS.Timeout | undefined;
+  private readonly quoteQty: number = 0;
+  
+  constructor(symbol: string, base: string, quote: string, quoteQty: number) {
     console.log('Trader Bot opening connection to Binance')
     this.ws = new WebSocket(BinanceWS);
-
     this.tradeData = new SymbolTraderData(symbol, base, quote);
+    this.quoteQty = quoteQty;
+  }
+  
+  async startTrading() {
     await this.tradeData.getExchangeInfo();
  
     const data = {
@@ -56,18 +60,18 @@ export class TraderBot {
     return { trading: true };
   }
 
-  static stop() {
+  public stopTrading() {
     console.log('Trader Bot closing connection to Binance')
 
-    clearInterval(this.interval);
+    if (this.interval) clearInterval(this.interval);
     this.ws.close();
   }
 
-  private static updatePrice() {
+  private updatePrice() {
     this.tradeData.updatePrice(this.currentPrice);
   }
 
-  private static async makeDecision() {
+  private async makeDecision() {
     console.log('-------------------------------')
     console.log(`Price is: ${this.tradeData.currentPrice}`)
     console.log(`Price diff: ${this.tradeData.percentageDifference}%`)
@@ -75,9 +79,7 @@ export class TraderBot {
     console.log(`Trade position state: ${this.tradeData.state}`)
     
     if (this.state === BotState.WAITING) {
-      const qty: number = 0.0003;
-      
-      const buy: any = await this.buyCurrency(qty);
+      const buy: any = await this.buyCurrency(this.quoteQty);
       
       this.updateState(BotState.TRADING);
       
@@ -88,7 +90,6 @@ export class TraderBot {
     }
 
     if (this.state === BotState.TRADING && this.tradeData.state === PositionState.SELL) {
-      console.log('SELL SELL SELL')
       const sell: any = await this.sellCurrency();
 
       this.updateState(BotState.PAUSED);
@@ -109,21 +110,23 @@ export class TraderBot {
       this.tradeData.finish();
       await this.saveTradeData();
       
-      this.stop();
+      this.stopTrading();
     }
   }
 
-  private static updateState(state: BotState) {
+  private updateState(state: BotState) {
     this.state = state;
   }
 
-  private static async saveTradeData() {
+  private async saveTradeData() {
     return await CryptoApi.post('/bots/trade/save', {
       tradeData: this.tradeData
     });
   }
   
-  private static async buyCurrency(quantity: number) {
+  private async buyCurrency(quantity: number) {
+    console.log(`Buying ${this.tradeData.base} with ${quantity} ${this.tradeData.quote}`);
+
     return await CryptoApi.post('/transactions/buy', {
       symbol: this.tradeData.symbol,
       base: this.tradeData.base,
@@ -133,7 +136,9 @@ export class TraderBot {
     });
   }
 
-  private static async sellCurrency() {
+  private async sellCurrency() {
+    console.log(`Selling ${this.tradeData.getSellQuantity()} ${this.tradeData.base}`);
+    
     return await CryptoApi.post('/transactions/sell', {
       symbol: this.tradeData.symbol,
       base: this.tradeData.base,

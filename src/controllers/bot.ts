@@ -15,10 +15,10 @@ export const stopBot = (req: Request, res: Response): void => {
   res.status(200).json({ message: 'Stopped Bot' });
 }
 
-export const trade = async (req: Request, res: Response): Promise<void> => {
-  const response = await TraderBot.watchPriceChanges('FETBTC', 'FET', 'BTC');
-  res.status(200).json({ response });
-}
+// export const trade = async (req: Request, res: Response): Promise<void> => {
+//   const response = await TraderBot.watchPriceChanges('FETBTC', 'FET', 'BTC');
+//   res.status(200).json({ response });
+// }
 
 export const test = async (req: Request, res: Response): Promise<void> => {
   setTimeout(() => {
