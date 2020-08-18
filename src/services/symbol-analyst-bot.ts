@@ -1,18 +1,23 @@
 import { SymbolPriceData } from '../models/symbol-price-data';
 import { BinanceApi } from '../api/binance-api';
+import { v4 as uuid } from 'uuid';
 
-class SymbolAnalystBot {
+export class SymbolAnalystBot {
   
   private symbol: SymbolPriceData;
   private performanceType: SymbolPerformanceType;
   private decision: Decision = Decision.GATHERING_DATA;
   private klineData: KlineDataPoint[] = [];
+  private botId: string;
   
   constructor(symbol: SymbolPriceData, type: SymbolPerformanceType) {
     this.symbol = symbol;
     this.performanceType = type;
-
-    this.fetchKlineData().then(this.evaluate);
+    this.botId = `SystemAnalystBot_${uuid()}`;
+  }
+  
+  public start() {
+    this.fetchKlineData().then(() => this.evaluate()).catch((e) => console.log(e));
   }
   
   private async fetchKlineData() {
@@ -32,14 +37,13 @@ class SymbolAnalystBot {
     }))
   }
   
-  private evaluate() {
-    this.updateDecision(Decision.EVALUATING);
-    
-    // To Do
-  }
-  
   private updateDecision(decision: Decision) {
     this.decision = decision;
+  }
+
+  private evaluate() {
+    this.updateDecision(Decision.EVALUATING);
+    // To Do
   }
   
 }

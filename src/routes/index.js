@@ -10,4 +10,5 @@ indexRouter.get('/start-bot', controllers_1.startBot);
 indexRouter.get('/stop-bot', controllers_1.stopBot);
 indexRouter.get('/bot/trade', controllers_1.trade);
 indexRouter.get('/test', controllers_1.test);
+indexRouter.get('/analyst', controllers_1.analystBot);
 exports.default = indexRouter;

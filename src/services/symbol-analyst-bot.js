@@ -1,13 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const binance_api_1 = require("../api/binance-api");
+const uuid_1 = require("uuid");
 class SymbolAnalystBot {
     constructor(symbol, type) {
         this.decision = Decision.GATHERING_DATA;
         this.klineData = [];
         this.symbol = symbol;
         this.performanceType = type;
-        this.fetchKlineData().then(this.evaluate);
+        this.botId = `SystemAnalystBot_${uuid_1.v4()}`;
+    }
+    start() {
+        this.fetchKlineData().then(() => this.evaluate()).catch((e) => console.log(e));
     }
     async fetchKlineData() {
         const klineData = await binance_api_1.BinanceApi.getKlineData(this.symbol.symbol);
@@ -25,14 +29,15 @@ class SymbolAnalystBot {
             takerBuyQuoteAssetVolume: point[10]
         }));
     }
+    updateDecision(decision) {
+        this.decision = decision;
+    }
     evaluate() {
         this.updateDecision(Decision.EVALUATING);
         // To Do
     }
-    updateDecision(decision) {
-        this.decision = decision;
-    }
 }
+exports.SymbolAnalystBot = SymbolAnalystBot;
 var SymbolPerformanceType;
 (function (SymbolPerformanceType) {
     SymbolPerformanceType["HIGHEST_GAINER"] = "HIGHEST_GAINER";
