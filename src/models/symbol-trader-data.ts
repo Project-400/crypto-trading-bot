@@ -1,7 +1,8 @@
 import {
   ExchangeInfoSymbol,
   ISymbolTraderData,
-  PositionState,
+  PositionState, 
+  SymbolType,
   TransactionFillCommission
 } from '@crypto-tracker/common-types';
 import { CryptoApi } from '../api/crypto-api';
@@ -12,6 +13,8 @@ export class SymbolTraderData implements ISymbolTraderData {
   public base: string;
   public quote: string;
   public lowercaseSymbol: string;
+  public baseInitialQty: number = 0; // to do
+  public quoteQtySpent: number = 0; // to do
   public baseQty: number = 0;
   public quoteQty: number = 0;
   public profit: number = 0;
@@ -25,6 +28,8 @@ export class SymbolTraderData implements ISymbolTraderData {
   public baseMinQty: number = 0;
   public baseStepSize: number = 0;
   public highestPriceReached: number = 0;
+  public lowestPriceReached: number = 0;
+  public symbolType: SymbolType = SymbolType.NONE;
   public percentageDroppedFromHigh: number = 0;
   public times = {
     createdAt: '',
@@ -34,11 +39,13 @@ export class SymbolTraderData implements ISymbolTraderData {
   constructor(
     symbol: string,
     base: string,
-    quote: string
+    quote: string,
+    symbolType: SymbolType
   ) {
     this.symbol = symbol;
     this.base = base;
     this.quote = quote;
+    this.symbolType = symbolType;
     this.lowercaseSymbol = symbol.toLowerCase();
     this.times.createdAt = new Date().toISOString();
   }
@@ -46,8 +53,9 @@ export class SymbolTraderData implements ISymbolTraderData {
   public updatePrice = (price: number) => {
     if (this.currentPrice) this.calculatePriceChanges(price);
     else {
-      this.currentPrice = price
-      this.highestPriceReached = price
+      this.currentPrice = price;
+      this.highestPriceReached = price;
+      this.lowestPriceReached = price;
     }
     
     if (this.percentageDroppedFromHigh < -1) {
@@ -63,6 +71,7 @@ export class SymbolTraderData implements ISymbolTraderData {
     this.priceDifference = this.currentPrice - newPrice;
 
     if (newPrice > this.highestPriceReached) this.highestPriceReached = newPrice;
+    else if (newPrice < this.lowestPriceReached) this.lowestPriceReached = newPrice;
     this.currentPrice = newPrice;
 
     const tempStartPrice = this.startPrice * 1000;

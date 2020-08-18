@@ -1,7 +1,7 @@
 import WebSocket, {MessageEvent} from 'isomorphic-ws';
 import { BinanceWS } from '../settings';
-import { SymbolTraderData } from '../models/symbol-trader-data';
-import { PositionState } from '@crypto-tracker/common-types';
+import {SymbolTraderData } from '../models/symbol-trader-data';
+import {PositionState, SymbolType} from '@crypto-tracker/common-types';
 import { CryptoApi } from '../api/crypto-api';
 
 export enum BotState {
@@ -11,28 +11,20 @@ export enum BotState {
   FINISHED = 'FINISHED'
 }
 
-export enum SymbolType {
-  NONE = 'NONE',
-  CLIMBER = 'CLIMBER',
-  LEAPER = 'LEAPER',
-  HIGHEST_GAINER = 'HIGHEST_GAINER',
-  AVERAGE_GAINER = 'AVERAGE_GAINER'
-}
-
 export class TraderBot {
 
   public state: BotState = BotState.WAITING;
-  public symbolType: SymbolType = SymbolType.NONE;
   private readonly ws: WebSocket;
   private currentPrice: number = 0;
   private readonly tradeData: SymbolTraderData;
   private interval: NodeJS.Timeout | undefined;
   private readonly quoteQty: number = 0;
-  
+  public symbolType: SymbolType = SymbolType.NONE;
+
   constructor(symbol: string, base: string, quote: string, quoteQty: number, symbolType: SymbolType) {
     console.log('Trader Bot opening connection to Binance')
     this.ws = new WebSocket(BinanceWS);
-    this.tradeData = new SymbolTraderData(symbol, base, quote);
+    this.tradeData = new SymbolTraderData(symbol, base, quote, symbolType);
     this.quoteQty = quoteQty;
     this.symbolType = symbolType;
   }

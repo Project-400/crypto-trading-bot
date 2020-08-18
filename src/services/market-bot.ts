@@ -99,12 +99,14 @@ export class MarketBot {
     let highestAvg: number = 0;
 
     if (this.deployedTraderBots.length <= 3) filteredSymbols.map((symbol: SymbolPriceData) => {
-      climber = this.findBestClimber(symbol, climber);
-      leaper = this.findHighestRecentLeaper(symbol, leaper);
+      if (!this.hasClimber) climber = this.findBestClimber(symbol, climber);
+      if (!this.hasLeaper) leaper = this.findHighestRecentLeaper(symbol, leaper);
       //
-      const highestGainData: { symbol: SymbolPriceData, highestGain: number } = this.findHighestGainer(symbol, highestGain);
-      highestGain = highestGainData.highestGain;
-      highestGainer = highestGainData.symbol;
+      if (!this.hasHighestGainer) {
+        const highestGainData: { symbol: SymbolPriceData, highestGain: number } = this.findHighestGainer(symbol, highestGain);
+        highestGain = highestGainData.highestGain;
+        highestGainer = highestGainData.symbol;
+      }
       //
       // const avgGainData = this.findHighestAverageGainer(symbol, highestAvg);
       // highestAvg = avgGainData.highestAvg;
@@ -176,6 +178,8 @@ export class MarketBot {
     if (climber?.symbol === leaper?.symbol) leaper = undefined; // TEMP - Figure out if symbols are repeated
     
     if (highestGainer && highestGain >= 8 && this.deployedTraderBots.length <= 2) {
+      this.hasHighestGainer = true;
+
       console.log(`PREPPING TO TRADE ${highestGainer?.symbol}`);
       const pairData = await this.getSymbolPairData(highestGainer?.symbol);
       let bot: TraderBot;
@@ -189,6 +193,8 @@ export class MarketBot {
     }
 
     if (leaper && this.deployedTraderBots.length <= 2) {
+      this.hasLeaper = true;
+
       console.log(`PREPPING TO TRADE ${leaper?.symbol}`);
       const pairData = await this.getSymbolPairData(leaper?.symbol);
       let bot: TraderBot;
