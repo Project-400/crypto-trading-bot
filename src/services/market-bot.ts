@@ -81,10 +81,30 @@ export class MarketBot {
     console.log('------------------------------');
     console.log('BEST PERFORMERS');
 
-    const climber: SymbolPriceData | null = this.findBestClimber(filteredSymbols);
-    const highestGainer: SymbolPriceData | null = this.findHighestGainer(filteredSymbols);
-    const avgGainer: SymbolPriceData | null = this.findHighestAverageGainer(filteredSymbols);
-    const leaper: SymbolPriceData | null = this.findHighestRecentLeaper(filteredSymbols);
+    // const climber: SymbolPriceData | null = this.findBestClimber(filteredSymbols);
+    // const highestGainer: SymbolPriceData | null = this.findHighestGainer(filteredSymbols);
+    // const avgGainer: SymbolPriceData | null = this.findHighestAverageGainer(filteredSymbols);
+    // const leaper: SymbolPriceData | null = this.findHighestRecentLeaper(filteredSymbols);
+
+    let climber: SymbolPriceData | undefined;
+    let leaper: SymbolPriceData | undefined;
+    let highestGainer: SymbolPriceData | undefined;
+    let avgGainer: SymbolPriceData | undefined;
+    let highestGain: number = 0;
+    let highestAvg: number = 0;
+
+    filteredSymbols.map((symbol: SymbolPriceData) => {
+      climber = this.findBestClimber(symbol, climber);
+      leaper = this.findHighestRecentLeaper(symbol, leaper);
+
+      const highestGainData: { symbol: SymbolPriceData, highestGain: number } = this.findHighestGainer(symbol, highestGain);
+      highestGain = highestGainData.highestGain;
+      highestGainer = highestGainData.symbol;
+
+      const avgGainData = this.findHighestAverageGainer(symbol, highestAvg);
+      highestAvg = avgGainData.highestAvg;
+      avgGainer = avgGainData.symbol;
+    });
     
     if (climber) {
       console.log(`************* CLIMBER **************`);
@@ -127,86 +147,74 @@ export class MarketBot {
 
   }
   
-  private static findBestClimber(symbols: SymbolPriceData[]): SymbolPriceData | null {
-    let best: SymbolPriceData | null = null;
+  private static findBestClimber(symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData {
+    if (!current) return symbol;
 
-    symbols.map((symbol: SymbolPriceData) => {
-      if (!best) return best = symbol;
-      
-      if (
-        symbol.pricePercentageChanges.sixtySeconds > best.pricePercentageChanges.sixtySeconds &&
-        symbol.prices.now >= symbol.prices.tenSeconds &&
-        symbol.prices.tenSeconds >= symbol.prices.twentySeconds &&
-        symbol.prices.twentySeconds >= symbol.prices.thirtySeconds &&
-        symbol.prices.thirtySeconds >= symbol.prices.fortySeconds &&
-        symbol.prices.fortySeconds >= symbol.prices.fiftySeconds &&
-        symbol.prices.fiftySeconds >= symbol.prices.sixtySeconds
-      ) best = symbol;
-    });
-    
-    return best;
+    return (
+      symbol.pricePercentageChanges.sixtySeconds > current.pricePercentageChanges.sixtySeconds &&
+      symbol.prices.now >= symbol.prices.tenSeconds &&
+      symbol.prices.tenSeconds >= symbol.prices.twentySeconds &&
+      symbol.prices.twentySeconds >= symbol.prices.thirtySeconds &&
+      symbol.prices.thirtySeconds >= symbol.prices.fortySeconds &&
+      symbol.prices.fortySeconds >= symbol.prices.fiftySeconds &&
+      symbol.prices.fiftySeconds >= symbol.prices.sixtySeconds
+    ) ? symbol : current;
   }
   
-  private static findHighestGainer(symbols: SymbolPriceData[]): SymbolPriceData | null {
-    let best: SymbolPriceData | null = null;
-    let highestGain: number = 0;
+  private static findHighestRecentLeaper(symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData {
+    if (!current) return symbol;
 
-    symbols.map((symbol: SymbolPriceData) => {
-      if (!best) return best = symbol;
-      
-      if (
-        symbol.pricePercentageChanges.now > highestGain ||
-        symbol.pricePercentageChanges.tenSeconds > highestGain ||
-        symbol.pricePercentageChanges.twentySeconds > highestGain ||
-        symbol.pricePercentageChanges.thirtySeconds > highestGain ||
-        symbol.pricePercentageChanges.fortySeconds > highestGain ||
-        symbol.pricePercentageChanges.sixtySeconds > highestGain
-      ) {
-        best = symbol;
-        highestGain = Math.max(...Object.values(symbol.pricePercentageChanges));
-      }
-    });
+    return (symbol.pricePercentageChanges.now > current.pricePercentageChanges.now) ? symbol : current;
+  }
+
+  private static findHighestGainer(symbol: SymbolPriceData, highestGain: number): { symbol: SymbolPriceData, highestGain: number } {
+    if (!highestGain) return {
+      symbol,
+      highestGain: Math.max(...Object.values(symbol.pricePercentageChanges))
+    };
+
+    if (
+      symbol.pricePercentageChanges.now > highestGain ||
+      symbol.pricePercentageChanges.tenSeconds > highestGain ||
+      symbol.pricePercentageChanges.twentySeconds > highestGain ||
+      symbol.pricePercentageChanges.thirtySeconds > highestGain ||
+      symbol.pricePercentageChanges.fortySeconds > highestGain ||
+      symbol.pricePercentageChanges.sixtySeconds > highestGain
+    ) return {
+      symbol,
+      highestGain: Math.max(...Object.values(symbol.pricePercentageChanges))
+    };
     
-    return best;
+    return {
+      symbol,
+      highestGain
+    };
   }
   
-  private static findHighestAverageGainer(symbols: SymbolPriceData[]): SymbolPriceData | null {
-    let best: SymbolPriceData | null = null;
-    let highestAvg: number = 0;
+  private static findHighestAverageGainer(symbol: SymbolPriceData, highestAvg: number): { symbol: SymbolPriceData, highestAvg: number } {
+    const avg = (
+      symbol.pricePercentageChanges.now +
+      symbol.pricePercentageChanges.tenSeconds +
+      symbol.pricePercentageChanges.twentySeconds +
+      symbol.pricePercentageChanges.thirtySeconds +
+      symbol.pricePercentageChanges.fortySeconds +
+      symbol.pricePercentageChanges.sixtySeconds
+    ) / 6;
 
-    symbols.map((symbol: SymbolPriceData) => {
-      if (!best) return best = symbol;
+    if (!highestAvg) return {
+        symbol,
+        highestAvg: avg
+     };
       
-      const avg: number = (
-        symbol.pricePercentageChanges.now + 
-        symbol.pricePercentageChanges.tenSeconds + 
-        symbol.pricePercentageChanges.twentySeconds + 
-        symbol.pricePercentageChanges.thirtySeconds + 
-        symbol.pricePercentageChanges.fortySeconds + 
-        symbol.pricePercentageChanges.sixtySeconds 
-      ) / 6;
-      
-      if (avg > highestAvg) {
-        best = symbol;
-        highestAvg = avg;
-      }
-    });
+    if (avg > highestAvg) return {
+      symbol,
+      highestAvg: avg
+    };
     
-    return best;
-  }
-  
-  private static findHighestRecentLeaper(symbols: SymbolPriceData[]): SymbolPriceData | null {
-    let best: SymbolPriceData | null = null;
-
-    symbols.map((symbol: SymbolPriceData) => {
-      if (!best) return best = symbol;
-      
-      if (symbol.pricePercentageChanges.now > best.pricePercentageChanges.now) {
-        best = symbol;
-      }
-    });
-    
-    return best;
+    return {
+      symbol,
+      highestAvg
+    };
   }
   
   private static isLeveraged(symbol: string): boolean {
