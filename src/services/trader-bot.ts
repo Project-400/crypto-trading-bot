@@ -58,6 +58,12 @@ export class TraderBot {
       if (data.result === null) return;
       this.currentPrice = data.a;
     };
+    
+    setTimeout(() => {
+      setInterval(() => {
+        if (this.tradeData.priceDifference < 2) this.tradeData.state = PositionState.SELL;
+      }, 60000);
+    }, 60000 * 30);
 
     return { trading: true };
   }
