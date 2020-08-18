@@ -35,6 +35,7 @@ export class SymbolTraderData implements ISymbolTraderData {
     createdAt: '',
     finishedAt: ''
   };
+  public startTime: number;
 
   constructor(
     symbol: string,
@@ -48,6 +49,7 @@ export class SymbolTraderData implements ISymbolTraderData {
     this.symbolType = symbolType;
     this.lowercaseSymbol = symbol.toLowerCase();
     this.times.createdAt = new Date().toISOString();
+    this.startTime = new Date().getTime();
   }
 
   public updatePrice = (price: number) => {
@@ -92,9 +94,9 @@ export class SymbolTraderData implements ISymbolTraderData {
   public logBuy = (buy: any) => {
     const transaction = buy.transaction;
     if (transaction.response && transaction.response.fills) {
-      const commission: number = this.logCommissions(transaction.response.fills);
+      const commission = this.logCommissions(transaction.response.fills);
       this.logPrice(transaction.response.fills);
-      this.baseQty += transaction.response.executedQty - commission;
+      this.baseQty += transaction.response.executedQty - (commission.isBase ? commission.total : 0);
       this.quoteQty -= transaction.response.cummulativeQuoteQty;
       this.state = PositionState.HOLD;
     }
@@ -103,18 +105,24 @@ export class SymbolTraderData implements ISymbolTraderData {
   public logSell = (sell: any) => {
     const transaction = sell.transaction;
     if (transaction.response && transaction.response.fills) {
-      const commission: number = this.logCommissions(transaction.response.fills);
+      const commission = this.logCommissions(transaction.response.fills);
       this.baseQty -= transaction.response.executedQty;
-      this.quoteQty += transaction.response.cummulativeQuoteQty - commission;
+      this.quoteQty += transaction.response.cummulativeQuoteQty - (commission.isQuote ? commission.total : 0);
       this.state = PositionState.SOLD;
     }
   }
 
-  private logCommissions = (fills: TransactionFillCommission[]): number => {
+  private logCommissions = (fills: TransactionFillCommission[]): { total: number, isQuote: boolean, isBase: boolean } => {
     this.commissions.push(...fills);
     let total: number = 0;
-    fills.map((c: TransactionFillCommission) => total += c.commission);
-    return total;
+    let isQuote: boolean = false;
+    let isBase: boolean = false;
+    fills.map((c: TransactionFillCommission) => {
+      isQuote = c.commissionAsset === this.quote; // To be changed - May have multiple commissions
+      isBase = c.commissionAsset === this.base;
+      total += c.commission;
+    });
+    return { total, isQuote, isBase };
   }
 
   private logPrice = (fills: any[]): void => {
