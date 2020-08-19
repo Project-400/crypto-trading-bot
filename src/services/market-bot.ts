@@ -5,6 +5,8 @@ import {BotState, TraderBot} from './trader-bot';
 import {CryptoApi} from '../api/crypto-api';
 import {SymbolType} from "@crypto-tracker/common-types";
 import {Decision, SymbolAnalystBot, SymbolPerformanceType} from "./symbol-analyst-bot";
+import {WebsocketProducer} from "../websocket/websocket";
+import {Logger} from "../logger/logger";
 
 export class MarketBot {
 
@@ -26,7 +28,7 @@ export class MarketBot {
   static start() {
     this.isWorking = true;
 
-    console.log('Opening Connection to Binance WebSocket')
+    Logger.info('Opening Connection to Binance WebSocket');
     this.ws = new WebSocket(BinanceWS);
     
     const data = {
@@ -36,8 +38,8 @@ export class MarketBot {
     }
 
     this.ws.onopen = () => {
-      console.log('Connected to Binance WebSocket');
-      console.log(`Starting up.. Gathering Data for 60 seconds.`)
+      Logger.info('Connected to Binance WebSocket');
+      Logger.info('Starting up.. Gathering Data for 60 seconds');
 
       this.ws.send(JSON.stringify(data));
       
@@ -49,13 +51,13 @@ export class MarketBot {
           await this.evaluateChanges();
         } else {
           if (this.checks >= 6) this.inStartup = false;
-          console.log(`Starting up.. Gathering Data for ${60 - (this.checks * 10)} seconds.`)
+          Logger.info(`Starting up.. Gathering Data for ${60 - (this.checks * 10)} seconds`);
         }
       }, 10000);
     };
 
     this.ws.onclose = () => {
-      console.log('Connection to Binance Disconnected');
+      Logger.info(`Connection to Binance Disconnected`);
     };
 
     this.ws.onmessage = (msg: MessageEvent) => {
@@ -67,8 +69,8 @@ export class MarketBot {
   
   static stop() {
     this.isWorking = false;
-
-    console.log('Closing Connection to Binance WebSocket')
+    
+    Logger.info(`Closing Connection to Binance WebSocket`);
     
     clearInterval(this.interval);
     this.ws.close();
@@ -119,7 +121,7 @@ export class MarketBot {
     if (highestGainer && highestGain >= 4 && this.deployedTraderBots.length <= 2) {
       this.hasHighestGainer = true;
 
-      console.log(`PREPPING TO TRADE ${highestGainer?.symbol}`);
+      Logger.info(`Preparing to trade ${highestGainer?.symbol} (Highest Gainer)`);
       const pairData = await this.getSymbolPairData(highestGainer?.symbol);
       let bot: TraderBot;
       if (pairData) {
@@ -144,7 +146,7 @@ export class MarketBot {
       if (analystBot.decision === Decision.BUY && this.deployedTraderBots.length <= 2 && !this.alreadyAssigned(leaper?.symbol)) {
         this.hasLeaper = true;
 
-        console.log(`PREPPING TO TRADE ${leaper?.symbol}`);
+        Logger.info(`Preparing to trade ${leaper?.symbol} (Leaper)`);
         const pairData = await this.getSymbolPairData(leaper?.symbol);
         let bot: TraderBot;
         if (pairData) {
@@ -172,7 +174,7 @@ export class MarketBot {
       if (analystBot.decision === Decision.BUY && this.deployedTraderBots.length <= 2 && !this.alreadyAssigned(climber?.symbol)) {
         this.hasClimber = true;
 
-        console.log(`PREPPING TO TRADE ${climber?.symbol}`);
+        Logger.info(`Preparing to trade ${climber?.symbol} (Climber)`);
         const pairData = await this.getSymbolPairData(climber?.symbol);
         let bot: TraderBot;
         if (pairData) {

@@ -3,6 +3,7 @@ import { BinanceWS } from '../settings';
 import {SymbolTraderData } from '../models/symbol-trader-data';
 import {PositionState, SymbolType} from '@crypto-tracker/common-types';
 import { CryptoApi } from '../api/crypto-api';
+import {Logger} from "../logger/logger";
 
 export enum BotState {
   WAITING = 'WAITING',
@@ -47,8 +48,6 @@ export class TraderBot {
       this.ws.send(JSON.stringify(data));
 
       this.interval = setInterval(async () => {
-        console.log('STATE');
-        console.log(this.tradeData.state);
         this.updatePrice();
         await this.makeDecision();
       }, 2000);
@@ -92,8 +91,11 @@ export class TraderBot {
     console.log(`Type: ${this.symbolType}`)
     console.log(`Price is: ${this.tradeData.currentPrice}`)
     console.log(`Price diff: ${this.tradeData.percentageDifference}%`)
+    console.log(`Price drop diff: ${this.tradeData.percentageDroppedFromHigh}%`)
     console.log(`The bot is: ${this.state}`)
     console.log(`Trade position state: ${this.tradeData.state}`)
+    
+    Logger.info(`${this.tradeData.symbol} ($${this.tradeData.currentPrice} -- Percentage change: ${this.tradeData.percentageDifference}%`);
     
     if (this.state === BotState.WAITING) {
       const buy: any = await this.buyCurrency(this.quoteQty);
@@ -139,7 +141,7 @@ export class TraderBot {
   }
   
   private async buyCurrency(quantity: number) {
-    console.log(`Buying ${this.tradeData.base} with ${quantity} ${this.tradeData.quote}`);
+    Logger.info(`Buying ${this.tradeData.base} with ${quantity} ${this.tradeData.quote}`);
 
     return await CryptoApi.post('/transactions/buy', {
       symbol: this.tradeData.symbol,
@@ -151,7 +153,7 @@ export class TraderBot {
   }
 
   private async sellCurrency() {
-    console.log(`Selling ${this.tradeData.getSellQuantity()} ${this.tradeData.base}`);
+    Logger.info(`Selling ${this.tradeData.getSellQuantity()} ${this.tradeData.base}`);
     
     return await CryptoApi.post('/transactions/sell', {
       symbol: this.tradeData.symbol,
