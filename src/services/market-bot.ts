@@ -21,8 +21,11 @@ export class MarketBot {
   static hasClimber: boolean = false;
   static hasLeaper: boolean = false;
   static hasHighestGainer: boolean = false;
+  static isWorking: boolean = false;
 
   static start() {
+    this.isWorking = true;
+
     console.log('Opening Connection to Binance WebSocket')
     this.ws = new WebSocket(BinanceWS);
     
@@ -63,8 +66,10 @@ export class MarketBot {
   }
   
   static stop() {
-    console.log('Closing Connection to Binance WebSocket')
+    this.isWorking = false;
 
+    console.log('Closing Connection to Binance WebSocket')
+    
     clearInterval(this.interval);
     this.ws.close();
   }
@@ -129,7 +134,7 @@ export class MarketBot {
       console.log(`----------- ${highestGainer?.symbol} ---------------`);
     }
 
-    if (leaper && leaper.pricePercentageChanges.now > 0) {
+    if (leaper && leaper.pricePercentageChanges.tenSeconds > 0) {
       console.log(`************* LEAPER TEST **************`);
       console.log(leaper.pricePercentageChanges.now);
 
@@ -245,7 +250,7 @@ export class MarketBot {
   private static findHighestRecentLeaper(symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData {
     if (!current) return symbol;
     
-    return (symbol.pricePercentageChanges.now > current.pricePercentageChanges.now) ? symbol : current;
+    return (symbol.pricePercentageChanges.tenSeconds > current.pricePercentageChanges.tenSeconds) ? symbol : current;
   }
 
   private static findHighestGainer(symbol: SymbolPriceData, highestGain: number): { symbol: SymbolPriceData, highestGain: number } {

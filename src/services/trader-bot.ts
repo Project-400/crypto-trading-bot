@@ -66,11 +66,11 @@ export class TraderBot {
     
     setTimeout(() => {
       setInterval(() => {
-        if (this.tradeData.priceDifference < 2) {
+        if (this.tradeData.priceDifference < 1.5) {
           this.tradeData.state = PositionState.TIMEOUT_SELL;
         }
-      }, 5000);
-    }, 10000);
+      }, 60000);
+    }, 60000 * 15);
 
     return { trading: true };
   }
@@ -113,11 +113,6 @@ export class TraderBot {
 
       if (sell.success && sell.transaction) {
         this.tradeData.logSell(sell);
-
-        console.log(this.tradeData.quoteQty)
-        console.log(this.tradeData.baseQty)
-        console.log(this.tradeData.baseQty)
-        console.log(this.tradeData.commissions)
         
         this.updateState(BotState.FINISHED); // TEMPORARY
       }
