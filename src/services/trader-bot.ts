@@ -47,6 +47,8 @@ export class TraderBot {
       this.ws.send(JSON.stringify(data));
 
       this.interval = setInterval(async () => {
+        console.log('STATE');
+        console.log(this.tradeData.state);
         this.updatePrice();
         await this.makeDecision();
       }, 2000);
@@ -64,9 +66,11 @@ export class TraderBot {
     
     setTimeout(() => {
       setInterval(() => {
-        if (this.tradeData.priceDifference < 2) this.tradeData.state = PositionState.SELL;
-      }, 60000);
-    }, 60000 * 30);
+        if (this.tradeData.priceDifference < 2) {
+          this.tradeData.state = PositionState.TIMEOUT_SELL;
+        }
+      }, 5000);
+    }, 10000);
 
     return { trading: true };
   }
@@ -102,7 +106,7 @@ export class TraderBot {
       }
     }
 
-    if (this.state === BotState.TRADING && this.tradeData.state === PositionState.SELL) {
+    if (this.state === BotState.TRADING && (this.tradeData.state === PositionState.SELL || this.tradeData.state === PositionState.TIMEOUT_SELL)) {
       const sell: any = await this.sellCurrency();
 
       this.updateState(BotState.PAUSED);

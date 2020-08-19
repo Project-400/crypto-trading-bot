@@ -129,7 +129,10 @@ export class MarketBot {
       console.log(`----------- ${highestGainer?.symbol} ---------------`);
     }
 
-    if (leaper) {
+    if (leaper && leaper.pricePercentageChanges.now > 0) {
+      console.log(`************* LEAPER TEST **************`);
+      console.log(leaper.pricePercentageChanges.now);
+
       const analystBot: SymbolAnalystBot = new SymbolAnalystBot(leaper, SymbolPerformanceType.LEAPER);
       await analystBot.start();
       
@@ -155,6 +158,9 @@ export class MarketBot {
     }
     
     if (climber) {
+      console.log(`************* CLIMBER TEST **************`);
+      console.log(climber.pricePercentageChanges);
+
       const analystBot: SymbolAnalystBot = new SymbolAnalystBot(climber, SymbolPerformanceType.CLIMBER);
       await analystBot.start();
       
@@ -226,14 +232,20 @@ export class MarketBot {
       symbol.prices.twentySeconds >= symbol.prices.thirtySeconds &&
       symbol.prices.thirtySeconds >= symbol.prices.fortySeconds &&
       symbol.prices.fortySeconds >= symbol.prices.fiftySeconds &&
-      symbol.prices.fiftySeconds >= symbol.prices.sixtySeconds
+      symbol.prices.fiftySeconds >= symbol.prices.sixtySeconds &&
+      symbol.pricePercentageChanges.tenSeconds >= 0 &&
+      symbol.pricePercentageChanges.twentySeconds >= 0 &&
+      symbol.pricePercentageChanges.thirtySeconds >= 0 &&
+      symbol.pricePercentageChanges.fortySeconds >= 0 &&
+      symbol.pricePercentageChanges.fiftySeconds >= 0 &&
+      symbol.pricePercentageChanges.sixtySeconds >= 0
     ) ? symbol : current;
   }
   
   private static findHighestRecentLeaper(symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData {
     if (!current) return symbol;
-
-    return (symbol.pricePercentageChanges.now > current.pricePercentageChanges.now && symbol.pricePercentageChanges.now > 1) ? symbol : current;
+    
+    return (symbol.pricePercentageChanges.now > current.pricePercentageChanges.now) ? symbol : current;
   }
 
   private static findHighestGainer(symbol: SymbolPriceData, highestGain: number): { symbol: SymbolPriceData, highestGain: number } {

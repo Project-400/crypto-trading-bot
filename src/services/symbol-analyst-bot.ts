@@ -62,8 +62,8 @@ export class SymbolAnalystBot {
     const minuteTwo: KlineDataPoint = this.klineData[length - 2];
     const minuteThree: KlineDataPoint = this.klineData[length - 3];
     return (
-      this.isGreenMinute(minuteTwo) && this.hasSignificantTopShadow(minuteTwo) &&
-      this.isGreenMinute(minuteOne) && this.hasSignificantTopShadow(minuteOne)
+      this.isGreenMinute(minuteTwo) && !this.hasSignificantTopShadow(minuteTwo) &&
+      this.isGreenMinute(minuteOne) && !this.hasSignificantTopShadow(minuteOne)
     );
   }
   
@@ -71,7 +71,7 @@ export class SymbolAnalystBot {
     const isGreen: boolean = this.isGreenMinute(point);
     const topShadow: number = point.high - (isGreen ? point.close : point.open);
     const shadowGrowth: number = point.high - point.low;
-    return topShadow > (shadowGrowth / 3);
+    return topShadow > (shadowGrowth / 2);
   }
   
   private isGreenMinute(point: KlineDataPoint) {

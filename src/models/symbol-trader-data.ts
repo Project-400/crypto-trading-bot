@@ -66,7 +66,7 @@ export class SymbolTraderData implements ISymbolTraderData {
     // else if (this.percentageDifference > 10) {
     //   this.state = PositionState.SELL;
     // }
-    else this.state = PositionState.HOLD;
+    else if (this.state !== PositionState.TIMEOUT_SELL) this.state = PositionState.HOLD;
   }
   
   private calculatePriceChanges = (newPrice: number) => {
