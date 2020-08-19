@@ -6,7 +6,14 @@ import {SymbolAnalystBot, SymbolPerformanceType} from "../services/symbol-analys
 import {SymbolPriceData} from "../models/symbol-price-data";
 
 export const startBot = (req: Request, res: Response): void => {
-  MarketBot.start();
+  try {
+    MarketBot.start();
+  } catch (e) {
+    console.log('ERROR **********')
+    console.log(e)
+    
+    MarketBot.stop();
+  }
   res.status(200).json({ message: 'Started Bot' });
 }
 

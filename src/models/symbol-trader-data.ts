@@ -63,9 +63,9 @@ export class SymbolTraderData implements ISymbolTraderData {
     if (this.percentageDroppedFromHigh < -1) {
       this.state = PositionState.SELL;
     }
-    else if (this.percentageDifference > 10) {
-      this.state = PositionState.SELL;
-    }
+    // else if (this.percentageDifference > 10) {
+    //   this.state = PositionState.SELL;
+    // }
     else this.state = PositionState.HOLD;
   }
   
@@ -128,9 +128,11 @@ export class SymbolTraderData implements ISymbolTraderData {
   private logPrice = (fills: any[]): void => {
     let total: number = 0;
     fills.map((c: any) => total += c.price);
-    const avgPrice = total / fills.length;
-    this.startPrice = avgPrice;
-    this.currentPrice = avgPrice;
+    if (total) {
+      const avgPrice = total / fills.length;
+      this.startPrice = avgPrice;
+      this.currentPrice = avgPrice;
+    }
   }
   
   public getExchangeInfo = async () => {

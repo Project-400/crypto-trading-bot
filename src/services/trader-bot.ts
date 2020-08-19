@@ -20,6 +20,8 @@ export class TraderBot {
   private interval: NodeJS.Timeout | undefined;
   private readonly quoteQty: number = 0;
   public symbolType: SymbolType = SymbolType.NONE;
+  public saved: boolean = false;
+  public symbol: string;
 
   constructor(symbol: string, base: string, quote: string, quoteQty: number, symbolType: SymbolType) {
     console.log('Trader Bot opening connection to Binance')
@@ -27,6 +29,7 @@ export class TraderBot {
     this.tradeData = new SymbolTraderData(symbol, base, quote, symbolType);
     this.quoteQty = quoteQty;
     this.symbolType = symbolType;
+    this.symbol = symbol;
   }
   
   async startTrading() {
@@ -82,6 +85,7 @@ export class TraderBot {
   private async makeDecision() {
     console.log('-------------------------------')
     console.log(`Symbol: ${this.tradeData.symbol}`)
+    console.log(`Type: ${this.symbolType}`)
     console.log(`Price is: ${this.tradeData.currentPrice}`)
     console.log(`Price diff: ${this.tradeData.percentageDifference}%`)
     console.log(`The bot is: ${this.state}`)
@@ -128,6 +132,8 @@ export class TraderBot {
   }
 
   private async saveTradeData() {
+    if (this.saved) return;
+    this.saved = true;
     return await CryptoApi.post('/bots/trade/save', {
       tradeData: this.tradeData
     });
