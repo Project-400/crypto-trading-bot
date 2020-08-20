@@ -5,7 +5,6 @@ import {BotState, TraderBot} from './trader-bot';
 import {CryptoApi} from '../api/crypto-api';
 import {SymbolType} from "@crypto-tracker/common-types";
 import {Decision, SymbolAnalystBot, SymbolPerformanceType} from "./symbol-analyst-bot";
-import {WebsocketProducer} from "../websocket/websocket";
 import {Logger} from "../logger/logger";
 
 export class MarketBot {
@@ -24,9 +23,13 @@ export class MarketBot {
   static hasLeaper: boolean = false;
   static hasHighestGainer: boolean = false;
   static isWorking: boolean = false;
+  static allowedQuotes: string[];
+  static ignorePairs: string[];
 
-  static start() {
+  static start(allowedQuotes: string[], ignorePairs: string[]) {
     this.isWorking = true;
+    this.allowedQuotes = allowedQuotes;
+    this.ignorePairs = ignorePairs;
 
     Logger.info('Opening Connection to Binance WebSocket');
     this.ws = new WebSocket(BinanceWS);
@@ -90,8 +93,8 @@ export class MarketBot {
     const filteredSymbols: SymbolPriceData[] = allSymbols.filter((s: SymbolPriceData) => {
       return !this.isLeveraged(s.symbol) &&
         !this.isTinyCurrency(s.symbol, s.prices.now - s.prices.sixtySeconds) &&
-        !this.isBTCUSDT(s.symbol) &&
-        this.isMainQuote(s.symbol)
+        !this.isIgnoredPair(s.symbol) &&
+        this.isAllowedQuote(s.symbol)
     });
     
     let climber: SymbolPriceData | undefined;
@@ -305,25 +308,23 @@ export class MarketBot {
     };
   }
   
-  private static isLeveraged(symbol: string): boolean {
-    return symbol.includes('UP') || symbol.includes('DOWN');
-  }
-  
   private static isTinyCurrency(symbol: string, priceChange: number): boolean { // USDT only temporarily
-    // if (symbol.endsWith('BTC') && priceChange < 0.00000005) return true;
-    // if (symbol.endsWith('ETH') && priceChange < 0.0000015) return true;
     if (symbol.endsWith('USDT') && priceChange < 0.0006) return true;
+    if (symbol.endsWith('BTC') && priceChange < 0.00000005) return true;
+    if (symbol.endsWith('ETH') && priceChange < 0.0000015) return true;
     return false;
   }
 
-  private static isMainQuote(symbol: string): boolean {
-    // return symbol.endsWith('BTC') || symbol.endsWith('ETH') || symbol.endsWith('USDT');
-    return symbol.endsWith('USDT'); // Temp
+  private static isLeveraged(symbol: string): boolean {
+    return symbol.includes('UP') || symbol.includes('DOWN');
   }
 
-  private static isBTCUSDT(symbol: string): boolean {
-    // return symbol.endsWith('BTC') || symbol.endsWith('ETH') || symbol.endsWith('USDT');
-    return symbol === 'BTCUSDT' || symbol === 'BCHUSDT'; // Temp
+  private static isAllowedQuote(symbol: string): boolean {
+    return !!this.allowedQuotes.find((q: string) => q === symbol);
+  }
+
+  private static isIgnoredPair(symbol: string): boolean {
+    return !!this.ignorePairs.find((p: string) => p === symbol);
   }
 
 }
