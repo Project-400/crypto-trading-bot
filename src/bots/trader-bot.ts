@@ -1,9 +1,9 @@
 import WebSocket, {MessageEvent} from 'isomorphic-ws';
 import { BinanceWS } from '../settings';
-import {SymbolTraderData } from '../models/symbol-trader-data';
-import {PositionState, SymbolType} from '@crypto-tracker/common-types';
+import { SymbolTraderData } from '../models/symbol-trader-data';
+import { PositionState, SymbolType } from '@crypto-tracker/common-types';
 import { CryptoApi } from '../api/crypto-api';
-import {Logger} from "../logger/logger";
+import { Logger } from '../logger/logger';
 
 export enum BotState {
   WAITING = 'WAITING',
