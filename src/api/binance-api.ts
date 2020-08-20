@@ -3,8 +3,8 @@ import { HTTP } from './http';
 
 export class BinanceApi {
 
-  public static async getKlineData(symbol: string): Promise<any> {
-    return await HTTP.get(`${BinanceAPI}/api/v3/klines?symbol=${symbol}&interval=1m&limit=5`);
+  public static async getKlineData(symbol: string, interval: string, limit: number): Promise<any> {
+    return await HTTP.get(`${BinanceAPI}/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
   }
 
 }

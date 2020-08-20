@@ -1,5 +1,6 @@
 import { MarketBot } from '../bots/market-bot';
 import { Request, Response } from 'express';
+import {LongTradeBot} from "../bots/long-trade-bot";
 
 export const startBot = (req: Request, res: Response): void => {
   try {
@@ -20,4 +21,10 @@ export const stopBot = (req: Request, res: Response): void => {
 
 export const checkBotStatus = (req: Request, res: Response): void => {
   res.status(200).json({ botWorking: MarketBot.isWorking });
+}
+
+export const longTrade = async (req: Request, res: Response): Promise<void> => {
+  const bot: LongTradeBot = new LongTradeBot('OMGUSDT');
+  await bot.start();
+  res.status(200).json({ state: bot.state });
 }

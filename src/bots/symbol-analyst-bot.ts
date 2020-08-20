@@ -2,10 +2,11 @@ import { SymbolPriceData } from '../models/symbol-price-data';
 import { BinanceApi } from '../api/binance-api';
 import { v4 as uuid } from 'uuid';
 import {KlineFunctions} from "../services/kline-functions";
+import {KlineDataPoint} from "../interfaces/interfaces";
 
 export class SymbolAnalystBot {
 
-  public decision: Decision = Decision.GATHERING_DATA;
+  public decision: SymbolAnalystBotDecision = SymbolAnalystBotDecision.GATHERING_DATA;
   private symbol: SymbolPriceData;
   private performanceType: SymbolPerformanceType;
   private klineData: KlineDataPoint[] = [];
@@ -39,20 +40,20 @@ export class SymbolAnalystBot {
     }));
   }
   
-  private updateDecision(decision: Decision) {
+  private updateDecision(decision: SymbolAnalystBotDecision) {
     this.decision = decision;
   }
 
   private evaluate() {
-    this.updateDecision(Decision.EVALUATING);
+    this.updateDecision(SymbolAnalystBotDecision.EVALUATING);
 
     console.log(`Analyst Bot: Analysing ${this.symbol.symbol}`);
 
     if (this.isClimbing()) {
-      this.decision = Decision.BUY;
+      this.decision = SymbolAnalystBotDecision.BUY;
       console.log(`Decision: BUY ${this.symbol.symbol}`);
     } else {
-      this.decision = Decision.ABANDON;
+      this.decision = SymbolAnalystBotDecision.ABANDON;
       console.log(`Decision: ABANDON ${this.symbol.symbol}`);
     }
   }
@@ -77,24 +78,10 @@ export enum SymbolPerformanceType {
   CLIMBER = 'CLIMBER'
 }
 
-export enum Decision {
+export enum SymbolAnalystBotDecision {
   GATHERING_DATA = 'GATHERING_DATA',
   EVALUATING = 'EVALUATING',
   WAIT = 'WAIT',
   BUY = 'BUY',
   ABANDON = 'ABANDON'
-}
-
-export interface KlineDataPoint {
-  openTime: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-  closeTime: number;
-  quoteAssetVolume: number;
-  numberOfTrades: number;
-  takerBuyBaseAssetVolume: number;
-  takerBuyQuoteAssetVolume: number;
 }

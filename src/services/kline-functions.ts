@@ -1,4 +1,4 @@
-import { KlineDataPoint } from '../bots/long-trade-bot';
+import {KlineDataPoint} from "../interfaces/interfaces";
 
 export class KlineFunctions {
 

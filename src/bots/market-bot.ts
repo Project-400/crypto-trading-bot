@@ -4,7 +4,7 @@ import {SymbolPriceData} from '../models/symbol-price-data';
 import {BotState, TraderBot} from './trader-bot';
 import {CryptoApi} from '../api/crypto-api';
 import {SymbolType} from '@crypto-tracker/common-types';
-import {Decision, SymbolAnalystBot, SymbolPerformanceType} from './symbol-analyst-bot';
+import {SymbolAnalystBotDecision, SymbolAnalystBot, SymbolPerformanceType} from './symbol-analyst-bot';
 import {Logger} from '../logger/logger';
 import {MarketAlgorithms} from '../services/market-algorithms';
 
@@ -127,7 +127,7 @@ export class MarketBot {
     let analystBot: SymbolAnalystBot | null = new SymbolAnalystBot(leaper, SymbolPerformanceType.LEAPER);
     await analystBot.start();
 
-    if (analystBot.decision === Decision.BUY && this.deployedTraderBots.length <= 2 && !this.alreadyAssigned(leaper?.symbol)) {
+    if (analystBot.decision === SymbolAnalystBotDecision.BUY && this.deployedTraderBots.length <= 2 && !this.alreadyAssigned(leaper?.symbol)) {
       this.hasLeaper = true;
 
       Logger.info(`Preparing to trade ${leaper?.symbol} (Leaper)`);
@@ -140,7 +140,7 @@ export class MarketBot {
       } else {
         console.log('No Pair Data for Leaper - SKIPPING');
       }
-    } else if (analystBot.decision === Decision.ABANDON) {
+    } else if (analystBot.decision === SymbolAnalystBotDecision.ABANDON) {
       analystBot = null;
     }
   }
@@ -149,7 +149,7 @@ export class MarketBot {
     let analystBot: SymbolAnalystBot | null = new SymbolAnalystBot(climber, SymbolPerformanceType.CLIMBER);
     await analystBot.start();
 
-    if (analystBot.decision === Decision.BUY && this.deployedTraderBots.length <= 2 && !this.alreadyAssigned(climber?.symbol)) {
+    if (analystBot.decision === SymbolAnalystBotDecision.BUY && this.deployedTraderBots.length <= 2 && !this.alreadyAssigned(climber?.symbol)) {
       this.hasClimber = true;
 
       Logger.info(`Preparing to trade ${climber?.symbol} (Climber)`);
@@ -162,7 +162,7 @@ export class MarketBot {
       } else {
         console.log('No Pair Data for Climber - SKIPPING');
       }
-    } else if (analystBot.decision === Decision.ABANDON) {
+    } else if (analystBot.decision === SymbolAnalystBotDecision.ABANDON) {
       analystBot = null;
     }
   }
