@@ -1,6 +1,7 @@
 import { SymbolPriceData } from '../models/symbol-price-data';
 import { BinanceApi } from '../api/binance-api';
 import { v4 as uuid } from 'uuid';
+import {KlineFunctions} from "../services/kline-functions";
 
 export class SymbolAnalystBot {
 
@@ -22,7 +23,7 @@ export class SymbolAnalystBot {
   }
   
   private async fetchKlineData() {
-    const klineData: number[][] = await BinanceApi.getKlineData(this.symbol.symbol);
+    const klineData: number[][] = await BinanceApi.getKlineData(this.symbol.symbol, '1m', 5);
     this.klineData = klineData.map((point: number[]) => ({
       openTime: point[0],
       open: point[1],
@@ -62,33 +63,11 @@ export class SymbolAnalystBot {
     const minuteTwo: KlineDataPoint = this.klineData[length - 2];
     const minuteThree: KlineDataPoint = this.klineData[length - 3];
     return (
-      this.isGreenMinute(minuteTwo) && !this.hasSignificantTopShadow(minuteTwo) &&
-      this.isGreenMinute(minuteOne) && !this.hasSignificantTopShadow(minuteOne)
+      KlineFunctions.isGreenMinute(minuteTwo) && !KlineFunctions.hasSignificantTopShadow(minuteTwo) &&
+      KlineFunctions.isGreenMinute(minuteOne) && !KlineFunctions.hasSignificantTopShadow(minuteOne)
     );
   }
-  
-  private hasSignificantTopShadow(point: KlineDataPoint): boolean { // Not ideal, maybe signify that price is dropping / about to drop
-    const isGreen: boolean = this.isGreenMinute(point);
-    const topShadow: number = point.high - (isGreen ? point.close : point.open);
-    const shadowGrowth: number = point.high - point.low;
-    return topShadow > (shadowGrowth / 2);
-  }
-  
-  private isGreenMinute(point: KlineDataPoint) {
-    return point.open < point.close;
-  }
-  
-  private isRedMinute(point: KlineDataPoint) {
-    return point.open > point.close;
-  }
-  
-  private isGrowing(point: KlineDataPoint) { // The total shadow is less than half of the total shadow
-    const actualGrowth: number = point.open - point.close;
-    const shadowGrowth: number = point.high - point.low;
-    const diff: number = shadowGrowth - actualGrowth;
-    return diff < (shadowGrowth / 2);
-  }
-  
+
 }
 
 export enum SymbolPerformanceType {
