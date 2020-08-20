@@ -6,6 +6,7 @@ import {CryptoApi} from '../api/crypto-api';
 import {SymbolType} from "@crypto-tracker/common-types";
 import {Decision, SymbolAnalystBot, SymbolPerformanceType} from "./symbol-analyst-bot";
 import {Logger} from "../logger/logger";
+import {MarketAlgorithms} from "../services/market-algorithms";
 
 export class MarketBot {
 
@@ -105,11 +106,11 @@ export class MarketBot {
     // let highestAvg: number = 0;
 
     if (this.deployedTraderBots.length <= 3) filteredSymbols.map((symbol: SymbolPriceData) => {
-      if (!this.hasClimber) climber = this.findBestClimber(symbol, climber);
-      if (!this.hasLeaper) leaper = this.findHighestRecentLeaper(symbol, leaper);
+      if (!this.hasClimber) climber = MarketAlgorithms.findBestClimber(symbol, climber);
+      if (!this.hasLeaper) leaper = MarketAlgorithms.findHighestRecentLeaper(symbol, leaper);
       //
       if (!this.hasHighestGainer) {
-        const highestGainData: { symbol: SymbolPriceData, highestGain: number } = this.findHighestGainer(symbol, highestGain);
+        const highestGainData: { symbol: SymbolPriceData, highestGain: number } = MarketAlgorithms.findHighestGainer(symbol, highestGain);
         highestGain = highestGainData.highestGain;
         highestGainer = highestGainData.symbol;
       }
@@ -199,9 +200,7 @@ export class MarketBot {
       if (this.deployedTraderBots[2].symbolType === SymbolType.LEAPER) this.hasLeaper = false;
       if (this.deployedTraderBots[2].symbolType === SymbolType.CLIMBER) this.hasClimber = false;
       if (this.deployedTraderBots[2].symbolType === SymbolType.HIGHEST_GAINER) this.hasHighestGainer = false;
-      // delete this.deployedTraderBots[2];
       this.deployedTraderBots.splice(2, 1);
-      // this.deployedTraderBots = []; // TEMP
     }
 
     if (this.deployedTraderBots.length && this.deployedTraderBots[1] && this.deployedTraderBots[1].state === BotState.FINISHED) {
@@ -209,7 +208,6 @@ export class MarketBot {
       if (this.deployedTraderBots[1].symbolType === SymbolType.CLIMBER) this.hasClimber = false;
       if (this.deployedTraderBots[1].symbolType === SymbolType.HIGHEST_GAINER) this.hasHighestGainer = false;
       this.deployedTraderBots.splice(1, 1);
-      // this.deployedTraderBots = []; // TEMP
     }
 
     if (this.deployedTraderBots.length && this.deployedTraderBots[0] && this.deployedTraderBots[0].state === BotState.FINISHED) {
@@ -218,7 +216,6 @@ export class MarketBot {
       if (this.deployedTraderBots[0].symbolType === SymbolType.HIGHEST_GAINER) this.hasHighestGainer = false;
 
       this.deployedTraderBots.splice(0, 1);
-      // this.deployedTraderBots = []; // TEMP
     }
   }
   
@@ -230,82 +227,6 @@ export class MarketBot {
     const response: any = await CryptoApi.get(`/exchange-pairs/single/${symbol}/${this.limitedQuote}`);
     if (response && response.success && response.info) return response.info;
     else return false;
-  }
-  
-  private static findBestClimber(symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData {
-    if (!current) return symbol;
-
-    return (
-      symbol.pricePercentageChanges.sixtySeconds > current.pricePercentageChanges.sixtySeconds &&
-      symbol.prices.now >= symbol.prices.tenSeconds &&
-      symbol.prices.tenSeconds >= symbol.prices.twentySeconds &&
-      symbol.prices.twentySeconds >= symbol.prices.thirtySeconds &&
-      symbol.prices.thirtySeconds >= symbol.prices.fortySeconds &&
-      symbol.prices.fortySeconds >= symbol.prices.fiftySeconds &&
-      symbol.prices.fiftySeconds >= symbol.prices.sixtySeconds &&
-      symbol.pricePercentageChanges.tenSeconds >= 0 &&
-      symbol.pricePercentageChanges.twentySeconds >= 0 &&
-      symbol.pricePercentageChanges.thirtySeconds >= 0 &&
-      symbol.pricePercentageChanges.fortySeconds >= 0 &&
-      symbol.pricePercentageChanges.fiftySeconds >= 0 &&
-      symbol.pricePercentageChanges.sixtySeconds >= 0
-    ) ? symbol : current;
-  }
-  
-  private static findHighestRecentLeaper(symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData {
-    if (!current) return symbol;
-    
-    return (symbol.pricePercentageChanges.tenSeconds > current.pricePercentageChanges.tenSeconds) ? symbol : current;
-  }
-
-  private static findHighestGainer(symbol: SymbolPriceData, highestGain: number): { symbol: SymbolPriceData, highestGain: number } {
-    if (!highestGain) return {
-      symbol,
-      highestGain: Math.max(...Object.values(symbol.pricePercentageChanges))
-    };
-
-    if (
-      symbol.pricePercentageChanges.now > highestGain ||
-      symbol.pricePercentageChanges.tenSeconds > highestGain ||
-      symbol.pricePercentageChanges.twentySeconds > highestGain ||
-      symbol.pricePercentageChanges.thirtySeconds > highestGain ||
-      symbol.pricePercentageChanges.fortySeconds > highestGain ||
-      symbol.pricePercentageChanges.sixtySeconds > highestGain
-    ) return {
-      symbol,
-      highestGain: Math.max(...Object.values(symbol.pricePercentageChanges))
-    };
-    
-    return {
-      symbol,
-      highestGain
-    };
-  }
-  
-  private static findHighestAverageGainer(symbol: SymbolPriceData, highestAvg: number): { symbol: SymbolPriceData, highestAvg: number } {
-    const avg = (
-      symbol.pricePercentageChanges.now +
-      symbol.pricePercentageChanges.tenSeconds +
-      symbol.pricePercentageChanges.twentySeconds +
-      symbol.pricePercentageChanges.thirtySeconds +
-      symbol.pricePercentageChanges.fortySeconds +
-      symbol.pricePercentageChanges.sixtySeconds
-    ) / 6;
-
-    if (!highestAvg) return {
-        symbol,
-        highestAvg: avg
-     };
-      
-    if (avg > highestAvg) return {
-      symbol,
-      highestAvg: avg
-    };
-    
-    return {
-      symbol,
-      highestAvg
-    };
   }
   
   private static isTinyCurrency(symbol: string, priceChange: number): boolean { // USDT only temporarily

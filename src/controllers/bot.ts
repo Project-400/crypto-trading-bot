@@ -1,4 +1,4 @@
-import { MarketBot } from '../services/market-bot';
+import { MarketBot } from '../bots/market-bot';
 import { Request, Response } from 'express';
 
 export const startBot = (req: Request, res: Response): void => {
