@@ -59,12 +59,12 @@ export class SymbolTraderData implements ISymbolTraderData {
       this.highestPriceReached = price;
       this.lowestPriceReached = price;
     }
-    
+
     if (this.percentageDroppedFromHigh < -1) {
       this.state = PositionState.SELL;
     }
-    // else if (this.percentageDifference > 10) {
-    //   this.state = PositionState.SELL;
+      // else if (this.percentageDifference > 10) {
+      //   this.state = PositionState.SELL;
     // }
     else if (this.state !== PositionState.TIMEOUT_SELL) this.state = PositionState.HOLD;
   }

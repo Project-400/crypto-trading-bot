@@ -12,6 +12,9 @@ export class WebsocketProducer {
     WebsocketProducer.server = http.createServer(app);
     WebsocketProducer.wss = new WebSocket.Server({ server: WebsocketProducer.server });
 
+    console.log('SETUP')
+    console.log(WebsocketProducer)
+
     WebsocketProducer.wss.on('connection', (ws: WebSocket) => {
       WebsocketProducer.webS = ws;
 
