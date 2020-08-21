@@ -6,6 +6,9 @@ import WebSocket, {MessageEvent} from "isomorphic-ws";
 import {BinanceWS} from "../settings";
 import {SymbolTraderData} from "../models/symbol-trader-data";
 import {LongTradeBotState, SymbolType} from "@crypto-tracker/common-types";
+import {Logger} from "../logger/logger";
+import {CryptoApi} from "../api/crypto-api";
+import {BotState} from "./trader-bot";
 
 export class LongTradeBot {
 
@@ -19,6 +22,9 @@ export class LongTradeBot {
   private tradeData: SymbolTraderData;
   private interval?: NodeJS.Timeout;
   private currentPrice: number = 0;
+  private averageKlineHeight: number = 0;
+  private averageKlineShadowHeight: number = 0;
+  private averageKlineCandleHeight: number = 0;
 
   constructor(symbol: string, base: string, quote: string, quoteQty: number) {
     this.symbol = symbol;
@@ -34,6 +40,7 @@ export class LongTradeBot {
     await this.tradeData.getExchangeInfo();
     this.updateState(LongTradeBotState.WAIT);
     // this.workoutKlineData();
+    this.calculateKlineHeights();
   }
 
   private setupSocket() {
@@ -156,29 +163,54 @@ export class LongTradeBot {
     this.state = state;
   }
 
-  private evaluate() {
+  private async evaluate() {
     console.log(`--------------------`);
     console.log(`Analyst Bot: Analysing ${this.symbol}`);
-    
+
     if (this.state === LongTradeBotState.WAIT && this.isClimbing()) {
       this.updateState(LongTradeBotState.BUY);
       console.log(`Decision: BUY ${this.symbol}`);
-      this.buyCurrency();
+      const buy: any = await this.buyCurrency();
+      
+      if (buy.success && buy.transaction) {
+        this.tradeData.logBuy(buy);
+      }
     } else if (this.state === LongTradeBotState.HOLD && this.isDropping()) {
       this.updateState(LongTradeBotState.SELL);
       console.log(`Decision: SELL ${this.symbol}`);
-      this.sellCurrency();
+      const sell: any = await this.sellCurrency();
+      
+      if (sell.success && sell.transaction) {
+        this.tradeData.logSell(sell);
+      }
+
     } else {
       console.log(`Decision: Still ${this.state} for ${this.symbol}`);
     }
   }
   
-  private buyCurrency() {
+  private async buyCurrency() {
     this.updateState(LongTradeBotState.HOLD);
+
+    return await CryptoApi.post('/transactions/buy', {
+      symbol: this.tradeData.symbol,
+      base: this.tradeData.base,
+      quote: this.tradeData.quote,
+      quantity: 20,
+      isTest: false
+    });
   }
   
-  private sellCurrency() {
+  private async sellCurrency() {
     this.updateState(LongTradeBotState.WAIT);
+
+    return await CryptoApi.post('/transactions/sell', {
+      symbol: this.tradeData.symbol,
+      base: this.tradeData.base,
+      quote: this.tradeData.quote,
+      quantity: this.tradeData.getSellQuantity(),
+      isTest: false
+    });
   }
 
   private isClimbing() {
@@ -186,8 +218,6 @@ export class LongTradeBot {
     const minuteOne: KlineDataPoint = this.klineData[length - 1];
     const minuteTwo: KlineDataPoint = this.klineData[length - 2];
     const minuteThree: KlineDataPoint = this.klineData[length - 3];
-    // const onePercent = minuteThree.high / 100;
-    // const diff: number = minuteOne.high - minuteThree.high;
     return (
       (
         KlineFunctions.isGreenPoint(minuteThree) &&
@@ -248,6 +278,22 @@ export class LongTradeBot {
     console.log(lowestPrice);
     console.log(averagePrice);
     console.log(highestPrice);
+  }
+  
+  private calculateKlineHeights() {
+    let klineTotal: number = 0;
+    let candleTotal: number = 0;
+    let shadowTotal: number = 0;
+    
+    this.klineData.map((p: KlineDataPoint) => {
+      klineTotal += p.high - p.low;
+      candleTotal += p.close > p.open ? p.close - p.open : p.open - p.close;
+      shadowTotal += p.close > p.open ? (p.high - p.close) + (p.open - p.low) : (p.high - p.open) + (p.close - p.low);
+    });
+    
+    this.averageKlineHeight = klineTotal / this.klineData.length;
+    this.averageKlineCandleHeight = candleTotal / this.klineData.length;
+    this.averageKlineShadowHeight = shadowTotal / this.klineData.length;
   }
   
 }
