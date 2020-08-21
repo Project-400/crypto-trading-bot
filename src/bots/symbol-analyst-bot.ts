@@ -64,8 +64,8 @@ export class SymbolAnalystBot {
     const minuteTwo: KlineDataPoint = this.klineData[length - 2];
     const minuteThree: KlineDataPoint = this.klineData[length - 3];
     return (
-      KlineFunctions.isGreenMinute(minuteTwo) && !KlineFunctions.hasSignificantTopShadow(minuteTwo) &&
-      KlineFunctions.isGreenMinute(minuteOne) && !KlineFunctions.hasSignificantTopShadow(minuteOne)
+      KlineFunctions.isGreenPoint(minuteTwo) && !KlineFunctions.hasSignificantTopShadow(minuteTwo) &&
+      KlineFunctions.isGreenPoint(minuteOne) && !KlineFunctions.hasSignificantTopShadow(minuteOne)
     );
   }
 

@@ -1,19 +1,19 @@
-import {KlineDataPoint} from "../interfaces/interfaces";
+import {KlineDataPoint} from '../interfaces/interfaces';
 
 export class KlineFunctions {
 
   public static hasSignificantTopShadow(point: KlineDataPoint): boolean { // Not ideal, maybe signify that price is dropping / about to drop
-    const isGreen: boolean = this.isGreenMinute(point);
+    const isGreen: boolean = this.isGreenPoint(point);
     const topShadow: number = point.high - (isGreen ? point.close : point.open);
     const shadowGrowth: number = point.high - point.low;
     return topShadow > (shadowGrowth / 2);
   }
 
-  public static isGreenMinute(point: KlineDataPoint) {
+  public static isGreenPoint(point: KlineDataPoint) {
     return point.open < point.close;
   }
 
-  public static isRedMinute(point: KlineDataPoint) {
+  public static isRedPoint(point: KlineDataPoint) {
     return point.open > point.close;
   }
 
@@ -24,5 +24,16 @@ export class KlineFunctions {
     return diff < (shadowGrowth / 2);
   }
 
+  public static droppedBy(lastPoint: KlineDataPoint, currentPoint: KlineDataPoint, percentage: number) {
+    const diff: number = lastPoint.close - currentPoint.close;
+    
+    return diff > (lastPoint.close / 100) * percentage;
+  }
 
+  public static increasedBy(lastPoint: KlineDataPoint, currentPoint: KlineDataPoint, percentage: number) {
+    const diff: number = currentPoint.close - lastPoint.close;
+    
+    return diff > (lastPoint.close / 100) * percentage;
+  }
+  
 }
