@@ -35,5 +35,22 @@ export class KlineFunctions {
     
     return diff > (lastPoint.close / 100) * percentage;
   }
-  
+
+  public static climbDistanceBetween(previousPoint: KlineDataPoint, currentPoint: KlineDataPoint, percentage: number) {
+    const distance: number = currentPoint.close - previousPoint.open;
+    
+    return distance > (previousPoint.close / 100) * percentage;
+  }
+
+  public static dropDistanceBetween(previousPoint: KlineDataPoint, currentPoint: KlineDataPoint, percentage: number) {
+    const distance: number = previousPoint.open - currentPoint.close;
+    
+    return distance > (previousPoint.close / 100) * percentage;
+  }
+
+  // public static isBiggerThan(previousPoint: KlineDataPoint, currentPoint: KlineDataPoint) {
+  //   const isGreen = currentPoint.
+  //   return currentPoint.;
+  // }
+  //
 }

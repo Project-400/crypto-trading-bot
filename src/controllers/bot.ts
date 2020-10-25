@@ -24,7 +24,7 @@ export const checkBotStatus = (req: Request, res: Response): void => {
 }
 
 export const longTrade = async (req: Request, res: Response): Promise<void> => {
-  const bot: LongTradeBot = new LongTradeBot('OMGUSDT', 'OMG', 'USDT', 10);
+  const bot: LongTradeBot = new LongTradeBot('ATOMUSDT', 'ATOM', 'USDT', 10);
   await bot.start();
   res.status(200).json({ state: bot.state });
 }

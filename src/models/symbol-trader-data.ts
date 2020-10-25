@@ -92,12 +92,17 @@ export class SymbolTraderData implements ISymbolTraderData {
   }
   
   public logBuy = (buy: any) => {
+    console.log(buy)
     const transaction = buy.transaction;
     if (transaction.response && transaction.response.fills) {
       const commission = this.logCommissions(transaction.response.fills);
+      console.log('commission')
+      console.log(commission)
       this.logPrice(transaction.response.fills);
       this.baseQty += transaction.response.executedQty - (commission.isBase ? commission.total : 0);
+      console.log(this.baseQty)
       this.quoteQty -= transaction.response.cummulativeQuoteQty;
+      console.log(this.quoteQty)
       this.state = PositionState.HOLD;
     }
   }
@@ -118,6 +123,7 @@ export class SymbolTraderData implements ISymbolTraderData {
     let isQuote: boolean = false;
     let isBase: boolean = false;
     fills.map((c: TransactionFillCommission) => {
+      console.log(c)
       isQuote = c.commissionAsset === this.quote; // To be changed - May have multiple commissions
       isBase = c.commissionAsset === this.base;
       total += c.commission;
@@ -159,9 +165,23 @@ export class SymbolTraderData implements ISymbolTraderData {
     if (this.baseStepSize) {
       const trim: number = this.baseQty % this.baseStepSize;
       qty = this.baseQty - trim;
+
+      console.log(this.baseQty)
+      console.log('1')
+      console.log(trim)
+      console.log(qty)
+
     } else {
       qty = this.baseQty;
+      console.log(this.baseQty)
+      console.log('2')
+      console.log(qty)
     }
+    
+    qty = this.baseQty - (this.baseQty / 800);
+
+    console.log('QTY')
+    console.log(qty)
     
     return qty.toFixed(this.exchangeInfo?.quotePrecision);
   }

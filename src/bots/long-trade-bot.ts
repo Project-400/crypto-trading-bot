@@ -15,11 +15,14 @@ export class LongTradeBot {
   public state: LongTradeBotState = LongTradeBotState.GATHERING_DATA;
   private ws: WebSocket;
   private readonly symbol: string;
+  private readonly quote: string;
+  private readonly base: string;
   private readonly lowerCaseSymbol: string;
   private readonly botId: string;
+  private readonly quoteQty: number;
   private klineData: KlineDataPoint[] = [];
   private klineMergeResolved: boolean = false; // Is Kline data from HTTP merged with WS data
-  private tradeData: SymbolTraderData;
+  private tradeData!: SymbolTraderData;
   private interval?: NodeJS.Timeout;
   private currentPrice: number = 0;
   private averageKlineHeight: number = 0;
@@ -28,10 +31,13 @@ export class LongTradeBot {
 
   constructor(symbol: string, base: string, quote: string, quoteQty: number) {
     this.symbol = symbol;
+    this.base = base;
+    this.quote = quote;
+    this.quoteQty = quoteQty;
     this.lowerCaseSymbol = symbol.toLowerCase();
     this.botId = `LongTradeBot_${uuid()}`;
-    this.tradeData = new SymbolTraderData(symbol, base, quote, SymbolType.LONG_TRADE);
     this.ws = new WebSocket(BinanceWS);
+    this.createTradeData();
   }
 
   public async start() {
@@ -71,9 +77,10 @@ export class LongTradeBot {
       //   }
       // }, 10000);
 
-      this.interval = setInterval(() => {
-        this.evaluate();
-      }, 2000);
+      this.interval = setInterval(async () => {
+        await this.evaluate();
+        this.updatePrice();
+      }, 1000);
 
     };
 
@@ -130,6 +137,10 @@ export class LongTradeBot {
   private sortPriceData(data: any) {
     this.currentPrice = data.a;
   }
+
+  private updatePrice() {
+    this.tradeData.updatePrice(this.currentPrice);
+  }
   
   private storeClosedKlinePoint(point: KlineDataPoint) {
     if (point.closeTime === this.klineData[this.klineData.length - 1].closeTime) {
@@ -165,7 +176,7 @@ export class LongTradeBot {
 
   private async evaluate() {
     console.log(`--------------------`);
-    console.log(`Analyst Bot: Analysing ${this.symbol}`);
+    console.log(`Analyst Bot: Analysing ${this.symbol} (${new Date().toISOString()})`);
 
     if (this.state === LongTradeBotState.WAIT && this.isClimbing()) {
       this.updateState(LongTradeBotState.BUY);
@@ -174,16 +185,20 @@ export class LongTradeBot {
       
       if (buy.success && buy.transaction) {
         this.tradeData.logBuy(buy);
+      } else {
+        console.log('NO TRANSACTION INFO 1')
       }
     } else if (this.state === LongTradeBotState.HOLD && this.isDropping()) {
       this.updateState(LongTradeBotState.SELL);
       console.log(`Decision: SELL ${this.symbol}`);
       const sell: any = await this.sellCurrency();
+      this.createTradeData();
       
       if (sell.success && sell.transaction) {
         this.tradeData.logSell(sell);
+      } else {
+        console.log('NO TRANSACTION INFO 2')
       }
-
     } else {
       console.log(`Decision: Still ${this.state} for ${this.symbol}`);
     }
@@ -196,7 +211,7 @@ export class LongTradeBot {
       symbol: this.tradeData.symbol,
       base: this.tradeData.base,
       quote: this.tradeData.quote,
-      quantity: 20,
+      quantity: 10,
       isTest: false
     });
   }
@@ -212,6 +227,10 @@ export class LongTradeBot {
       isTest: false
     });
   }
+  
+  private createTradeData() {
+    this.tradeData = new SymbolTraderData(this.symbol, this.base, this.quote, SymbolType.LONG_TRADE);
+  }
 
   private isClimbing() {
     const length: number = this.klineData.length;
@@ -219,19 +238,23 @@ export class LongTradeBot {
     const minuteTwo: KlineDataPoint = this.klineData[length - 2];
     const minuteThree: KlineDataPoint = this.klineData[length - 3];
     return (
+      // (
+      //   KlineFunctions.isGreenPoint(minuteThree) &&
+      //   KlineFunctions.isGreenPoint(minuteTwo) &&
+      //   KlineFunctions.isGreenPoint(minuteOne) &&
+      //   KlineFunctions.climbDistanceBetween(minuteThree, minuteOne, 0.5)
+      // ) || 
+      // (
+      //   KlineFunctions.isGreenPoint(minuteTwo) &&
+      //   KlineFunctions.increasedBy(minuteTwo, minuteOne, 0.5)
+      // ) ||
+      // (
+      //   KlineFunctions.isGreenPoint(minuteOne) &&
+      //   KlineFunctions.increasedBy(minuteTwo, minuteOne, 1)
+      // ) ||
       (
-        KlineFunctions.isGreenPoint(minuteThree) &&
-        KlineFunctions.isGreenPoint(minuteTwo) &&
         KlineFunctions.isGreenPoint(minuteOne) &&
-        KlineFunctions.increasedBy(minuteThree, minuteTwo, 0.2)
-      ) || 
-      (
-        KlineFunctions.isGreenPoint(minuteTwo) &&
-        KlineFunctions.increasedBy(minuteTwo, minuteOne, 0.5)
-      ) ||
-      (
-        KlineFunctions.isGreenPoint(minuteOne) &&
-        KlineFunctions.increasedBy(minuteTwo, minuteOne, 1)
+        KlineFunctions.increasedBy(minuteTwo, minuteOne, 0.1)
       )
     );
   }
@@ -242,19 +265,27 @@ export class LongTradeBot {
     const minuteTwo: KlineDataPoint = this.klineData[length - 2];
     const minuteThree: KlineDataPoint = this.klineData[length - 3];
     return (
+      // (
+      //   KlineFunctions.isRedPoint(minuteThree) &&
+      //   KlineFunctions.isRedPoint(minuteTwo) &&
+      //   KlineFunctions.isRedPoint(minuteOne) &&
+      //   KlineFunctions.dropDistanceBetween(minuteThree, minuteOne, 0.5)
+      // ) ||
+      // (
+      //   KlineFunctions.isRedPoint(minuteTwo) && 
+      //   KlineFunctions.droppedBy(minuteTwo, minuteOne, 0.5)
+      // ) ||
+      // (
+      //   KlineFunctions.isRedPoint(minuteOne) && 
+      //   KlineFunctions.droppedBy(minuteTwo, minuteOne, 1)
+      // ) ||
+      // (
+      //   KlineFunctions.isRedPoint(minuteOne) && 
+      //   KlineFunctions.droppedBy(minuteTwo, minuteOne, 1)
+      // ) ||
       (
-        KlineFunctions.isRedPoint(minuteThree) &&
-        KlineFunctions.isRedPoint(minuteTwo) &&
         KlineFunctions.isRedPoint(minuteOne) &&
-        KlineFunctions.droppedBy(minuteThree, minuteTwo, 0.2)
-      ) ||
-      (
-        KlineFunctions.isRedPoint(minuteTwo) && 
-        KlineFunctions.droppedBy(minuteTwo, minuteOne, 0.5)
-      ) ||
-      (
-        KlineFunctions.isRedPoint(minuteOne) && 
-        KlineFunctions.droppedBy(minuteTwo, minuteOne, 1)
+        KlineFunctions.droppedBy(minuteTwo, minuteOne, 0.1)
       )
     );
   }
@@ -296,4 +327,54 @@ export class LongTradeBot {
     this.averageKlineShadowHeight = shadowTotal / this.klineData.length;
   }
   
+  private findTrends() {
+    // const trends = {
+    //   up: [],
+    //   down: [],
+    //   flat: []
+    // };
+    const trends = {
+      up: 0,
+      down: 0,
+      flat: 0
+    };
+    
+    let runCount: number = 0;
+    
+    let run: TrendRun = {
+      start: new Date(),
+      end: new Date(),
+      points: [],
+      direction: TrendDirection.FLAT
+    };
+    
+    // this.klineData.map((point: KlineDataPoint) => {
+    //   if (KlineFunctions.isGreenPoint(point))
+    // });
+    
+    for (let i = 0; i < this.klineData.length; i++) {
+      const klinePoint: KlineDataPoint = this.klineData[i];
+      let point: RunPoint;
+      // if (KlineFunctions.isGreenPoint(klinePoint)) 
+      // if (i === 0) 
+    }
+  }
+  
+}
+
+interface TrendRun {
+  start: Date,
+  end: Date,
+  points: RunPoint[],
+  direction: TrendDirection
+}
+
+interface RunPoint {
+  direction: TrendDirection
+}
+
+enum TrendDirection {
+  UP = 'UP',
+  DOWN = 'DOWN',
+  FLAT = 'FLAT'
 }
