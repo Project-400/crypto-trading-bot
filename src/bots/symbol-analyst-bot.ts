@@ -1,8 +1,8 @@
 import { SymbolPriceData } from '../models/symbol-price-data';
 import { BinanceApi } from '../api/binance-api';
 import { v4 as uuid } from 'uuid';
-import {KlineFunctions} from "../services/kline-functions";
-import {KlineDataPoint} from "../interfaces/interfaces";
+import { KlineFunctions } from '../services/kline-functions';
+import { KlineDataPoint } from '../interfaces/interfaces';
 
 export class SymbolAnalystBot {
 
@@ -11,18 +11,18 @@ export class SymbolAnalystBot {
   private performanceType: SymbolPerformanceType;
   private klineData: KlineDataPoint[] = [];
   private botId: string;
-  
-  constructor(symbol: SymbolPriceData, type: SymbolPerformanceType) {
+
+  public constructor(symbol: SymbolPriceData, type: SymbolPerformanceType) {
     this.symbol = symbol;
     this.performanceType = type;
     this.botId = `SystemAnalystBot_${uuid()}`;
   }
-  
+
   public async start() {
     await this.fetchKlineData();
     this.evaluate();
   }
-  
+
   private async fetchKlineData() {
     const klineData: number[][] = await BinanceApi.getKlineData(this.symbol.symbol, '1m', 5);
     this.klineData = klineData.map((point: number[]) => ({
@@ -39,16 +39,16 @@ export class SymbolAnalystBot {
       takerBuyQuoteAssetVolume: point[10]
     }));
   }
-  
+
   private updateDecision(decision: SymbolAnalystBotDecision) {
-    this.decision = decision;
+	  this.decision = decision;
   }
 
   private evaluate() {
     this.updateDecision(SymbolAnalystBotDecision.EVALUATING);
-
+  
     console.log(`Analyst Bot: Analysing ${this.symbol.symbol}`);
-
+  
     if (this.isClimbing()) {
       this.decision = SymbolAnalystBotDecision.BUY;
       console.log(`Decision: BUY ${this.symbol.symbol}`);
@@ -57,16 +57,16 @@ export class SymbolAnalystBot {
       console.log(`Decision: ABANDON ${this.symbol.symbol}`);
     }
   }
-  
+
   private isClimbing() {
-    const length: number = this.klineData.length;
-    const minuteOne: KlineDataPoint = this.klineData[length - 1];
-    const minuteTwo: KlineDataPoint = this.klineData[length - 2];
-    const minuteThree: KlineDataPoint = this.klineData[length - 3];
-    return (
-      KlineFunctions.isGreenPoint(minuteTwo) && !KlineFunctions.hasSignificantTopShadow(minuteTwo) &&
-      KlineFunctions.isGreenPoint(minuteOne) && !KlineFunctions.hasSignificantTopShadow(minuteOne)
-    );
+  	const length: number = this.klineData.length;
+  	const minuteOne: KlineDataPoint = this.klineData[length - 1];
+  	const minuteTwo: KlineDataPoint = this.klineData[length - 2];
+	  const minuteThree: KlineDataPoint = this.klineData[length - 3];
+	  return (
+  		KlineFunctions.isGreenPoint(minuteTwo) && !KlineFunctions.hasSignificantTopShadow(minuteTwo) &&
+  		KlineFunctions.isGreenPoint(minuteOne) && !KlineFunctions.hasSignificantTopShadow(minuteOne)
+	  );
   }
 
 }
