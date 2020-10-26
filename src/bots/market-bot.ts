@@ -10,30 +10,36 @@ import { MarketAlgorithms } from '../services/market-algorithms';
 
 export class MarketBot {
 
-	private static ws: WebSocket;
-	private static prices: { [s: string]: number } = { };
-	private static symbols: { [s: string]: SymbolPriceData } = { };
-	private static batches: number = 0;
-	private static interval: NodeJS.Timeout;
-	private static inStartup: boolean = true;
-	private static checks: number = 0;
-	private static deployedTraderBots: TraderBot[] = [];
-	private static deployedAnalystBots: SymbolAnalystBot[] = [];
-	private static limitedQuote: string = 'USDT';
-	private static hasClimber: boolean = false;
-	private static hasLeaper: boolean = false;
-	private static hasHighestGainer: boolean = false;
-	private static isWorking: boolean = false;
-	private static allowedQuotes: string[];
-	private static ignorePairs: string[];
+	private ws!: WebSocket;
+	private prices: { [s: string]: number } = { };
+	private symbols: { [s: string]: SymbolPriceData } = { };
+	private batches: number = 0;
+	private interval!: NodeJS.Timeout;
+	private inStartup: boolean = true;
+	private checks: number = 0;
+	private deployedTraderBots: TraderBot[] = [];
+	private deployedAnalystBots: SymbolAnalystBot[] = [];
+	private limitedQuote: string = 'USDT';
+	private hasClimber: boolean = false;
+	private hasLeaper: boolean = false;
+	private hasHighestGainer: boolean = false;
+	private allowedQuotes: string[];
+	private ignorePairs: string[];
+	public isWorking: boolean = false;
 
-	public static start(allowedQuotes: string[], ignorePairs: string[]) {
-		MarketBot.isWorking = true;
-		MarketBot.allowedQuotes = allowedQuotes;
-		MarketBot.ignorePairs = ignorePairs;
+	public constructor(allowedQuotes: string[], ignorePairs: string[]) {
+		this.allowedQuotes = allowedQuotes;
+		this.ignorePairs = ignorePairs;
+	}
+
+	public start() {
+	// public static start(allowedQuotes: string[], ignorePairs: string[]) {
+		this.isWorking = true;
+		// MarketBot.allowedQuotes = allowedQuotes;
+		// MarketBot.ignorePairs = ignorePairs;
 
 		Logger.info('Opening Connection to Binance WebSocket');
-		MarketBot.ws = new WebSocket(BinanceWS);
+		this.ws = new WebSocket(BinanceWS);
 
 		const data = {
 			method: 'SUBSCRIBE',
@@ -41,57 +47,57 @@ export class MarketBot {
 			id: 1
 		};
 
-		MarketBot.ws.onopen = () => {
+		this.ws.onopen = () => {
 			Logger.info('Connected to Binance WebSocket');
 			Logger.info('Starting up.. Gathering Data for 60 seconds');
 
-			MarketBot.ws.send(JSON.stringify(data));
+			this.ws.send(JSON.stringify(data));
 
-			MarketBot.interval = setInterval(async () => {
-				MarketBot.updatePrices();
-				MarketBot.checks += 1;
+			this.interval = setInterval(async () => {
+				this.updatePrices();
+				this.checks += 1;
 
-				if (!MarketBot.inStartup) {
-					await MarketBot.evaluateChanges();
+				if (!this.inStartup) {
+					await this.evaluateChanges();
 				} else {
-					if (MarketBot.checks >= 6) MarketBot.inStartup = false;
-					Logger.info(`Starting up.. Gathering Data for ${60 - (MarketBot.checks * 10)} seconds`);
+					if (this.checks >= 6) this.inStartup = false;
+					Logger.info(`Starting up.. Gathering Data for ${60 - (this.checks * 10)} seconds`);
 				}
 			}, 10000);
 		};
 
-		MarketBot.ws.onclose = () => {
+		this.ws.onclose = () => {
 			Logger.info(`Connection to Binance Disconnected`);
 		};
 
-		MarketBot.ws.onmessage = (msg: MessageEvent) => {
+		this.ws.onmessage = (msg: MessageEvent) => {
 			const data = JSON.parse(msg.data as string);
 			if (data.result === null) return;
-			MarketBot.prices[data.s] = data.a;
+			this.prices[data.s] = data.a;
 		};
 	}
 
-	public static stop() {
-		MarketBot.isWorking = false;
+	public stop() {
+		this.isWorking = false;
 
 		Logger.info(`Closing Connection to Binance WebSocket`);
 
-		clearInterval(MarketBot.interval);
-		MarketBot.ws.close();
+		clearInterval(this.interval);
+		this.ws.close();
 	}
 
-	private static updatePrices() {
-		Object.keys(MarketBot.prices).map((symbol: string) => {
-			const price: number = MarketBot.prices[symbol];
-			const existingSymbol: SymbolPriceData = MarketBot.symbols[symbol];
+	private updatePrices() {
+		Object.keys(this.prices).map((symbol: string) => {
+			const price: number = this.prices[symbol];
+			const existingSymbol: SymbolPriceData = this.symbols[symbol];
 			if (existingSymbol) existingSymbol.updatePrice(price);
-			else MarketBot.symbols[symbol] = new SymbolPriceData(symbol, price);
+			else this.symbols[symbol] = new SymbolPriceData(symbol, price);
 		});
 	}
 
-	private static async evaluateChanges(): Promise<void> {
-		const filteredSymbols: SymbolPriceData[] = MarketBot.filterOutPairs();
-		const performers: PerformersData = MarketBot.findPerformingPairs(filteredSymbols);
+	private async evaluateChanges(): Promise<void> {
+		const filteredSymbols: SymbolPriceData[] = this.filterOutPairs();
+		const performers: PerformersData = this.findPerformingPairs(filteredSymbols);
 
 		const climber: SymbolPriceData | undefined = performers.climber;
 		const leaper: SymbolPriceData | undefined = performers.leaper;
@@ -101,45 +107,45 @@ export class MarketBot {
 		// let avgGainer: SymbolPriceData | undefined;
 		// let highestAvg: number = 0;
 
-		if (highestGainer && highestGain >= 4 && MarketBot.deployedTraderBots.length <= 2) await MarketBot.setupHighestClimber(highestGainer);
-		if (leaper && leaper.pricePercentageChanges.tenSeconds > 0) await MarketBot.setupLeaper(leaper);
-		if (climber) await MarketBot.setupClimber(climber);
+		if (highestGainer && highestGain >= 4 && this.deployedTraderBots.length <= 2) await this.setupHighestClimber(highestGainer);
+		if (leaper && leaper.pricePercentageChanges.tenSeconds > 0) await this.setupLeaper(leaper);
+		if (climber) await this.setupClimber(climber);
 
-		MarketBot.removeFinishedTraderBots();
+		this.removeFinishedTraderBots();
 	}
 
-	private static async setupHighestClimber(highestGainer: SymbolPriceData) {
-		MarketBot.hasHighestGainer = true;
+	private async setupHighestClimber(highestGainer: SymbolPriceData) {
+		this.hasHighestGainer = true;
 
 		Logger.info(`Preparing to trade ${highestGainer?.symbol} (Highest Gainer)`);
-		const pairData = await MarketBot.getSymbolPairData(highestGainer?.symbol);
+		const pairData = await this.getSymbolPairData(highestGainer?.symbol);
 		let bot: TraderBot;
 		if (pairData) {
 			bot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 30, SymbolType.HIGHEST_GAINER);
 			await bot.startTrading();
-			MarketBot.deployedTraderBots.push(bot);
+			this.deployedTraderBots.push(bot);
 		} else {
 			console.log('No Pair Data for Highest Gainer - SKIPPING');
 		}
 	}
 
-	private static async setupLeaper(leaper: SymbolPriceData) {
+	private async setupLeaper(leaper: SymbolPriceData) {
 		let analystBot: SymbolAnalystBot | null = new SymbolAnalystBot(leaper, SymbolPerformanceType.LEAPER);
 		await analystBot.start();
 
 		if (analystBot.decision === SymbolAnalystBotDecision.BUY &&
-			MarketBot.deployedTraderBots.length <= 2 &&
-			!MarketBot.alreadyAssigned(leaper?.symbol)
+			this.deployedTraderBots.length <= 2 &&
+			!this.alreadyAssigned(leaper?.symbol)
 		) {
-			MarketBot.hasLeaper = true;
+			this.hasLeaper = true;
 
 			Logger.info(`Preparing to trade ${leaper?.symbol} (Leaper)`);
-			const pairData = await MarketBot.getSymbolPairData(leaper?.symbol);
+			const pairData = await this.getSymbolPairData(leaper?.symbol);
 			let bot: TraderBot;
 			if (pairData) {
 				bot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 12, SymbolType.LEAPER);
 				await bot.startTrading();
-				MarketBot.deployedTraderBots.push(bot);
+				this.deployedTraderBots.push(bot);
 			} else {
 				console.log('No Pair Data for Leaper - SKIPPING');
 			}
@@ -148,22 +154,22 @@ export class MarketBot {
 		}
 	}
 
-	private static async setupClimber(climber: SymbolPriceData) {
+	private async setupClimber(climber: SymbolPriceData) {
 		let analystBot: SymbolAnalystBot | null = new SymbolAnalystBot(climber, SymbolPerformanceType.CLIMBER);
 		await analystBot.start();
 
 		if (analystBot.decision === SymbolAnalystBotDecision.BUY &&
-			MarketBot.deployedTraderBots.length <= 2 &&
-			!MarketBot.alreadyAssigned(climber?.symbol)) {
-			MarketBot.hasClimber = true;
+			this.deployedTraderBots.length <= 2 &&
+			!this.alreadyAssigned(climber?.symbol)) {
+			this.hasClimber = true;
 
 			Logger.info(`Preparing to trade ${climber?.symbol} (Climber)`);
-			const pairData = await MarketBot.getSymbolPairData(climber?.symbol);
+			const pairData = await this.getSymbolPairData(climber?.symbol);
 			let bot: TraderBot;
 			if (pairData) {
 				bot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 12, SymbolType.CLIMBER);
 				await bot.startTrading();
-				MarketBot.deployedTraderBots.push(bot);
+				this.deployedTraderBots.push(bot);
 			} else {
 				console.log('No Pair Data for Climber - SKIPPING');
 			}
@@ -172,7 +178,7 @@ export class MarketBot {
 		}
 	}
 
-	private static findPerformingPairs(symbols: SymbolPriceData[]): PerformersData {
+	private findPerformingPairs(symbols: SymbolPriceData[]): PerformersData {
 		let climber: SymbolPriceData | undefined;
 		let leaper: SymbolPriceData | undefined;
 		let highestGainer: SymbolPriceData | undefined;
@@ -180,11 +186,11 @@ export class MarketBot {
 		let highestGain: number = 0;
 		// let highestAvg: number = 0;
 
-		if (MarketBot.deployedTraderBots.length <= 3) symbols.map((symbol: SymbolPriceData) => {
-			if (!MarketBot.hasClimber) climber = MarketAlgorithms.findBestClimber(symbol, climber);
-			if (!MarketBot.hasLeaper) leaper = MarketAlgorithms.findHighestRecentLeaper(symbol, leaper);
+		if (this.deployedTraderBots.length <= 3) symbols.map((symbol: SymbolPriceData) => {
+			if (!this.hasClimber) climber = MarketAlgorithms.findBestClimber(symbol, climber);
+			if (!this.hasLeaper) leaper = MarketAlgorithms.findHighestRecentLeaper(symbol, leaper);
 			//
-			if (!MarketBot.hasHighestGainer) {
+			if (!this.hasHighestGainer) {
 				const highestGainData: { symbol: SymbolPriceData; highestGain: number } = MarketAlgorithms.findHighestGainer(symbol, highestGain);
 				highestGain = highestGainData.highestGain;
 				highestGainer = highestGainData.symbol;
@@ -203,55 +209,55 @@ export class MarketBot {
 		};
 	}
 
-	private static removeFinishedTraderBots() {
-		MarketBot.deployedTraderBots = MarketBot.deployedTraderBots.filter((bot: TraderBot) => {
+	private removeFinishedTraderBots() {
+		this.deployedTraderBots = this.deployedTraderBots.filter((bot: TraderBot) => {
 			if (bot.state === BotState.FINISHED) {
-				if (bot.symbolType === SymbolType.LEAPER) MarketBot.hasLeaper = false;
-				if (bot.symbolType === SymbolType.CLIMBER) MarketBot.hasClimber = false;
-				if (bot.symbolType === SymbolType.HIGHEST_GAINER) MarketBot.hasHighestGainer = false;
+				if (bot.symbolType === SymbolType.LEAPER) this.hasLeaper = false;
+				if (bot.symbolType === SymbolType.CLIMBER) this.hasClimber = false;
+				if (bot.symbolType === SymbolType.HIGHEST_GAINER) this.hasHighestGainer = false;
 			}
 
 			return bot.state !== BotState.FINISHED;
 		});
 	}
 
-	private static alreadyAssigned(symbol: string) {
-		return !!MarketBot.deployedTraderBots.find((bot: TraderBot) => bot.symbol === symbol);
+	private alreadyAssigned(symbol: string) {
+		return !!this.deployedTraderBots.find((bot: TraderBot) => bot.symbol === symbol);
 	}
 
-	private static async getSymbolPairData(symbol: string) {
-		const response: any = await CryptoApi.get(`/exchange-pairs/single/${symbol}/${MarketBot.limitedQuote}`);
+	private async getSymbolPairData(symbol: string) {
+		const response: any = await CryptoApi.get(`/exchange-pairs/single/${symbol}/${this.limitedQuote}`);
 		if (response && response.success && response.info) return response.info;
 		else return false;
 	}
 
-	private static filterOutPairs(): SymbolPriceData[] {
-		const allSymbols: SymbolPriceData[] = Object.values(MarketBot.symbols);
+	private filterOutPairs(): SymbolPriceData[] {
+		const allSymbols: SymbolPriceData[] = Object.values(this.symbols);
 
 		return allSymbols.filter((s: SymbolPriceData) =>
-			!MarketBot.isLeveraged(s.symbol) &&
-				!MarketBot.isTinyCurrency(s.symbol, s.prices.now - s.prices.sixtySeconds) &&
-				!MarketBot.isIgnoredPair(s.symbol) &&
-				MarketBot.isAllowedQuote(s.symbol));
+			!this.isLeveraged(s.symbol) &&
+				!this.isTinyCurrency(s.symbol, s.prices.now - s.prices.sixtySeconds) &&
+				!this.isIgnoredPair(s.symbol) &&
+			this.isAllowedQuote(s.symbol));
 	}
 
-	private static isTinyCurrency(symbol: string, priceChange: number): boolean { // USDT only temporarily
+	private isTinyCurrency(symbol: string, priceChange: number): boolean { // USDT only temporarily
 		if (symbol.endsWith('USDT') && priceChange < 0.0006) return true;
 		if (symbol.endsWith('BTC') && priceChange < 0.00000005) return true;
 		if (symbol.endsWith('ETH') && priceChange < 0.0000015) return true;
 		return false;
 	}
 
-	private static isLeveraged(symbol: string): boolean {
+	private isLeveraged(symbol: string): boolean {
 		return symbol.includes('UP') || symbol.includes('DOWN');
 	}
 
-	private static isAllowedQuote(symbol: string): boolean {
-		return !!MarketBot.allowedQuotes.find((q: string) => q === symbol);
+	private isAllowedQuote(symbol: string): boolean {
+		return !!this.allowedQuotes.find((q: string) => q === symbol);
 	}
 
-	private static isIgnoredPair(symbol: string): boolean {
-		return !!MarketBot.ignorePairs.find((p: string) => p === symbol);
+	private isIgnoredPair(symbol: string): boolean {
+		return !!this.ignorePairs.find((p: string) => p === symbol);
 	}
 
 }

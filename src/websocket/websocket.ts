@@ -1,6 +1,6 @@
-import http from "http";
-import * as WebSocket from "ws";
-import express from "express";
+import http from 'http';
+import * as WebSocket from 'ws';
+import express from 'express';
 
 export class WebsocketProducer {
 

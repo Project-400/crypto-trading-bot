@@ -1,4 +1,4 @@
-import {KlineDataPoint} from '../interfaces/interfaces';
+import { KlineDataPoint } from '../interfaces/interfaces';
 
 export class KlineFunctions {
 
