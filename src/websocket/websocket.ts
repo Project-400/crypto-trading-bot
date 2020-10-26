@@ -4,42 +4,42 @@ import express from "express";
 
 export class WebsocketProducer {
 
-  static server: http.Server;
-  static wss: WebSocket.Server;
-  static webS: WebSocket;
-  
-  public static setup(app: express.Application) {
-    WebsocketProducer.server = http.createServer(app);
-    WebsocketProducer.wss = new WebSocket.Server({ server: WebsocketProducer.server });
+	static server: http.Server;
+	static wss: WebSocket.Server;
+	static webS: WebSocket;
 
-    console.log('SETUP')
-    console.log(WebsocketProducer)
+	public static setup(app: express.Application) {
+		WebsocketProducer.server = http.createServer(app);
+		WebsocketProducer.wss = new WebSocket.Server({ server: WebsocketProducer.server });
 
-    WebsocketProducer.wss.on('connection', (ws: WebSocket) => {
-      WebsocketProducer.webS = ws;
+		console.log('SETUP')
+		console.log(WebsocketProducer)
 
-      ws.on('message', (message: string) => {
-        console.log('received: %s', message);
-        ws.send(`Hello, you sent -> ${message}`);
-      });
+		WebsocketProducer.wss.on('connection', (ws: WebSocket) => {
+			WebsocketProducer.webS = ws;
 
-      ws.send('Hi there, I am a WebSocket server');
-    });
+			ws.on('message', (message: string) => {
+				console.log('received: %s', message);
+				ws.send(`Hello, you sent -> ${message}`);
+			});
 
-    WebsocketProducer.wss.on('close', (ws: WebSocket) => {
-      console.log('Connection closed')
-    });
+			ws.send('Hi there, I am a WebSocket server');
+		});
 
-    WebsocketProducer.server.listen(process.env.PORT || 8999, () => {
-      // @ts-ignore
-      if (WebsocketProducer.server.address() && WebsocketProducer.server.address().port) console.log(`Server started on port ${WebsocketProducer.server.address().port} :)`);
-      else console.log('Server not started');
-    });
+		WebsocketProducer.wss.on('close', (ws: WebSocket) => {
+			console.log('Connection closed')
+		});
 
-  }
-  
-  public static sendMessage(msg: string) {
-    WebsocketProducer.webS.send(msg);
-  }
+		WebsocketProducer.server.listen(process.env.PORT || 8999, () => {
+			// @ts-ignore
+			if (WebsocketProducer.server.address() && WebsocketProducer.server.address().port) console.log(`Server started on port ${WebsocketProducer.server.address().port} :)`);
+			else console.log('Server not started');
+		});
+
+	}
+
+	public static sendMessage(msg: string) {
+		WebsocketProducer.webS.send(msg);
+	}
 
 }

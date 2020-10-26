@@ -23,7 +23,7 @@
     "indent": [
       true,
       "tabs",
-      4
+      8
     ],
     "no-any": false,
     "whitespace": [
