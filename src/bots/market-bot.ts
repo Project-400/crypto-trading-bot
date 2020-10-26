@@ -32,7 +32,7 @@ export class MarketBot {
 		this.ignorePairs = ignorePairs;
 	}
 
-	public start() {
+	public start = (): void => {
 	// public static start(allowedQuotes: string[], ignorePairs: string[]) {
 		this.isWorking = true;
 		// MarketBot.allowedQuotes = allowedQuotes;
@@ -41,19 +41,19 @@ export class MarketBot {
 		Logger.info('Opening Connection to Binance WebSocket');
 		this.ws = new WebSocket(BinanceWS);
 
-		const data = {
+		const data: any = {
 			method: 'SUBSCRIBE',
 			params: [ '!bookTicker' ],
 			id: 1
 		};
 
-		this.ws.onopen = () => {
+		this.ws.onopen = (): void => {
 			Logger.info('Connected to Binance WebSocket');
 			Logger.info('Starting up.. Gathering Data for 60 seconds');
 
 			this.ws.send(JSON.stringify(data));
 
-			this.interval = setInterval(async () => {
+			this.interval = setInterval(async (): Promise<void> => {
 				this.updatePrices();
 				this.checks += 1;
 
@@ -66,18 +66,18 @@ export class MarketBot {
 			}, 10000);
 		};
 
-		this.ws.onclose = () => {
+		this.ws.onclose = (): void => {
 			Logger.info(`Connection to Binance Disconnected`);
 		};
 
-		this.ws.onmessage = (msg: MessageEvent) => {
-			const data = JSON.parse(msg.data as string);
-			if (data.result === null) return;
-			this.prices[data.s] = data.a;
+		this.ws.onmessage = (msg: MessageEvent): void => {
+			const msgData: any = JSON.parse(msg.data as string);
+			if (msgData.result === null) return;
+			this.prices[msgData.s] = msgData.a;
 		};
 	}
 
-	public stop() {
+	public stop = (): void => {
 		this.isWorking = false;
 
 		Logger.info(`Closing Connection to Binance WebSocket`);
@@ -86,8 +86,8 @@ export class MarketBot {
 		this.ws.close();
 	}
 
-	private updatePrices() {
-		Object.keys(this.prices).map((symbol: string) => {
+	private updatePrices = (): void => {
+		Object.keys(this.prices).map((symbol: string): void => {
 			const price: number = this.prices[symbol];
 			const existingSymbol: SymbolPriceData = this.symbols[symbol];
 			if (existingSymbol) existingSymbol.updatePrice(price);
@@ -114,11 +114,11 @@ export class MarketBot {
 		this.removeFinishedTraderBots();
 	}
 
-	private async setupHighestClimber(highestGainer: SymbolPriceData) {
+	private setupHighestClimber = async (highestGainer: SymbolPriceData): Promise<void> => {
 		this.hasHighestGainer = true;
 
 		Logger.info(`Preparing to trade ${highestGainer?.symbol} (Highest Gainer)`);
-		const pairData = await this.getSymbolPairData(highestGainer?.symbol);
+		const pairData: any = await this.getSymbolPairData(highestGainer?.symbol);
 		let bot: TraderBot;
 		if (pairData) {
 			bot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 30, SymbolType.HIGHEST_GAINER);
@@ -129,7 +129,7 @@ export class MarketBot {
 		}
 	}
 
-	private async setupLeaper(leaper: SymbolPriceData) {
+	private setupLeaper = async (leaper: SymbolPriceData): Promise<void> => {
 		let analystBot: SymbolAnalystBot | null = new SymbolAnalystBot(leaper, SymbolPerformanceType.LEAPER);
 		await analystBot.start();
 
@@ -140,7 +140,7 @@ export class MarketBot {
 			this.hasLeaper = true;
 
 			Logger.info(`Preparing to trade ${leaper?.symbol} (Leaper)`);
-			const pairData = await this.getSymbolPairData(leaper?.symbol);
+			const pairData: any = await this.getSymbolPairData(leaper?.symbol);
 			let bot: TraderBot;
 			if (pairData) {
 				bot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 12, SymbolType.LEAPER);
@@ -154,7 +154,7 @@ export class MarketBot {
 		}
 	}
 
-	private async setupClimber(climber: SymbolPriceData) {
+	private setupClimber = async (climber: SymbolPriceData): Promise<void> =>  {
 		let analystBot: SymbolAnalystBot | null = new SymbolAnalystBot(climber, SymbolPerformanceType.CLIMBER);
 		await analystBot.start();
 
@@ -164,7 +164,7 @@ export class MarketBot {
 			this.hasClimber = true;
 
 			Logger.info(`Preparing to trade ${climber?.symbol} (Climber)`);
-			const pairData = await this.getSymbolPairData(climber?.symbol);
+			const pairData: any = await this.getSymbolPairData(climber?.symbol);
 			let bot: TraderBot;
 			if (pairData) {
 				bot = new TraderBot(pairData.symbol, pairData.base, pairData.quote, 12, SymbolType.CLIMBER);
@@ -209,7 +209,7 @@ export class MarketBot {
 		};
 	}
 
-	private removeFinishedTraderBots() {
+	private removeFinishedTraderBots = (): void =>  {
 		this.deployedTraderBots = this.deployedTraderBots.filter((bot: TraderBot) => {
 			if (bot.state === BotState.FINISHED) {
 				if (bot.symbolType === SymbolType.LEAPER) this.hasLeaper = false;
@@ -221,44 +221,36 @@ export class MarketBot {
 		});
 	}
 
-	private alreadyAssigned(symbol: string) {
-		return !!this.deployedTraderBots.find((bot: TraderBot) => bot.symbol === symbol);
-	}
+	private alreadyAssigned = (symbol: string): boolean => !!this.deployedTraderBots.find((bot: TraderBot): boolean => bot.symbol === symbol);
 
-	private async getSymbolPairData(symbol: string) {
+	private getSymbolPairData = async (symbol: string): Promise<boolean> => {
 		const response: any = await CryptoApi.get(`/exchange-pairs/single/${symbol}/${this.limitedQuote}`);
 		if (response && response.success && response.info) return response.info;
-		else return false;
+		return false;
 	}
 
 	private filterOutPairs(): SymbolPriceData[] {
 		const allSymbols: SymbolPriceData[] = Object.values(this.symbols);
 
-		return allSymbols.filter((s: SymbolPriceData) =>
+		return allSymbols.filter((s: SymbolPriceData): boolean =>
 			!this.isLeveraged(s.symbol) &&
 				!this.isTinyCurrency(s.symbol, s.prices.now - s.prices.sixtySeconds) &&
 				!this.isIgnoredPair(s.symbol) &&
 			this.isAllowedQuote(s.symbol));
 	}
 
-	private isTinyCurrency(symbol: string, priceChange: number): boolean { // USDT only temporarily
+	private isTinyCurrency = (symbol: string, priceChange: number): boolean => { // USDT only temporarily
 		if (symbol.endsWith('USDT') && priceChange < 0.0006) return true;
 		if (symbol.endsWith('BTC') && priceChange < 0.00000005) return true;
 		if (symbol.endsWith('ETH') && priceChange < 0.0000015) return true;
 		return false;
 	}
 
-	private isLeveraged(symbol: string): boolean {
-		return symbol.includes('UP') || symbol.includes('DOWN');
-	}
+	private isLeveraged = (symbol: string): boolean => symbol.includes('UP') || symbol.includes('DOWN');
 
-	private isAllowedQuote(symbol: string): boolean {
-		return !!this.allowedQuotes.find((q: string) => q === symbol);
-	}
+	private isAllowedQuote = (symbol: string): boolean => !!this.allowedQuotes.find((q: string): boolean => q === symbol);
 
-	private isIgnoredPair(symbol: string): boolean {
-		return !!this.ignorePairs.find((p: string) => p === symbol);
-	}
+	private isIgnoredPair = (symbol: string): boolean => !!this.ignorePairs.find((p: string): boolean => p === symbol);
 
 }
 

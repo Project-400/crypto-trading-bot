@@ -38,7 +38,7 @@ export class LongTradeBot {
 		this.createTradeData();
 	}
 
-	public async start() {
+	public start = async (): Promise<void> => {
 		this.setupSocket();
 		await this.fetchKlineData();
 		await this.tradeData.getExchangeInfo();
@@ -47,8 +47,8 @@ export class LongTradeBot {
 		this.calculateKlineHeights();
 	}
 
-	private setupSocket() {
-		const data = {
+	private setupSocket = (): void => {
+		const data: any = {
 			method: 'SUBSCRIBE',
 			params: [
 			`${this.lowerCaseSymbol}@kline_1m`,
@@ -57,7 +57,7 @@ export class LongTradeBot {
 			id: 1
 		};
 
-		this.ws.onopen = () => {
+		this.ws.onopen = (): void => {
 			// Logger.info('Connected to Binance WebSocket');
 			// Logger.info('Starting up.. Gathering Data for 60 seconds');
 
@@ -75,33 +75,33 @@ export class LongTradeBot {
 			//   }
 			// }, 10000);
 
-			this.interval = setInterval(async () => {
+			this.interval = setInterval(async (): Promise<void> => {
 			await this.evaluate();
 			this.updatePrice();
 			}, 1000);
 
 		};
 
-		this.ws.onclose = () => {
+		this.ws.onclose = (): void => {
 			// Logger.info(`Connection to Binance Disconnected`);
 		};
 
-		this.ws.onmessage = (msg: MessageEvent) => {
-			const data = JSON.parse(msg.data as string);
-			if (data.result === null) return;
+		this.ws.onmessage = (msg: MessageEvent): void => {
+			const msgData: any = JSON.parse(msg.data as string);
+			if (msgData.result === null) return;
 			// console.log(data)
-			this.sortSocketData(data);
+			this.sortSocketData(msgData);
 			// this.prices[data.s] = data.a;
 		};
 	}
 
-	private sortSocketData(data: any) {
+	private sortSocketData = (data: any): void => {
 		this.tradeData.updatePrice(data.s);
 		if (data.e === 'kline') this.sortKlineData(data);
 		else this.sortPriceData(data);
 	}
 
-	private sortKlineData(data: any) {
+	private sortKlineData = (data: any): void => {
 		if (!data || !data.k) return console.log('No Kline Data');
 
 		const k: any = data.k;
@@ -132,15 +132,15 @@ export class LongTradeBot {
 		this.storeClosedKlinePoint(klinePoint);
 	}
 
-	private sortPriceData(data: any) {
+	private sortPriceData = (data: any): void => {
 		this.currentPrice = data.a;
 	}
 
-	private updatePrice() {
+	private updatePrice = (): void => {
 		this.tradeData.updatePrice(this.currentPrice);
 	}
 
-	private storeClosedKlinePoint(point: KlineDataPoint) {
+	private storeClosedKlinePoint = (point: KlineDataPoint): void => {
 		if (point.closeTime === this.klineData[this.klineData.length - 1].closeTime) {
 			this.klineData[this.klineData.length - 1] = point;
 		} else {
@@ -149,11 +149,11 @@ export class LongTradeBot {
 		}
 	}
 
-	private async fetchKlineData() {
+	private fetchKlineData = async (): Promise<void> => {
 		this.updateState(LongTradeBotState.GATHERING_DATA);
 
 		const klineData: number[][] = await BinanceApi.getKlineData(this.symbol, '1m', 120);
-		this.klineData = klineData.map((point: number[]) => ({
+		this.klineData = klineData.map((point: number[]): any => ({
 			openTime: point[0],
 			open: point[1],
 			high: point[2],
@@ -168,11 +168,11 @@ export class LongTradeBot {
 		}));
 	}
 
-	private updateState(state: LongTradeBotState) {
+	private updateState = (state: LongTradeBotState): void => {
 		this.state = state;
 	}
 
-	private async evaluate() {
+	private evaluate = async (): Promise<void> => {
 		console.log(`--------------------`);
 		console.log(`Analyst Bot: Analysing ${this.symbol} (${new Date().toISOString()})`);
 
@@ -202,7 +202,7 @@ export class LongTradeBot {
 		}
 	}
 
-	private async buyCurrency() {
+	private buyCurrency = async (): Promise<void> => {
 		this.updateState(LongTradeBotState.HOLD);
 
 		return CryptoApi.post('/transactions/buy', {
@@ -214,7 +214,7 @@ export class LongTradeBot {
 		});
 	}
 
-	private async sellCurrency() {
+	private sellCurrency = async (): Promise<void> => {
 		this.updateState(LongTradeBotState.WAIT);
 
 		return CryptoApi.post('/transactions/sell', {
@@ -226,11 +226,11 @@ export class LongTradeBot {
 		});
 	}
 
-	private createTradeData() {
+	private createTradeData = (): void => {
 		this.tradeData = new SymbolTraderData(this.symbol, this.base, this.quote, SymbolType.LONG_TRADE);
 	}
 
-	private isClimbing() {
+	private isClimbing = (): boolean => {
 		const length: number = this.klineData.length;
 		const minuteOne: KlineDataPoint = this.klineData[length - 1];
 		const minuteTwo: KlineDataPoint = this.klineData[length - 2];
@@ -257,7 +257,7 @@ export class LongTradeBot {
 		);
 	}
 
-	private isDropping() {
+	private isDropping = (): boolean => {
 		const length: number = this.klineData.length;
 		const minuteOne: KlineDataPoint = this.klineData[length - 1];
 		const minuteTwo: KlineDataPoint = this.klineData[length - 2];
@@ -288,13 +288,13 @@ export class LongTradeBot {
 		);
 	}
 
-	private workoutKlineData() {
+	private workoutKlineData = (): void => {
 		let totalPrice: number = 0;
 		let averagePrice: number = 0;
 		let lowestPrice: number = 0;
 		let highestPrice: number = 0;
 
-		this.klineData.map((k: KlineDataPoint) => {
+		this.klineData.map((k: KlineDataPoint): void => {
 			totalPrice += Number(k.close);
 			if ((lowestPrice && k.close < lowestPrice) || !lowestPrice) lowestPrice = k.close;
 			if ((highestPrice && k.close > highestPrice) || !highestPrice) highestPrice = k.close;
@@ -309,7 +309,7 @@ export class LongTradeBot {
 		console.log(highestPrice);
 	}
 
-	private calculateKlineHeights() {
+	private calculateKlineHeights = (): void => {
 		let klineTotal: number = 0;
 		let candleTotal: number = 0;
 		let shadowTotal: number = 0;
@@ -325,13 +325,13 @@ export class LongTradeBot {
 		this.averageKlineShadowHeight = shadowTotal / this.klineData.length;
 	}
 
-	private findTrends() {
+	private findTrends = (): void => {
 		// const trends = {
 		//   up: [],
 		//   down: [],
 		//   flat: []
 		// };
-		const trends = {
+		const trends: any = {
 			up: 0,
 			down: 0,
 			flat: 0

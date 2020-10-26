@@ -20,7 +20,7 @@ export class SymbolPriceData {
 		sixtySeconds: 0
 	};
 
-	constructor(
+	public constructor(
 		symbol: string,
 		price: number
 	) {
@@ -28,8 +28,8 @@ export class SymbolPriceData {
 		this.prices.now = price;
 	}
 
-	public updatePrice = (price: number) => {
-		const currentPrices = this.prices;
+	public updatePrice = (price: number): void => {
+		const currentPrices: PriceTimes = this.prices;
 
 		this.prices = {
 			now: price,
@@ -39,7 +39,7 @@ export class SymbolPriceData {
 			fortySeconds: currentPrices.thirtySeconds,
 			fiftySeconds: currentPrices.fortySeconds,
 			sixtySeconds: currentPrices.fiftySeconds
-		}
+		};
 
 		this.pricePercentageChanges = {
 			now: 0,
@@ -49,7 +49,7 @@ export class SymbolPriceData {
 			fortySeconds: this.calculatePercentageChange(price, this.prices.fortySeconds),
 			fiftySeconds: this.calculatePercentageChange(price, this.prices.fiftySeconds),
 			sixtySeconds: this.calculatePercentageChange(price, this.prices.sixtySeconds)
-		}
+		};
 	}
 
 	private calculatePercentageChange = (currentPrice: number, previousPrice: number): number => {

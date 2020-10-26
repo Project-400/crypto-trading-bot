@@ -2,7 +2,7 @@ import { SymbolPriceData } from '../models/symbol-price-data';
 
 export class MarketAlgorithms {
 
-	public static findHighestGainer(symbol: SymbolPriceData, highestGain: number): { symbol: SymbolPriceData, highestGain: number } {
+	public static findHighestGainer = (symbol: SymbolPriceData, highestGain: number): { symbol: SymbolPriceData; highestGain: number } => {
 		if (!highestGain) return {
 			symbol,
 			highestGain: Math.max(...Object.values(symbol.pricePercentageChanges))
@@ -26,7 +26,7 @@ export class MarketAlgorithms {
 		};
 	}
 
-	public static findBestClimber(symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData {
+	public static findBestClimber = (symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData => {
 		if (!current) return symbol;
 
 		return (
@@ -46,14 +46,15 @@ export class MarketAlgorithms {
 		) ? symbol : current;
 	}
 
-	public static findHighestRecentLeaper(symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData {
+	public static findHighestRecentLeaper = (symbol: SymbolPriceData, current?: SymbolPriceData): SymbolPriceData => {
 		if (!current) return symbol;
 
 		return (symbol.pricePercentageChanges.tenSeconds > current.pricePercentageChanges.tenSeconds) ? symbol : current;
 	}
 
-	public static findHighestAverageGainer(symbol: SymbolPriceData, highestAvg: number): { symbol: SymbolPriceData, highestAvg: number } {
-		const avg = (
+	public static findHighestAverageGainer = (symbol: SymbolPriceData, highestAvg: number):
+		{ symbol: SymbolPriceData; highestAvg: number } => {
+		const avg: number = (
 			symbol.pricePercentageChanges.now +
 			symbol.pricePercentageChanges.tenSeconds +
 			symbol.pricePercentageChanges.twentySeconds +

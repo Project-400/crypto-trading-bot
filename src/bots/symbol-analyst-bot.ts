@@ -18,14 +18,14 @@ export class SymbolAnalystBot {
 		this.botId = `SystemAnalystBot_${uuid()}`;
 	}
 
-	public async start() {
+	public start = async (): Promise<void> => {
 		await this.fetchKlineData();
 		this.evaluate();
 	}
 
-	private async fetchKlineData() {
+	private fetchKlineData = async (): Promise<void> => {
 		const klineData: number[][] = await BinanceApi.getKlineData(this.symbol.symbol, '1m', 5);
-		this.klineData = klineData.map((point: number[]) => ({
+		this.klineData = klineData.map((point: number[]): any => ({
 			openTime: point[0],
 			open: point[1],
 			high: point[2],
@@ -40,11 +40,11 @@ export class SymbolAnalystBot {
 		}));
 	}
 
-	private updateDecision(decision: SymbolAnalystBotDecision) {
+	private updateDecision = (decision: SymbolAnalystBotDecision): void => {
 		this.decision = decision;
 	}
 
-	private evaluate() {
+	private evaluate = (): void => {
 		this.updateDecision(SymbolAnalystBotDecision.EVALUATING);
 
 		console.log(`Analyst Bot: Analysing ${this.symbol.symbol}`);
@@ -58,7 +58,7 @@ export class SymbolAnalystBot {
 		}
 	}
 
-	private isClimbing() {
+	private isClimbing = (): boolean => {
 		const length: number = this.klineData.length;
 		const minuteOne: KlineDataPoint = this.klineData[length - 1];
 		const minuteTwo: KlineDataPoint = this.klineData[length - 2];

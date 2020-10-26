@@ -1,4 +1,4 @@
-import WebSocket, {MessageEvent} from 'isomorphic-ws';
+import WebSocket, { MessageEvent } from 'isomorphic-ws';
 import { BinanceWS } from '../settings';
 import { SymbolTraderData } from '../models/symbol-trader-data';
 import { PositionState, SymbolType } from '@crypto-tracker/common-types';
@@ -24,8 +24,8 @@ export class TraderBot {
 	public saved: boolean = false;
 	public symbol: string;
 
-	constructor(symbol: string, base: string, quote: string, quoteQty: number, symbolType: SymbolType) {
-		console.log('Trader Bot opening connection to Binance')
+	public constructor(symbol: string, base: string, quote: string, quoteQty: number, symbolType: SymbolType) {
+		console.log('Trader Bot opening connection to Binance');
 		this.ws = new WebSocket(BinanceWS);
 		this.tradeData = new SymbolTraderData(symbol, base, quote, symbolType);
 		this.quoteQty = quoteQty;
@@ -33,38 +33,38 @@ export class TraderBot {
 		this.symbol = symbol;
 	}
 
-	async startTrading() {
+	public startTrading = async (): Promise<{ trading: boolean }> => {
 		await this.tradeData.getExchangeInfo();
 
-		const data = {
+		const data: any = {
 			method: 'SUBSCRIBE',
 			params: [`${this.tradeData.lowercaseSymbol}@bookTicker`],
 			id: 1
 		};
 
-		this.ws.onopen = () => {
+		this.ws.onopen = (): void => {
 			console.log('Trader Bot connected to Binance');
 
 			this.ws.send(JSON.stringify(data));
 
-			this.interval = setInterval(async () => {
+			this.interval = setInterval(async (): Promise<void> => {
 				this.updatePrice();
 				await this.makeDecision();
 			}, 2000);
 		};
 
-		this.ws.onclose = () => {
+		this.ws.onclose = (): void => {
 			console.log('Trader Bot disconnected from Binance');
 		};
 
-		this.ws.onmessage = (msg: MessageEvent) => {
-			const data = JSON.parse(msg.data as string);
-			if (data.result === null) return;
-			this.currentPrice = data.a;
+		this.ws.onmessage = (msg: MessageEvent): void => {
+			const msgData: any = JSON.parse(msg.data as string);
+			if (msgData.result === null) return;
+			this.currentPrice = msgData.a;
 		};
 
-		setTimeout(() => {
-			setInterval(() => {
+		setTimeout((): void => {
+			setInterval((): void => {
 				if (this.tradeData.priceDifference < 1.5) {
 					this.tradeData.state = PositionState.TIMEOUT_SELL;
 				}
@@ -74,18 +74,18 @@ export class TraderBot {
 		return { trading: true };
 	}
 
-	public stopTrading() {
-		console.log('Trader Bot closing connection to Binance')
+	public stopTrading = (): void => {
+		console.log('Trader Bot closing connection to Binance');
 
 		if (this.interval) clearInterval(this.interval);
 		this.ws.close();
 	}
 
-	private updatePrice() {
+	private updatePrice = (): void => {
 		this.tradeData.updatePrice(this.currentPrice);
 	}
 
-	private async makeDecision() {
+	private makeDecision = async (): Promise<void> => {
 		console.log('-------------------------------');
 		console.log(`Symbol: ${this.tradeData.symbol}`);
 		console.log(`Type: ${this.symbolType}`);
@@ -108,7 +108,13 @@ export class TraderBot {
 			}
 		}
 
-		if (this.state === BotState.TRADING && (this.tradeData.state === PositionState.SELL || this.tradeData.state === PositionState.TIMEOUT_SELL)) {
+		if (
+			this.state === BotState.TRADING &&
+			(
+				this.tradeData.state === PositionState.SELL ||
+				this.tradeData.state === PositionState.TIMEOUT_SELL
+			)
+		) {
 			const sell: any = await this.sellCurrency();
 
 			this.updateState(BotState.PAUSED);
@@ -128,22 +134,22 @@ export class TraderBot {
 		}
 	}
 
-	private updateState(state: BotState) {
+	private updateState = (state: BotState): void => {
 		this.state = state;
 	}
 
-	private async saveTradeData() {
+	private saveTradeData = async (): Promise<void> => {
 		if (this.saved) return;
 		this.saved = true;
-		return await CryptoApi.post('/bots/trade/save', {
+		return CryptoApi.post('/bots/trade/save', {
 			tradeData: this.tradeData
 		});
 	}
 
-	private async buyCurrency(quantity: number) {
+	private buyCurrency = async (quantity: number): Promise<void> =>  {
 		Logger.info(`Buying ${this.tradeData.base} with ${quantity} ${this.tradeData.quote}`);
 
-		return await CryptoApi.post('/transactions/buy', {
+		return CryptoApi.post('/transactions/buy', {
 			symbol: this.tradeData.symbol,
 			base: this.tradeData.base,
 			quote: this.tradeData.quote,
@@ -152,10 +158,10 @@ export class TraderBot {
 		});
 	}
 
-	private async sellCurrency() {
+	private sellCurrency = async (): Promise<void> => {
 		Logger.info(`Selling ${this.tradeData.getSellQuantity()} ${this.tradeData.base}`);
 
-		return await CryptoApi.post('/transactions/sell', {
+		return CryptoApi.post('/transactions/sell', {
 			symbol: this.tradeData.symbol,
 			base: this.tradeData.base,
 			quote: this.tradeData.quote,

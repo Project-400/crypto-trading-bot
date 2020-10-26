@@ -31,13 +31,13 @@ export class SymbolTraderData implements ISymbolTraderData {
 	public lowestPriceReached: number = 0;
 	public symbolType: SymbolType = SymbolType.NONE;
 	public percentageDroppedFromHigh: number = 0;
-	public times = {
+	public times: { createdAt: string; finishedAt: string } = {
 		createdAt: '',
 		finishedAt: ''
 	};
 	public startTime: number;
 
-	constructor(
+	public constructor(
 		symbol: string,
 		base: string,
 		quote: string,
@@ -52,7 +52,7 @@ export class SymbolTraderData implements ISymbolTraderData {
 		this.startTime = new Date().getTime();
 	}
 
-	public updatePrice = (price: number) => {
+	public updatePrice = (price: number): void => {
 		if (this.currentPrice) this.calculatePriceChanges(price);
 		else {
 			this.currentPrice = price;
@@ -62,68 +62,67 @@ export class SymbolTraderData implements ISymbolTraderData {
 
 		if (this.percentageDroppedFromHigh < -1) {
 			this.state = PositionState.SELL;
-		}
-			// else if (this.percentageDifference > 10) {
-			//   this.state = PositionState.SELL;
+		} else if (this.state !== PositionState.TIMEOUT_SELL) this.state = PositionState.HOLD;
+		// else if (this.percentageDifference > 10) {
+		//   this.state = PositionState.SELL;
 		// }
-		else if (this.state !== PositionState.TIMEOUT_SELL) this.state = PositionState.HOLD;
 	}
 
-	private calculatePriceChanges = (newPrice: number) => {
+	private calculatePriceChanges = (newPrice: number): void => {
 		this.priceDifference = this.currentPrice - newPrice;
 
 		if (newPrice > this.highestPriceReached) this.highestPriceReached = newPrice;
 		else if (newPrice < this.lowestPriceReached) this.lowestPriceReached = newPrice;
 		this.currentPrice = newPrice;
 
-		const tempStartPrice = this.startPrice * 1000;
+		const tempStartPrice: number = this.startPrice * 1000;
 
-		const tempNewPrice = newPrice * 1000;
-		const tempPriceDifference = tempNewPrice - tempStartPrice;
+		const tempNewPrice: number = newPrice * 1000;
+		const tempPriceDifference: number = tempNewPrice - tempStartPrice;
 
 		if (tempNewPrice !== tempStartPrice) this.percentageDifference = (tempPriceDifference / tempStartPrice) * 100;
 		else this.percentageDifference = 0;
 
-		const tempHighPrice = this.highestPriceReached * 1000;
-		const tempHighPriceDifference = tempNewPrice - tempHighPrice;
+		const tempHighPrice: number = this.highestPriceReached * 1000;
+		const tempHighPriceDifference: number = tempNewPrice - tempHighPrice;
 
 		if (tempNewPrice < tempHighPrice) this.percentageDroppedFromHigh = (tempHighPriceDifference / tempHighPrice) * 100;
 		else this.percentageDroppedFromHigh = 0;
 	}
 
-	public logBuy = (buy: any) => {
-		console.log(buy)
-		const transaction = buy.transaction;
+	public logBuy = (buy: any): void => {
+		console.log(buy);
+		const transaction: any = buy.transaction;
 		if (transaction.response && transaction.response.fills) {
-			const commission = this.logCommissions(transaction.response.fills);
-			console.log('commission')
-			console.log(commission)
+			const commission: { total: number; isQuote: boolean; isBase: boolean } = this.logCommissions(transaction.response.fills);
+			console.log('commission');
+			console.log(commission);
 			this.logPrice(transaction.response.fills);
 			this.baseQty += transaction.response.executedQty - (commission.isBase ? commission.total : 0);
-			console.log(this.baseQty)
+			console.log(this.baseQty);
 			this.quoteQty -= transaction.response.cummulativeQuoteQty;
-			console.log(this.quoteQty)
+			console.log(this.quoteQty);
 			this.state = PositionState.HOLD;
 		}
 	}
 
-	public logSell = (sell: any) => {
-		const transaction = sell.transaction;
+	public logSell = (sell: any): void => {
+		const transaction: any = sell.transaction;
 		if (transaction.response && transaction.response.fills) {
-			const commission = this.logCommissions(transaction.response.fills);
+			const commission: { total: number; isQuote: boolean; isBase: boolean } = this.logCommissions(transaction.response.fills);
 			this.baseQty -= transaction.response.executedQty;
 			this.quoteQty += transaction.response.cummulativeQuoteQty - (commission.isQuote ? commission.total : 0);
 			this.state = PositionState.SOLD;
 		}
 	}
 
-	private logCommissions = (fills: TransactionFillCommission[]): { total: number, isQuote: boolean, isBase: boolean } => {
+	private logCommissions = (fills: TransactionFillCommission[]): { total: number; isQuote: boolean; isBase: boolean } => {
 		this.commissions.push(...fills);
 		let total: number = 0;
 		let isQuote: boolean = false;
 		let isBase: boolean = false;
-		fills.map((c: TransactionFillCommission) => {
-			console.log(c)
+		fills.map((c: TransactionFillCommission): void => {
+			console.log(c);
 			isQuote = c.commissionAsset === this.quote; // To be changed - May have multiple commissions
 			isBase = c.commissionAsset === this.base;
 			total += c.commission;
@@ -133,15 +132,15 @@ export class SymbolTraderData implements ISymbolTraderData {
 
 	private logPrice = (fills: any[]): void => {
 		let total: number = 0;
-		fills.map((c: any) => total += c.price);
+		fills.map((c: any): void => total += c.price);
 		if (total) {
-			const avgPrice = total / fills.length;
+			const avgPrice: number = total / fills.length;
 			this.startPrice = avgPrice;
 			this.currentPrice = avgPrice;
 		}
 	}
 
-	public getExchangeInfo = async () => {
+	public getExchangeInfo = async (): Promise<void> => {
 		const response: any = await CryptoApi.get(`/exchange-info/single/${this.symbol}/${this.quote}`);
 		if (response.success) this.exchangeInfo = response.info;
 
@@ -150,10 +149,10 @@ export class SymbolTraderData implements ISymbolTraderData {
 		this.getLotSize();
 	}
 
-	private getLotSize = () => {
-		const lotSizeFilter: any = this.exchangeInfo?.filters.find((f: any) => f.filterType === 'LOT_SIZE');
+	private getLotSize = (): void => {
+		const lotSizeFilter: any = this.exchangeInfo?.filters.find((f: any): boolean => f.filterType === 'LOT_SIZE');
 		if (lotSizeFilter) {
-			console.log(`${this.symbol} has a step size limit of ${lotSizeFilter.stepSize}`)
+			console.log(`${this.symbol} has a step size limit of ${lotSizeFilter.stepSize}`);
 			this.baseMinQty = lotSizeFilter.minQty;
 			this.baseStepSize = lotSizeFilter.stepSize;
 		}
@@ -166,27 +165,27 @@ export class SymbolTraderData implements ISymbolTraderData {
 			const trim: number = this.baseQty % this.baseStepSize;
 			qty = this.baseQty - trim;
 
-			console.log(this.baseQty)
-			console.log('1')
-			console.log(trim)
-			console.log(qty)
+			console.log(this.baseQty);
+			console.log('1');
+			console.log(trim);
+			console.log(qty);
 
 		} else {
 			qty = this.baseQty;
-			console.log(this.baseQty)
-			console.log('2')
-			console.log(qty)
+			console.log(this.baseQty);
+			console.log('2');
+			console.log(qty);
 		}
 
 		qty = this.baseQty - (this.baseQty / 800);
 
-		console.log('QTY')
-		console.log(qty)
+		console.log('QTY');
+		console.log(qty);
 
 		return qty.toFixed(this.exchangeInfo?.quotePrecision);
 	}
 
-	public finish = () => {
+	public finish = (): void => {
 		this.times.finishedAt = new Date().toISOString();
 	}
 

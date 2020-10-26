@@ -1,11 +1,11 @@
 import express, { Router } from 'express';
-import { startBot, stopBot, checkBotStatus, longTrade } from '../controllers';
+import { BotController} from '../controllers';
 
 const indexRouter: Router = express.Router();
 
-indexRouter.get('/start-bot', startBot);
-indexRouter.get('/stop-bot', stopBot);
-indexRouter.get('/bot-status', checkBotStatus);
-indexRouter.get('/long-trade', longTrade);
+indexRouter.get('/start-bot', BotController.startBot);
+indexRouter.get('/stop-bot', BotController.stopBot);
+indexRouter.get('/bot-status', BotController.checkBotStatus);
+indexRouter.get('/long-trade', BotController.longTrade);
 
 export default indexRouter;
