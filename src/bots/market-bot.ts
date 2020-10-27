@@ -10,6 +10,7 @@ import { MarketAlgorithms } from '../services/market-algorithms';
 
 export class MarketBot {
 
+	private botId: string;
 	private ws!: WebSocket;
 	private prices: { [s: string]: number } = { };
 	private symbols: { [s: string]: SymbolPriceData } = { };
@@ -27,7 +28,8 @@ export class MarketBot {
 	private ignorePairs: string[];
 	public isWorking: boolean = false;
 
-	public constructor(allowedQuotes: string[], ignorePairs: string[]) {
+	public constructor(botId: string, allowedQuotes: string[], ignorePairs: string[]) {
+		this.botId = botId;
 		this.allowedQuotes = allowedQuotes;
 		this.ignorePairs = ignorePairs;
 	}
@@ -85,6 +87,8 @@ export class MarketBot {
 		clearInterval(this.interval);
 		this.ws.close();
 	}
+
+	public getBotId = (): string => this.botId;
 
 	private updatePrices = (): void => {
 		Object.keys(this.prices).map((symbol: string): void => {

@@ -14,14 +14,15 @@ export class BotManager {
 
 	public static deployNewBot = (botId: string): MarketBot => {
 		const bot: MarketBot = new MarketBot(botId, ['USDT'], ['BTCUSDT', 'BCHUSDT', 'ETHUSDT']);
-		return bot;
+		BotManager.deployedBots.push(bot);
 		// bot.start();
+		return bot;
 	}
 
 	public static shutdownBot = (botId: string): void => {
 		const botIndex: number = BotManager.getBotIndex(botId);
 		if (botIndex > -1) {
-			BotManager.deployedBots[botIndex].stop();
+			// BotManager.deployedBots[botIndex].stop();
 			BotManager.deployedBots.splice(botIndex, 1);
 		}
 	}
