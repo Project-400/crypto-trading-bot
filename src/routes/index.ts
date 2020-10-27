@@ -7,6 +7,7 @@ indexRouter.get('/start-bot', BotController.deployBot);
 indexRouter.get('/stop-bot', BotController.stopBot);
 indexRouter.get('/get-bot', BotController.getBot);
 indexRouter.get('/get-all-bots', BotController.getAllBots);
+indexRouter.get('/shutdown-bots', BotController.shutdownBots);
 // indexRouter.get('/bot-status', BotController.checkBotStatus);
 indexRouter.get('/long-trade', BotController.longTrade);
 

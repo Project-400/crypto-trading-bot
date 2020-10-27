@@ -27,4 +27,14 @@ export class BotManager {
 		}
 	}
 
+	public static shutdownAllBots = (): number => {
+		const count: number = BotManager.deployedBots.length;
+
+		BotManager.deployedBots.map((bot: MarketBot): void => bot.stop());
+
+		BotManager.deployedBots = [];
+
+		return count;
+	}
+
 }

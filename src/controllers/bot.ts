@@ -52,6 +52,12 @@ export class BotController {
 		return res.status(200).json({ bots });
 	}
 
+	public static shutdownBots = (req: Request, res: Response): Response => {
+		const count: number = BotManager.shutdownAllBots();
+
+		return res.status(200).json({ message: 'Shutdown all bots', count });
+	}
+
 	// public static checkBotStatus = (req: Request, res: Response): Response => {
 	// 	if (!req.query || !req.query.botId) return res.status(400).json({ error: 'Invalid request parameters' });
 	//

@@ -82,10 +82,10 @@ export class MarketBot {
 	public stop = (): void => {
 		this.isWorking = false;
 
-		Logger.info(`Closing Connection to Binance WebSocket`);
+		// Logger.info(`Closing Connection to Binance WebSocket`);
 
-		clearInterval(this.interval);
-		this.ws.close();
+		// clearInterval(this.interval);
+		// this.ws.close();
 	}
 
 	public getBotId = (): string => this.botId;
