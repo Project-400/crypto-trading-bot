@@ -22,7 +22,7 @@ export class BotManager {
 	public static shutdownBot = (botId: string): void => {
 		const botIndex: number = BotManager.getBotIndex(botId);
 		if (botIndex > -1) {
-			// BotManager.deployedBots[botIndex].stop();
+			BotManager.deployedBots[botIndex].stop();
 			BotManager.deployedBots.splice(botIndex, 1);
 		}
 	}

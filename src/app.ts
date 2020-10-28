@@ -15,7 +15,7 @@ app.use('/v1', indexRouter);
 
 WebsocketProducer.setup(app);
 
-app.listen(3001, '0.0.0.0', function() {
+app.listen(3001, '0.0.0.0', (): void => {
 	console.log('Listening to port:  ' + 3000);
 });
 

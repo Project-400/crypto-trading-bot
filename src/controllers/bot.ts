@@ -6,9 +6,9 @@ import { MarketBot } from '../bots/market-bot';
 export class BotController {
 
 	public static deployBot = (req: Request, res: Response): Response => {
-		if (!req.query || !req.query.botId) return res.status(400).json({ error: 'Invalid request parameters' });
+		if (!req.body || !req.body.botId) return res.status(400).json({ error: 'Invalid request body' });
 
-		const botId: string = req.query.botId as string;
+		const botId: string = req.body.botId.toString();
 		let bot!: MarketBot;
 
 		try {
@@ -17,15 +17,15 @@ export class BotController {
 			console.log('Bot failed to deploy');
 			console.log(e);
 
-			// MarketBot.stop();
+			if (bot) BotManager.shutdownBot(botId);
 		}
 		return res.status(200).json({ message: 'Started Bot', bot });
 	}
 
 	public static stopBot = (req: Request, res: Response): Response => {
-		if (!req.query || !req.query.botId) return res.status(400).json({ error: 'Invalid request parameters' });
+		if (!req.body || !req.body.botId) return res.status(400).json({ error: 'Invalid request body' });
 
-		const botId: string = req.query.botId as string;
+		const botId: string = req.body.botId.toString();
 		const bot: MarketBot | undefined = BotManager.getBot(botId);
 
 		if (!bot) return res.status(404).json({ error: 'Bot not found' });
@@ -38,7 +38,7 @@ export class BotController {
 	public static getBot = (req: Request, res: Response): Response => {
 		if (!req.query || !req.query.botId) return res.status(400).json({ error: 'Invalid request parameters' });
 
-		const botId: string = req.query.botId as string;
+		const botId: string = req.query.botId.toString();
 		const bot: MarketBot | undefined = BotManager.getBot(botId);
 
 		if (!bot) return res.status(404).json({ error: 'Bot not found' });
