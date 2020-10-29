@@ -1,8 +1,10 @@
 import express, { Router } from 'express';
 import { BotController } from '../controllers';
+import { HealthController } from '../controllers/health-controller';
 
 const indexRouter: Router = express.Router();
 
+indexRouter.get('/health', HealthController.health);
 indexRouter.get('/trader-bot', BotController.getBot);
 indexRouter.get('/trader-bot/all', BotController.getAllBots);
 indexRouter.post('/trader-bot', BotController.deployBot);
