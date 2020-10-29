@@ -88,6 +88,10 @@ export class MarketBot {
 		// this.ws.close();
 	}
 
+	public pause = (): void => {
+		this.isWorking = false;
+	}
+
 	public getBotId = (): string => this.botId;
 
 	private updatePrices = (): void => {

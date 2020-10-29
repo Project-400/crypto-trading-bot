@@ -27,6 +27,11 @@ export class BotManager {
 		}
 	}
 
+	public static pauseBot = (botId: string): void => {
+		const botIndex: number = BotManager.getBotIndex(botId);
+		if (botIndex > -1) BotManager.deployedBots[botIndex].pause();
+	}
+
 	public static shutdownAllBots = (): number => {
 		const count: number = BotManager.deployedBots.length;
 
