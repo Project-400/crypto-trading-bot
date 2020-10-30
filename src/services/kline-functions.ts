@@ -24,6 +24,9 @@ export class KlineFunctions {
 	public static droppedBy = (lastPoint: KlineDataPoint, currentPoint: KlineDataPoint, percentage: number): boolean => {
 		const diff: number = lastPoint.close - currentPoint.close;
 
+		console.log(diff);
+		console.log((lastPoint.close / 100) * percentage);
+
 		return diff > (lastPoint.close / 100) * percentage;
 	}
 
