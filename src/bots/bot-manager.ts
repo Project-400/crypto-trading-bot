@@ -13,6 +13,8 @@ export class BotManager {
 		BotManager.deployedBots.findIndex((b: MarketBot): boolean => b.getBotId() === botId)
 
 	public static deployNewBot = (botId: string): MarketBot => {
+		if (BotManager.getBot(botId)) throw Error('Bot already exists');
+
 		const bot: MarketBot = new MarketBot(botId, ['USDT'], ['BTCUSDT', 'BCHUSDT', 'ETHUSDT']);
 		BotManager.deployedBots.push(bot);
 		// bot.start();
