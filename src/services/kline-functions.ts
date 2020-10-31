@@ -24,16 +24,13 @@ export class KlineFunctions {
 	public static droppedBy = (lastPoint: KlineDataPoint, currentPoint: KlineDataPoint, percentage: number): boolean => {
 		const diff: number = lastPoint.close - currentPoint.close;
 
-		console.log(diff);
-		console.log((lastPoint.close / 100) * percentage);
-
-		return diff > (lastPoint.close / 100) * percentage;
+		return diff >= (lastPoint.close / 100) * percentage;
 	}
 
 	public static increasedBy = (lastPoint: KlineDataPoint, currentPoint: KlineDataPoint, percentage: number): boolean => {
 		const diff: number = currentPoint.close - lastPoint.close;
 
-		return diff > (lastPoint.close / 100) * percentage;
+		return diff >= (lastPoint.close / 100) * percentage;
 	}
 
 	public static climbDistanceBetween = (previousPoint: KlineDataPoint, currentPoint: KlineDataPoint, percentage: number): boolean => {
@@ -48,9 +45,4 @@ export class KlineFunctions {
 		return distance > (previousPoint.close / 100) * percentage;
 	}
 
-	// public static isBiggerThan(previousPoint: KlineDataPoint, currentPoint: KlineDataPoint) {
-	//   const isGreen = currentPoint.
-	//   return currentPoint.;
-	// }
-	//
 }
