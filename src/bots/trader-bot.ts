@@ -1,20 +1,13 @@
 import WebSocket, { MessageEvent } from 'isomorphic-ws';
-import { BinanceWS } from '../settings';
+import { BinanceWS } from '../environment';
 import { SymbolTraderData } from '../models/symbol-trader-data';
-import { PositionState, SymbolType } from '@crypto-tracker/common-types';
-import { CryptoApi } from '../api/crypto-api';
-import { Logger } from '../logger/logger';
-
-export enum BotState {
-	WAITING = 'WAITING',
-	TRADING = 'TRADING',
-	PAUSED = 'PAUSED',
-	FINISHED = 'FINISHED'
-}
+import { PositionState, SymbolType, TradingBotState } from '@crypto-tracker/common-types';
+import { CryptoApi } from '../external-api/crypto-api';
+import { Logger } from '../config/logger/logger';
 
 export class TraderBot {
 
-	public state: BotState = BotState.WAITING;
+	public state: TradingBotState = TradingBotState.WAITING;
 	private readonly ws: WebSocket;
 	private currentPrice: number = 0;
 	private readonly tradeData: SymbolTraderData;
@@ -97,10 +90,10 @@ export class TraderBot {
 
 		Logger.info(`${this.tradeData.symbol} ($${this.tradeData.currentPrice} -- Percentage change: ${this.tradeData.percentageDifference}%`);
 
-		if (this.state === BotState.WAITING) {
+		if (this.state === TradingBotState.WAITING) {
 			const buy: any = await this.buyCurrency(this.quoteQty);
 
-			this.updateState(BotState.TRADING);
+			this.updateState(TradingBotState.TRADING);
 
 			if (buy.success && buy.transaction) {
 				this.tradeData.logBuy(buy);
@@ -109,7 +102,7 @@ export class TraderBot {
 		}
 
 		if (
-			this.state === BotState.TRADING &&
+			this.state === TradingBotState.TRADING &&
 			(
 				this.tradeData.state === PositionState.SELL ||
 				this.tradeData.state === PositionState.TIMEOUT_SELL
@@ -117,16 +110,16 @@ export class TraderBot {
 		) {
 			const sell: any = await this.sellCurrency();
 
-			this.updateState(BotState.PAUSED);
+			this.updateState(TradingBotState.PAUSED);
 
 			if (sell.success && sell.transaction) {
 				this.tradeData.logSell(sell);
 
-				this.updateState(BotState.FINISHED); // TEMPORARY
+				this.updateState(TradingBotState.FINISHED); // TEMPORARY
 			}
 		}
 
-		if (this.state === BotState.FINISHED) {
+		if (this.state === TradingBotState.FINISHED) {
 			this.tradeData.finish();
 			await this.saveTradeData();
 
@@ -134,7 +127,7 @@ export class TraderBot {
 		}
 	}
 
-	private updateState = (state: BotState): void => {
+	private updateState = (state: TradingBotState): void => {
 		this.state = state;
 	}
 

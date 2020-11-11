@@ -1,12 +1,12 @@
-import { BinanceApi } from '../api/binance-api';
+import { BinanceApi } from '../external-api/binance-api';
 import { v4 as uuid } from 'uuid';
-import { KlineFunctions } from '../services/kline-functions';
+import { KlineFunctions } from '../utils/kline-functions';
 import { KlineDataPoint } from '../interfaces/interfaces';
 import WebSocket, { MessageEvent } from 'isomorphic-ws';
-import { BinanceWS } from '../settings';
+import { BinanceWS } from '../environment';
 import { SymbolTraderData } from '../models/symbol-trader-data';
 import { LongTradeBotState, SymbolType } from '@crypto-tracker/common-types';
-import { CryptoApi } from '../api/crypto-api';
+import { CryptoApi } from '../external-api/crypto-api';
 
 export class LongTradeBot {
 

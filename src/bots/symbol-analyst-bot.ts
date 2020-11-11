@@ -1,7 +1,7 @@
 import { SymbolPriceData } from '../models/symbol-price-data';
-import { BinanceApi } from '../api/binance-api';
+import { BinanceApi } from '../external-api/binance-api';
 import { v4 as uuid } from 'uuid';
-import { KlineFunctions } from '../services/kline-functions';
+import { KlineFunctions } from '../utils/kline-functions';
 import { KlineDataPoint } from '../interfaces/interfaces';
 
 export class SymbolAnalystBot {

@@ -5,7 +5,7 @@ import {
 	SymbolType,
 	TransactionFillCommission
 } from '@crypto-tracker/common-types';
-import { CryptoApi } from '../api/crypto-api';
+import { CryptoApi } from '../external-api/crypto-api';
 
 export class SymbolTraderData implements ISymbolTraderData {
 

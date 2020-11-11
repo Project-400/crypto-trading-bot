@@ -1,6 +1,5 @@
 import express, { Router } from 'express';
-import { BotController } from '../controllers';
-import { HealthController } from '../controllers/health-controller';
+import { HealthController, BotController } from '../controllers';
 
 const indexRouter: Router = express.Router();
 

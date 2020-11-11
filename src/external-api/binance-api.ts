@@ -1,4 +1,4 @@
-import { BinanceAPI } from '../settings';
+import { BinanceAPI } from '../environment';
 import { HTTP } from './http';
 
 export class BinanceApi {

@@ -1,12 +1,12 @@
 import WebSocket, { MessageEvent } from 'isomorphic-ws';
-import { BinanceWS } from '../settings';
+import { BinanceWS } from '../environment';
 import { SymbolPriceData } from '../models/symbol-price-data';
-import { BotState, TraderBot } from './trader-bot';
-import { CryptoApi } from '../api/crypto-api';
-import { SymbolType } from '@crypto-tracker/common-types';
+import { TraderBot } from './trader-bot';
+import { CryptoApi } from '../external-api/crypto-api';
+import { SymbolType, TradingBotState } from '@crypto-tracker/common-types';
 import { SymbolAnalystBotDecision, SymbolAnalystBot, SymbolPerformanceType } from './symbol-analyst-bot';
-import { Logger } from '../logger/logger';
-import { MarketAlgorithms } from '../services/market-algorithms';
+import { Logger } from '../config/logger/logger';
+import { MarketAlgorithms } from '../utils/market-algorithms';
 
 export class MarketBot {
 
@@ -218,14 +218,14 @@ export class MarketBot {
 	}
 
 	private removeFinishedTraderBots = (): void =>  {
-		this.deployedTraderBots = this.deployedTraderBots.filter((bot: TraderBot) => {
-			if (bot.state === BotState.FINISHED) {
+		this.deployedTraderBots = this.deployedTraderBots.filter((bot: TraderBot): boolean => {
+			if (bot.state === TradingBotState.FINISHED) {
 				if (bot.symbolType === SymbolType.LEAPER) this.hasLeaper = false;
 				if (bot.symbolType === SymbolType.CLIMBER) this.hasClimber = false;
 				if (bot.symbolType === SymbolType.HIGHEST_GAINER) this.hasHighestGainer = false;
 			}
 
-			return bot.state !== BotState.FINISHED;
+			return bot.state !== TradingBotState.FINISHED;
 		});
 	}
 
