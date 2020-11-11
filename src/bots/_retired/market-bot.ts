@@ -1,12 +1,12 @@
 import WebSocket, { MessageEvent } from 'isomorphic-ws';
-import { BinanceWS } from '../environment';
-import { SymbolPriceData } from '../models/symbol-price-data';
+import { BinanceWS } from '../../environment';
+import { SymbolPriceData } from '../../models/symbol-price-data';
 import { TraderBot } from './trader-bot';
-import { CryptoApi } from '../external-api/crypto-api';
+import { CryptoApi } from '../../external-api/crypto-api';
 import { SymbolType, TradingBotState } from '@crypto-tracker/common-types';
 import { SymbolAnalystBotDecision, SymbolAnalystBot, SymbolPerformanceType } from './symbol-analyst-bot';
-import { Logger } from '../config/logger/logger';
-import { MarketAlgorithms } from '../utils/market-algorithms';
+import { Logger } from '../../config/logger/logger';
+import { MarketAlgorithms } from '../../utils/market-algorithms';
 
 export class MarketBot {
 
@@ -19,7 +19,7 @@ export class MarketBot {
 	private inStartup: boolean = true;
 	private checks: number = 0;
 	private deployedTraderBots: TraderBot[] = [];
-	private deployedAnalystBots: SymbolAnalystBot[] = [];
+	// private deployedAnalystBots: SymbolAnalystBot[] = [];
 	private limitedQuote: string = 'USDT';
 	private hasClimber: boolean = false;
 	private hasLeaper: boolean = false;
@@ -35,10 +35,7 @@ export class MarketBot {
 	}
 
 	public start = (): void => {
-	// public static start(allowedQuotes: string[], ignorePairs: string[]) {
 		this.isWorking = true;
-		// MarketBot.allowedQuotes = allowedQuotes;
-		// MarketBot.ignorePairs = ignorePairs;
 
 		Logger.info('Opening Connection to Binance WebSocket');
 		this.ws = new WebSocket(BinanceWS);

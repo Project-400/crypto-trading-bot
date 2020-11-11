@@ -1,4 +1,4 @@
-import { MarketBot } from './market-bot';
+import { MarketBot } from './_retired/market-bot';
 
 export class BotManager {
 
@@ -17,7 +17,7 @@ export class BotManager {
 
 		const bot: MarketBot = new MarketBot(botId, ['USDT'], ['BTCUSDT', 'BCHUSDT', 'ETHUSDT']);
 		BotManager.deployedBots.push(bot);
-		// bot.start();
+		bot.start();
 		return bot;
 	}
 

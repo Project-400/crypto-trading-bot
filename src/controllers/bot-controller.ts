@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { LongTradeBot } from '../bots/long-trade-bot';
+import { LongTradeBot } from '../bots/_retired/long-trade-bot';
 import { BotManager } from '../bots/bot-manager';
-import { MarketBot } from '../bots/market-bot';
+import { MarketBot } from '../bots/_retired/market-bot';
 
 export class BotController {
 

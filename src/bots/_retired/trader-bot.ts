@@ -1,9 +1,9 @@
 import WebSocket, { MessageEvent } from 'isomorphic-ws';
-import { BinanceWS } from '../environment';
-import { SymbolTraderData } from '../models/symbol-trader-data';
+import { BinanceWS } from '../../environment';
+import { SymbolTraderData } from '../../models/symbol-trader-data';
 import { PositionState, SymbolType, TradingBotState } from '@crypto-tracker/common-types';
-import { CryptoApi } from '../external-api/crypto-api';
-import { Logger } from '../config/logger/logger';
+import { CryptoApi } from '../../external-api/crypto-api';
+import { Logger } from '../../config/logger/logger';
 
 export class TraderBot {
 
