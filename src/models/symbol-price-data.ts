@@ -1,4 +1,4 @@
-export class SymbolPriceData {
+export class TradingPairPriceData {
 
 	public symbol: string;
 	public prices: PriceTimes = {

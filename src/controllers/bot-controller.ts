@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { LongTradeBot } from '../bots/_retired/long-trade-bot';
 import { BotManager } from '../bots/bot-manager';
-import { MarketBot } from '../bots/_retired/market-bot';
+import MarketAnalystBot from '../bots/market-analyst-bot';
 
 export class BotController {
 
@@ -9,7 +9,7 @@ export class BotController {
 		if (!req.body || !req.body.botId) return res.status(400).json({ error: 'Invalid request body' });
 
 		const botId: string = req.body.botId.toString();
-		let bot!: MarketBot;
+		let bot!: MarketAnalystBot;
 
 		try {
 			bot = BotManager.deployNewBot(botId);
@@ -27,7 +27,7 @@ export class BotController {
 		if (!req.body || !req.body.botId) return res.status(400).json({ error: 'Invalid request body' });
 
 		const botId: string = req.body.botId.toString();
-		const bot: MarketBot | undefined = BotManager.getBot(botId);
+		const bot: MarketAnalystBot | undefined = BotManager.getBot(botId);
 
 		if (!bot) return res.status(404).json({ error: 'Bot not found' });
 
@@ -40,7 +40,7 @@ export class BotController {
 		if (!req.body || !req.body.botId) return res.status(400).json({ error: 'Invalid request body' });
 
 		const botId: string = req.body.botId.toString();
-		const bot: MarketBot | undefined = BotManager.getBot(botId);
+		const bot: MarketAnalystBot | undefined = BotManager.getBot(botId);
 
 		if (!bot) return res.status(404).json({ error: 'Bot not found' });
 
@@ -53,7 +53,7 @@ export class BotController {
 		if (!req.query || !req.query.botId) return res.status(400).json({ error: 'Invalid request parameters' });
 
 		const botId: string = req.query.botId.toString();
-		const bot: MarketBot | undefined = BotManager.getBot(botId);
+		const bot: MarketAnalystBot | undefined = BotManager.getBot(botId);
 
 		if (!bot) return res.status(404).json({ error: 'Bot not found' });
 
@@ -61,7 +61,7 @@ export class BotController {
 	}
 
 	public static getAllBots = (req: Request, res: Response): Response => {
-		const bots: MarketBot[] = BotManager.getAllBots();
+		const bots: MarketAnalystBot[] = BotManager.getAllBots();
 
 		return res.status(200).json({ success: true, bots });
 	}

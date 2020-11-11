@@ -23,7 +23,6 @@ export class MarketBot {
 	private limitedQuote: string = 'USDT';
 	private hasClimber: boolean = false;
 	private hasLeaper: boolean = false;
-	private hasHighestGainer: boolean = false;
 	private allowedQuotes: string[];
 	private ignorePairs: string[];
 	public isWorking: boolean = false;
