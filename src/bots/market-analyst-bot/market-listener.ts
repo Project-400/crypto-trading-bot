@@ -27,8 +27,8 @@ export default class MarketListener {
 	private allSymbolData: AllSymbolData = { };				// An object containing all of the current symbol price data & changes
 	private inStartup: boolean = true;
 	private updateCheckCount: number = 0;
-	private allowedQuotes: string[] = []; 			// Currencies the bot is allowed to use to trade with, eg. USDT
-	private ignorePairs: string[] = [];				// Symbol pairs to ignore and not trade with, eg. USDTBTC
+	private allowedQuotes: string[] = []; 					// Currencies the bot is allowed to use to trade with, eg. USDT
+	private ignorePairs: string[] = [];						// Symbol pairs to ignore and not trade with, eg. USDTBTC
 
 	public ConnectAndListen = (): void => {
 		Logger.info('Opening Connection to Binance WebSocket');
