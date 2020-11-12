@@ -29,7 +29,7 @@ export class SymbolTraderData implements ISymbolTraderData {
 	public baseStepSize: number = 0;
 	public highestPriceReached: number = 0;
 	public lowestPriceReached: number = 0;
-	public symbolType: SymbolType = SymbolType.NONE;
+	// public symbolType: SymbolType = SymbolType.NONE;
 	public percentageDroppedFromHigh: number = 0;
 	public times: { createdAt: string; finishedAt: string } = {
 		createdAt: '',
@@ -40,13 +40,11 @@ export class SymbolTraderData implements ISymbolTraderData {
 	public constructor(
 		symbol: string,
 		base: string,
-		quote: string,
-		symbolType: SymbolType
+		quote: string
 	) {
 		this.symbol = symbol;
 		this.base = base;
 		this.quote = quote;
-		this.symbolType = symbolType;
 		this.lowercaseSymbol = symbol.toLowerCase();
 		this.times.createdAt = new Date().toISOString();
 		this.startTime = new Date().getTime();

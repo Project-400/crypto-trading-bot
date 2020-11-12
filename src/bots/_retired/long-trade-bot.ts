@@ -227,7 +227,8 @@ export class LongTradeBot {
 	}
 
 	private createTradeData = (): void => {
-		this.tradeData = new SymbolTraderData(this.symbol, this.base, this.quote, SymbolType.LONG_TRADE);
+		this.tradeData = new SymbolTraderData(this.symbol, this.base, this.quote);
+		// this.tradeData = new SymbolTraderData(this.symbol, this.base, this.quote, SymbolType.LONG_TRADE);
 	}
 
 	private isClimbing = (): boolean => {

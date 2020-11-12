@@ -4,7 +4,7 @@ import SocketConnection, { SocketMessage } from '../../config/websocket/connecto
 
 export default class PriceListener {
 
-	private binanceWsConnection!: SocketConnection;		// Websocket Connection to Binance
+	private binanceWsConnection?: SocketConnection;		// Websocket Connection to Binance
 	private currentPrice: number = 0;					// The current price for the symbol being watched
 	private readonly symbol: string;					// The symbol string, eg. BTCUSDT
 	private readonly lowercaseSymbol: string;			// Lowercase version of the symbol, eg. btcusdt
@@ -26,6 +26,11 @@ export default class PriceListener {
 		);
 	}
 
+	public StopListening = (): void => {
+		this.binanceWsConnection?.Close();
+		this.binanceWsConnection = undefined;
+	}
+
 	private SocketOpen = (): void => {
 		Logger.info('Trader Bot connected to Binance WebSocket');
 
@@ -35,7 +40,7 @@ export default class PriceListener {
 			id: 1
 		};
 
-		this.binanceWsConnection.SendData(data);
+		this.binanceWsConnection?.SendData(data);
 	}
 
 	private SocketClose = (): void => {
@@ -43,6 +48,7 @@ export default class PriceListener {
 	}
 
 	private SocketMessage = (msg: SocketMessage): void => {
+		Logger.info(`Received Message`);
 		const msgData: any = JSON.parse(msg.data as string);
 		console.log(msgData);
 		if (msgData.result === null) return;

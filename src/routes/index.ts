@@ -13,5 +13,6 @@ indexRouter.put('/trader-bot/pause', BotController.pauseBot);
 indexRouter.put('/trader-bot/shutdown-all', BotController.shutdownBots);
 // indexRouter.get('/bot-status', BotController.checkBotStatus);
 indexRouter.post('/long-trade', BotController.longTrade);
+indexRouter.post('/connect', BotController.openConnection);
 
 export default indexRouter;

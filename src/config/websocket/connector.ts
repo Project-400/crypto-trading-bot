@@ -28,6 +28,8 @@ export default class SocketConnection {
 		}
 	}
 
+	public Close = (): void => this.websocket.close();
+
 }
 
 export type SocketMessage = MessageEvent;

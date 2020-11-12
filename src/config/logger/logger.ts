@@ -1,10 +1,10 @@
-import { WebsocketProducer } from '../websocket/websocket';
+import { WebsocketProducer } from '../websocket/producer';
 
 export class Logger {
 
 	public static info = (msg: string): void => {
 		console.log(msg);
-		WebsocketProducer.sendMessage(msg);
+		// WebsocketProducer.sendMessage(msg);
 	}
 
 }

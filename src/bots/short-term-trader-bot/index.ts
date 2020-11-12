@@ -33,11 +33,12 @@ export default class ShortTermTraderBot {
 	public getBotId = (): string => this.botId;
 	public getIsWorking = (): boolean => this.isWorking;
 
-	public constructor(botId: string, tradingPairSymbol: string, quoteQty: number, repeatedlyTrade: boolean) {
+	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number, repeatedlyTrade: boolean) {
 		this.botId = botId;
 		this.tradingPairSymbol = tradingPairSymbol;
 		this.quoteQty = quoteQty;
 		this.repeatedlyTrade = repeatedlyTrade;
+		this.tradeData = new SymbolTraderData(tradingPairSymbol, base, quote);
 		this.priceListener = new PriceListener(this.tradingPairSymbol);
 	}
 
@@ -48,6 +49,8 @@ export default class ShortTermTraderBot {
 
 	public Stop = (): void => {
 		this.isWorking = false;
+		// if (this.interval) clearInterval(this.interval);
+		this.priceListener.StopListening();
 	}
 
 	public Pause = (): void => {
@@ -59,8 +62,8 @@ export default class ShortTermTraderBot {
 	}
 
 	private saveTradeData = async (): Promise<void> => {
-		if (this.saved) return;
-		this.saved = true;
+		// if (this.saved) return;
+		// this.saved = true;
 		return CryptoApi.post('/bots/trade/save', {
 			tradeData: this.tradeData
 		});
