@@ -2,7 +2,7 @@ import logger from 'morgan';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import indexRouter from './routes';
-import { WebsocketProducer } from './config/websocket/websocket';
+import { WebsocketProducer } from './config/websocket/producer';
 
 const app: express.Application = express();
 
