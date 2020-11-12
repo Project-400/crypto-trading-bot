@@ -11,3 +11,23 @@ export interface KlineDataPoint {
 	takerBuyBaseAssetVolume: number;
 	takerBuyQuoteAssetVolume: number;
 }
+
+export interface BinanceWebsocketSubscription {
+	method: string,
+	params: string[],
+	id: number
+}
+
+export interface BinanceStreamResult {
+	result?: any;
+	id?: number;
+}
+
+export interface BinanceBookTickerStreamData extends BinanceStreamResult {
+	u: number,     	// order book updateId
+	s: string,     	// symbol
+	b: string, 		// best bid price
+	B: string, 		// best bid qty
+	a: string, 		// best ask price
+	A: string  		// best ask qty
+}

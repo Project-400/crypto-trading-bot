@@ -1,6 +1,7 @@
 import { Logger } from '../../config/logger/logger';
 import { BINANCE_WS } from '../../environment';
 import SocketConnection, { SocketMessage } from '../../config/websocket/connector';
+import { BinanceBookTickerStreamData, BinanceWebsocketSubscription } from '../../interfaces/interfaces';
 
 export default class PriceListener {
 
@@ -13,6 +14,8 @@ export default class PriceListener {
 		this.symbol = symbol;
 		this.lowercaseSymbol = this.symbol.toLowerCase();
 	}
+
+	public Price = (): number => this.currentPrice;
 
 	public ConnectAndListen = (): void => {
 		Logger.info('Opening Connection to Binance WebSocket');
@@ -34,7 +37,7 @@ export default class PriceListener {
 	private SocketOpen = (): void => {
 		Logger.info('Trader Bot connected to Binance WebSocket');
 
-		const data: any = {
+		const data: BinanceWebsocketSubscription = {
 			method: 'SUBSCRIBE',
 			params: [ `${this.lowercaseSymbol}@bookTicker` ],
 			id: 1
@@ -48,11 +51,9 @@ export default class PriceListener {
 	}
 
 	private SocketMessage = (msg: SocketMessage): void => {
-		Logger.info(`Received Message`);
-		const msgData: any = JSON.parse(msg.data as string);
-		console.log(msgData);
+		const msgData: BinanceBookTickerStreamData = JSON.parse(msg.data as string);
 		if (msgData.result === null) return;
-		this.currentPrice = msgData.a;
+		this.currentPrice = Number(msgData.a);
 	}
 
 	private SocketError = (): void => {

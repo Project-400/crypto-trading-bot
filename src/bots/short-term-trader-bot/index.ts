@@ -23,8 +23,7 @@ export default class ShortTermTraderBot {
 	private readonly botId: string;								// Unique Id generated when the Bot entity is created in the CRUD service
 	private readonly tradingPairSymbol: string;					// The symbol the bot should trade with, eg. USDTBTC
 	private readonly quoteQty: number;							// The limit of how much of the quote currency the bot can use, eg. 10 USDT
-	// private readonly interval: NodeJS.Timeout | undefined;		// A SetTimeout that will trigger updates
-	// private readonly binanceWsConnection!: WebSocket;			// Websocket Connection to Binance
+	private updateChecker: NodeJS.Timeout | undefined;		// A SetTimeout that will trigger updates
 	private readonly repeatedlyTrade!: boolean;					// Flat to indicate whether to continuously buy and sell (true) or shutdown after first sell (false)
 	private readonly tradeData: SymbolTraderData;
 	private readonly priceListener: PriceListener;
@@ -45,16 +44,25 @@ export default class ShortTermTraderBot {
 	public Start = (): void => {
 		this.isWorking = true;
 		this.priceListener.ConnectAndListen();
+		this.BeginCheckingUpdates();
 	}
 
 	public Stop = (): void => {
 		this.isWorking = false;
-		// if (this.interval) clearInterval(this.interval);
+		if (this.updateChecker) clearInterval(this.updateChecker);
 		this.priceListener.StopListening();
 	}
 
 	public Pause = (): void => {
 		this.isWorking = false;
+	}
+
+	private BeginCheckingUpdates = (): void => {
+		this.updateChecker = setInterval(async (): Promise<void> => {
+			await this.makeDecision();
+			if (this.priceListener.Price() !== 0) console.log(`CURRENT PRICE IS ${this.priceListener.Price()}`);
+			else console.log('PRICE is still 0');
+		}, 1000);
 	}
 
 	private updateState = (state: TradingBotState): void => {
@@ -70,14 +78,14 @@ export default class ShortTermTraderBot {
 	}
 
 	private makeDecision = async (): Promise<void> => {
-		console.log('-------------------------------');
-		console.log(`Symbol: ${this.tradeData.symbol}`);
-		// console.log(`Type: ${this.symbolType}`);
-		console.log(`Price is: ${this.tradeData.currentPrice}`);
-		console.log(`Price diff: ${this.tradeData.percentageDifference}%`);
-		console.log(`Price drop diff: ${this.tradeData.percentageDroppedFromHigh}%`);
-		console.log(`The bot is: ${this.state}`);
-		console.log(`Trade position state: ${this.tradeData.state}`);
+		// console.log('-------------------------------');
+		// console.log(`Symbol: ${this.tradeData.symbol}`);
+		// // console.log(`Type: ${this.symbolType}`);
+		// console.log(`Price is: ${this.tradeData.currentPrice}`);
+		// console.log(`Price diff: ${this.tradeData.percentageDifference}%`);
+		// console.log(`Price drop diff: ${this.tradeData.percentageDroppedFromHigh}%`);
+		// console.log(`The bot is: ${this.state}`);
+		// console.log(`Trade position state: ${this.tradeData.state}`);
 
 		Logger.info(`${this.tradeData.symbol} ($${this.tradeData.currentPrice} -- Percentage change: ${this.tradeData.percentageDifference}%`);
 
