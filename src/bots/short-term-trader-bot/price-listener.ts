@@ -1,13 +1,13 @@
 import { Logger } from '../../config/logger/logger';
-import WebSocket, { MessageEvent } from 'isomorphic-ws';
 import { BINANCE_WS } from '../../environment';
+import SocketConnection, { SocketMessage } from '../../config/websocket/connector';
 
 export default class PriceListener {
 
-	private binanceWsConnection!: WebSocket;		// Websocket Connection to Binance
-	private currentPrice: number = 0;				// The current price for the symbol being watched
-	private readonly symbol: string;				// The symbol string, eg. USDTBTC
-	private readonly lowercaseSymbol: string;		// Lowercase version of the symbol, eg. usdtbtc
+	private binanceWsConnection!: SocketConnection;		// Websocket Connection to Binance
+	private currentPrice: number = 0;					// The current price for the symbol being watched
+	private readonly symbol: string;					// The symbol string, eg. BTCUSDT
+	private readonly lowercaseSymbol: string;			// Lowercase version of the symbol, eg. btcusdt
 
 	public constructor(symbol: string) {
 		this.symbol = symbol;
@@ -17,7 +17,17 @@ export default class PriceListener {
 	public ConnectAndListen = (): void => {
 		Logger.info('Opening Connection to Binance WebSocket');
 
-		this.binanceWsConnection = new WebSocket(BINANCE_WS);
+		this.binanceWsConnection = new SocketConnection(
+			BINANCE_WS,
+			this.SocketOpen,
+			this.SocketClose,
+			this.SocketMessage,
+			this.SocketError
+		);
+	}
+
+	private SocketOpen = (): void => {
+		Logger.info('Trader Bot connected to Binance WebSocket');
 
 		const data: any = {
 			method: 'SUBSCRIBE',
@@ -25,21 +35,22 @@ export default class PriceListener {
 			id: 1
 		};
 
-		this.binanceWsConnection.onopen = (): void => {
-			Logger.info('Trader Bot to Binance WebSocket');
+		this.binanceWsConnection.SendData(data);
+	}
 
-			this.binanceWsConnection.send(JSON.stringify(data));
-		};
+	private SocketClose = (): void => {
+		Logger.info(`Trader Bot disconnected from Binance`);
+	}
 
-		this.binanceWsConnection.onclose = (): void => {
-			Logger.info(`Trader Bot disconnected from Binance`);
-		};
+	private SocketMessage = (msg: SocketMessage): void => {
+		const msgData: any = JSON.parse(msg.data as string);
+		console.log(msgData);
+		if (msgData.result === null) return;
+		this.currentPrice = msgData.a;
+	}
 
-		this.binanceWsConnection.onmessage = (msg: MessageEvent): void => {
-			const msgData: any = JSON.parse(msg.data as string);
-			if (msgData.result === null) return;
-			this.currentPrice = msgData.a;
-		};
+	private SocketError = (): void => {
+		Logger.info(`Trader Bot encountered an error while connected to Binance`);
 	}
 
 }
