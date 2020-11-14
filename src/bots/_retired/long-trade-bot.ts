@@ -6,7 +6,7 @@ import WebSocket, { MessageEvent } from 'isomorphic-ws';
 import { BinanceWS } from '../../environment';
 import { SymbolTraderData } from '../../models/symbol-trader-data';
 import { LongTradeBotState, SymbolType } from '@crypto-tracker/common-types';
-import { CryptoApi } from '../../external-api/crypto-api';
+import { CrudServiceApi } from '../../external-api/crud-service-api';
 
 export class LongTradeBot {
 
@@ -205,7 +205,7 @@ export class LongTradeBot {
 	private buyCurrency = async (): Promise<void> => {
 		this.updateState(LongTradeBotState.HOLD);
 
-		return CryptoApi.post('/transactions/buy', {
+		return CrudServiceApi.post('/transactions/buy', {
 			symbol: this.tradeData.symbol,
 			base: this.tradeData.base,
 			quote: this.tradeData.quote,
@@ -217,7 +217,7 @@ export class LongTradeBot {
 	private sellCurrency = async (): Promise<void> => {
 		this.updateState(LongTradeBotState.WAIT);
 
-		return CryptoApi.post('/transactions/sell', {
+		return CrudServiceApi.post('/transactions/sell', {
 			symbol: this.tradeData.symbol,
 			base: this.tradeData.base,
 			quote: this.tradeData.quote,

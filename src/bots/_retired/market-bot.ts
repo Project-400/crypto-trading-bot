@@ -2,7 +2,7 @@ import WebSocket, { MessageEvent } from 'isomorphic-ws';
 import { BinanceWS } from '../../environment';
 import { SymbolPriceData } from '../../models/symbol-price-data';
 import { TraderBot } from './trader-bot';
-import { CryptoApi } from '../../external-api/crypto-api';
+import { CrudServiceApi } from '../../external-api/crud-service-api';
 import { SymbolType, TradingBotState } from '@crypto-tracker/common-types';
 import { SymbolAnalystBotDecision, SymbolAnalystBot, SymbolPerformanceType } from './symbol-analyst-bot';
 import { Logger } from '../../config/logger/logger';
@@ -228,7 +228,7 @@ export class MarketBot {
 	private alreadyAssigned = (symbol: string): boolean => !!this.deployedTraderBots.find((bot: TraderBot): boolean => bot.symbol === symbol);
 
 	private getSymbolPairData = async (symbol: string): Promise<boolean> => {
-		const response: any = await CryptoApi.get(`/exchange-pairs/single/${symbol}/${this.limitedQuote}`);
+		const response: any = await CrudServiceApi.get(`/exchange-pairs/single/${symbol}/${this.limitedQuote}`);
 		if (response && response.success && response.info) return response.info;
 		return false;
 	}

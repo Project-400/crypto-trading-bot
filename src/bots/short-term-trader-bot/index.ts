@@ -1,9 +1,8 @@
-import { PositionState, TradingBotState } from '@crypto-tracker/common-types';
-import WebSocket from 'isomorphic-ws';
-import { SymbolTraderData } from '../../models/symbol-trader-data';
-import { CryptoApi } from '../../external-api/crypto-api';
+import { ExchangeInfoSymbol, PositionState, TradingBotState } from '@crypto-tracker/common-types';
+import { CrudServiceApi } from '../../external-api/crud-service-api';
 import { Logger } from '../../config/logger/logger';
 import PriceListener from './price-listener';
+import { BotTradeData } from '../../models/bot-trade-data';
 
 /*
 *
@@ -18,61 +17,70 @@ import PriceListener from './price-listener';
 
 export default class ShortTermTraderBot {
 
-	private state: TradingBotState = TradingBotState.WAITING;
-	private isWorking: boolean = false;							// Flag for when bot is currently trading or not
+	private botState: TradingBotState = TradingBotState.WAITING;
 	private readonly botId: string;								// Unique Id generated when the Bot entity is created in the CRUD service
 	private readonly tradingPairSymbol: string;					// The symbol the bot should trade with, eg. USDTBTC
+	public readonly base: string;											// The base currency (The currency being bought), eg. BTC
+	public readonly quote: string;											// The quote currency (The currency being used to spend / trade for the base), eg. USDT
 	private readonly quoteQty: number;							// The limit of how much of the quote currency the bot can use, eg. 10 USDT
 	private updateChecker: NodeJS.Timeout | undefined;		// A SetTimeout that will trigger updates
 	private readonly repeatedlyTrade!: boolean;					// Flat to indicate whether to continuously buy and sell (true) or shutdown after first sell (false)
-	private readonly tradeData: SymbolTraderData;
+	private tradeData?: BotTradeData;
 	private readonly priceListener: PriceListener;
 	private currentPrice: number = 0;
+	public exchangeInfo: ExchangeInfoSymbol;						// The Binance details related to this trading pair - Limits, rounding, etc.
 
 	public getBotId = (): string => this.botId;
-	public getIsWorking = (): boolean => this.isWorking;
+	public getBotState = (): TradingBotState => this.botState;
 
-	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number, repeatedlyTrade: boolean) {
+	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number, repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol) {
+		// TODO: Exchange info and other external calls to be passed in before starting
 		this.botId = botId;
 		this.tradingPairSymbol = tradingPairSymbol;
+		this.base = base;
+		this.quote = quote;
 		this.quoteQty = quoteQty;
 		this.repeatedlyTrade = repeatedlyTrade;
-		this.tradeData = new SymbolTraderData(tradingPairSymbol, base, quote);
 		this.priceListener = new PriceListener(this.tradingPairSymbol);
+		this.exchangeInfo = exchangeInfo;
+		this.SetState(TradingBotState.WAITING);
 	}
 
 	public Start = (): void => {
-		this.isWorking = true;
+		this.SetState(TradingBotState.STARTING);
 		this.priceListener.ConnectAndListen();
 		this.BeginCheckingUpdates();
 	}
 
 	public Stop = (): void => {
-		this.isWorking = false;
 		if (this.updateChecker) clearInterval(this.updateChecker);
 		this.priceListener.StopListening();
 	}
 
 	public Pause = (): void => {
-		this.isWorking = false;
+		this.SetState(TradingBotState.PAUSED);
 	}
 
 	private BeginCheckingUpdates = (): void => {
 		this.updateChecker = setInterval(async (): Promise<void> => {
-			await this.makeDecision();
+			if (this.priceListener.Price() !== 0) {
+				if (this.botState === TradingBotState.STARTING) this.SetState(TradingBotState.WAITING);
+				await this.makeDecision();
+			}
+
 			if (this.priceListener.Price() !== 0) console.log(`CURRENT PRICE IS ${this.priceListener.Price()}`);
 			else console.log('PRICE is still 0');
 		}, 1000);
 	}
 
-	private updateState = (state: TradingBotState): void => {
-		this.state = state;
+	private SetState = (state: TradingBotState): void => {
+		this.botState = state;
 	}
 
 	private saveTradeData = async (): Promise<void> => {
 		// if (this.saved) return;
 		// this.saved = true;
-		return CryptoApi.post('/bots/trade/save', {
+		return CrudServiceApi.post('/bots/trade/save', {
 			tradeData: this.tradeData
 		});
 	}
@@ -86,66 +94,73 @@ export default class ShortTermTraderBot {
 		// console.log(`Price drop diff: ${this.tradeData.percentageDroppedFromHigh}%`);
 		// console.log(`The bot is: ${this.state}`);
 		// console.log(`Trade position state: ${this.tradeData.state}`);
+		console.log(`Bot is ${this.botState}`);
+		// Logger.info(`${this.tradeData.symbol} ($${this.tradeData.currentPrice} -- Percentage change: ${this.tradeData.percentageDifference}%`);
 
-		Logger.info(`${this.tradeData.symbol} ($${this.tradeData.currentPrice} -- Percentage change: ${this.tradeData.percentageDifference}%`);
+		if (this.botState === TradingBotState.WAITING) {
+			this.tradeData = new BotTradeData(this.tradingPairSymbol, this.base, this.quote, this.exchangeInfo);
 
-		if (this.state === TradingBotState.WAITING) {
+			console.log(`BUY CURRENCY: ${this.tradingPairSymbol}`);
 			const buy: any = await this.BuyCurrency(this.quoteQty);
-
-			this.updateState(TradingBotState.TRADING);
+			this.SetState(TradingBotState.TRADING);
 
 			if (buy.success && buy.transaction) {
-				this.tradeData.logBuy(buy);
-				this.currentPrice = this.tradeData.currentPrice;
+				this.tradeData.SortBuyData(buy.transaction);
+				this.currentPrice = this.tradeData.currentPrice; // TODO: Is this needed?
 			}
 		}
 
 		if (
-			this.state === TradingBotState.TRADING &&
-			(
-				this.tradeData.state === PositionState.SELL ||
-				this.tradeData.state === PositionState.TIMEOUT_SELL
-			)
+			this.botState === TradingBotState.TRADING// &&
+			// (
+			// 	// this.tradeData.state === PositionState.SELL ||
+			// 	// this.tradeData.state === PositionState.TIMEOUT_SELL
+			// )
 		) {
-			const sell: any = await this.SellCurrency();
 
-			this.updateState(TradingBotState.PAUSED);
+			const sell: any = await this.SellCurrency();
+			this.SetState(TradingBotState.PAUSED);
+
+			console.log(`SELL CURRENCY: ${this.tradingPairSymbol}`);
 
 			if (sell.success && sell.transaction) {
-				this.tradeData.logSell(sell);
-
-				this.updateState(TradingBotState.FINISHED); // TEMPORARY
+				this.tradeData?.SortSellData(sell.transaction);
+				this.SetState(TradingBotState.FINISHED); // TEMPORARY
 			}
 		}
 
-		if (this.state === TradingBotState.FINISHED) {
-			this.tradeData.finish();
-			await this.saveTradeData();
+		if (this.botState === TradingBotState.FINISHED) {
+			this.tradeData.Finish();
+
+			console.log(this.tradeData);
+			// await this.saveTradeData();
 
 			this.Stop();
 		}
 	}
 
-	private BuyCurrency = async (quantity: number): Promise<void> =>  {
-		Logger.info(`Buying ${this.tradeData.base} with ${quantity} ${this.tradeData.quote}`);
+	private BuyCurrency = async (quantity: number): Promise<void> =>  { // TODO: Buy through CRUD service - Log data there
+		Logger.info(`Buying ${this.base} with ${quantity} ${this.quote}`);
 
-		return CryptoApi.post('/transactions/buy', {
-			symbol: this.tradeData.symbol,
-			base: this.tradeData.base,
-			quote: this.tradeData.quote,
+		return CrudServiceApi.post('/transactions/buy', {
+			symbol: this.tradingPairSymbol,
+			base: this.base,
+			quote: this.quote,
 			quantity,
 			isTest: false
 		});
 	}
 
-	private SellCurrency = async (): Promise<void> => {
-		Logger.info(`Selling ${this.tradeData.getSellQuantity()} ${this.tradeData.base}`);
+	private SellCurrency = async (): Promise<void> => { // TODO: Buy through CRUD service - Log data there
+		if (!this.tradeData) return console.error('The Trade Date object for this bot does not exist');
 
-		return CryptoApi.post('/transactions/sell', {
-			symbol: this.tradeData.symbol,
-			base: this.tradeData.base,
-			quote: this.tradeData.quote,
-			quantity: this.tradeData.getSellQuantity(),
+		Logger.info(`Selling ${this.tradeData.GetSellQuantity()} ${this.tradeData.base}`);
+
+		return CrudServiceApi.post('/transactions/sell', {
+			symbol: this.tradingPairSymbol,
+			base: this.base,
+			quote: this.quote,
+			quantity: this.tradeData.GetSellQuantity(),
 			isTest: false
 		});
 	}

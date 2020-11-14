@@ -1,7 +1,7 @@
 import { CrudServiceUrl } from '../environment';
 import { HTTP } from './http';
 
-export class CryptoApi {
+export class CrudServiceApi {
 
 	public static async get(path: string): Promise<any> {
 		return HTTP.get(`${CrudServiceUrl}${path}`);

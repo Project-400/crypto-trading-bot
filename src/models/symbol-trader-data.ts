@@ -5,7 +5,7 @@ import {
 	SymbolType,
 	TransactionFillCommission
 } from '@crypto-tracker/common-types';
-import { CryptoApi } from '../external-api/crypto-api';
+import { CrudServiceApi } from '../external-api/crud-service-api';
 
 export class SymbolTraderData implements ISymbolTraderData {
 
@@ -37,11 +37,7 @@ export class SymbolTraderData implements ISymbolTraderData {
 	};
 	public startTime: number;
 
-	public constructor(
-		symbol: string,
-		base: string,
-		quote: string
-	) {
+	public constructor(symbol: string, base: string, quote: string) {
 		this.symbol = symbol;
 		this.base = base;
 		this.quote = quote;
@@ -139,7 +135,7 @@ export class SymbolTraderData implements ISymbolTraderData {
 	}
 
 	public getExchangeInfo = async (): Promise<void> => {
-		const response: any = await CryptoApi.get(`/exchange-info/single/${this.symbol}/${this.quote}`);
+		const response: any = await CrudServiceApi.get(`/exchange-info/single/${this.symbol}/${this.quote}`);
 		if (response.success) this.exchangeInfo = response.info;
 
 		if (!this.exchangeInfo) console.error(`No exchange info for ${this.symbol}`);

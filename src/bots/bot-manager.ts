@@ -15,7 +15,7 @@ export class BotManager {
 	public static deployNewBot = (botId: string): ShortTermTraderBot => {
 		if (BotManager.getBot(botId)) throw Error('Bot already exists');
 
-		const bot: ShortTermTraderBot = new ShortTermTraderBot(botId, 'BTC', 'USDT', 'BTCUSDT', 10, true);
+		const bot: ShortTermTraderBot = new ShortTermTraderBot(botId, 'WAVES', 'USDT', 'WAVESUSDT', 10, true);
 		BotManager.deployedBots.push(bot);
 		bot.Start();
 		return bot;
