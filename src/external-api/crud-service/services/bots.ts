@@ -1,4 +1,4 @@
-import { CrudService } from './crud-service';
+import CrudService from './index';
 import { BotTradeData } from '../../models/bot-trade-data';
 
 export default class CrudServiceBots extends CrudService {

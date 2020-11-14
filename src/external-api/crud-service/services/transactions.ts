@@ -1,4 +1,4 @@
-import { CrudService } from './crud-service';
+import CrudService from './index';
 
 export default class CrudServiceTransactions extends CrudService {
 

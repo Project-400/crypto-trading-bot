@@ -2,7 +2,7 @@ import WebSocket, { MessageEvent } from 'isomorphic-ws';
 import { BinanceWS } from '../../environment';
 import { SymbolTraderData } from '../../models/symbol-trader-data';
 import { PositionState, SymbolType, TradingBotState } from '@crypto-tracker/common-types';
-import { CrudServiceApi } from '../../external-api/crud-service-api';
+import { CrudService } from '../../external-api/crud-service';
 import { Logger } from '../../config/logger/logger';
 
 export class TraderBot {
@@ -134,7 +134,7 @@ export class TraderBot {
 	private saveTradeData = async (): Promise<void> => {
 		if (this.saved) return;
 		this.saved = true;
-		return CrudServiceApi.post('/bots/trade/save', {
+		return CrudService.post('/bots/trade/save', {
 			tradeData: this.tradeData
 		});
 	}
@@ -142,7 +142,7 @@ export class TraderBot {
 	private buyCurrency = async (quantity: number): Promise<void> =>  {
 		Logger.info(`Buying ${this.tradeData.base} with ${quantity} ${this.tradeData.quote}`);
 
-		return CrudServiceApi.post('/transactions/buy', {
+		return CrudService.post('/transactions/buy', {
 			symbol: this.tradeData.symbol,
 			base: this.tradeData.base,
 			quote: this.tradeData.quote,
@@ -154,7 +154,7 @@ export class TraderBot {
 	private sellCurrency = async (): Promise<void> => {
 		Logger.info(`Selling ${this.tradeData.getSellQuantity()} ${this.tradeData.base}`);
 
-		return CrudServiceApi.post('/transactions/sell', {
+		return CrudService.post('/transactions/sell', {
 			symbol: this.tradeData.symbol,
 			base: this.tradeData.base,
 			quote: this.tradeData.quote,
