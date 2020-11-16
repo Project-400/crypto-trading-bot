@@ -1,8 +1,9 @@
 import {
 	ExchangeInfoSymbol,
-	TransactionFillCommission
+	TransactionFill
 } from '@crypto-tracker/common-types';
 import Calculations from '../utils/calculations';
+import { CommissionTotals } from '../interfaces/interfaces';
 
 /*
 *
@@ -12,28 +13,35 @@ import Calculations from '../utils/calculations';
 
 export class BotTradeData { // New version of SymbolTraderData
 
-	public symbol: string;											// The trading pair symbol, eg. BTCUSDT
-	public base: string;											// The base currency (The currency being bought), eg. BTC
-	public quote: string;											// The quote currency (The currency being used to spend / trade for the base), eg. USDT
-	public baseQty: number = 0;										// The amount of base currency currently being traded
-	public quoteQty: number = 0;									// The amount of quote currency being used to trade with (Limit set by bot)
-	public profit: number = 0;										// The current / final amount of profit made (measured in the quote currency)
-	public startPrice: number = 0;									// The price of the base (measured in quote) for the initial trade
-	public currentPrice: number = 0;								// The current price of the base (measured in quote)
-	public highestPriceReached: number = 0;							// The highest price of the base (measured in quote) reached during trading
-	public lowestPriceReached: number = 0;							// The lowest price of the base (measured in quote) reached during trading
-	public priceDifference: number = 0;								// The difference in price of the base from the start to the current
-	public percentageDifference: number = 0;						// The percentage difference in price of the base from the start to the current
-	public percentageDroppedFromHigh: number = 0;					// The percentage difference in price of the base from the highest price to the current
-	public commissions: TransactionFillCommission[] = [];			// A list of commissions taken by Binance
-	public exchangeInfo: ExchangeInfoSymbol;						// The Binance details related to this trading pair - Limits, rounding, etc.
-	public baseMinQty: number = 0;									// The minimum amount TODO: Should this be the quote instead of base?
-	public baseStepSize: number = 0;								// The minimum step size TODO: Same as above
-	public startTime: number;										// The time the trading began (For calculations)
-	public times: { createdAt: string; finishedAt: string } = {		// Times actions occurred (For DB records)
-		createdAt: '',
-		finishedAt: ''
-	};
+	public symbol: string;												// The trading pair symbol, eg. BTCUSDT
+	public base: string;												// The base currency (The currency being bought), eg. BTC
+	public quote: string;												// The quote currency (The currency being used to spend / trade for the base), eg. USDT
+	public baseQty: number = 0;											// The amount of base currency currently being traded
+	public quoteQty: number = 0;										// The amount of quote currency being used to trade with (Limit set by bot)
+	public profit: number = 0;											// The current / final amount of profit made (measured in the quote currency)
+	public startPrice: number = 0;										// The price of the base (measured in quote) for the initial trade
+	public currentPrice: number = 0;									// The current price of the base (measured in quote)
+	public highestPriceReached: number = 0;								// The highest price of the base (measured in quote) reached during trading
+	public lowestPriceReached: number = 0;								// The lowest price of the base (measured in quote) reached during trading
+	public priceDifference: number = 0;									// The difference in price of the base from the start to the current
+	public percentageDifference: number = 0;							// The percentage difference in price of the base from the start to the current
+	public percentageDroppedFromHigh: number = 0;						// The percentage difference in price of the base from the highest price to the current
+	public fills: TransactionFill[] = [];								// A list of fills (sub-transactions that make up the total transaction) taken by Binance
+	public commissions: CommissionTotals = { };							// A map of commissions totals taken by Binance
+	public baseMinQty: number = 0;										// The minimum amount TODO: Should this be the quote instead of base?
+	public baseStepSize: number = 0;									// The minimum step size TODO: Same as above
+	public startTime: number;											// The time the trading began (For calculations)
+	public quotePrecision: number = 0;									// The time the trading began (For calculations)
+	public times: {														// Times actions occurred (For DB records)
+		createdAt?: string;													// Trade data object created
+		buyAt?: string;														// Buy action started
+		sellAt?: string;													// Sell action started
+		buyTransactionAt?: string;											// Time Binance performed buy transaction
+		sellTransactionAt?: string;											// Time Binance performed sell transaction
+		finishedAt?: string;												// Trade data finished
+	} = { };
+	public buyTransactionType?: string;									// Buy Transaction type, eg. MARKET
+public sellTransactionType?: string;									// Sell Transaction type, eg. MARKET
 
 	// public baseInitialQty: number = 0; // to do
 	// public quoteQtySpent: number = 0; // to do
@@ -42,7 +50,6 @@ export class BotTradeData { // New version of SymbolTraderData
 		symbol: string,
 		base: string,
 		quote: string,
-		// startPrice: number,				// TODO: This needs to be calculated based on average from buy
 		exchangeInfo: ExchangeInfoSymbol
 	) {
 		this.symbol = symbol;
@@ -50,9 +57,7 @@ export class BotTradeData { // New version of SymbolTraderData
 		this.quote = quote;
 		this.times.createdAt = new Date().toISOString();
 		this.startTime = new Date().getTime();
-		this.exchangeInfo = exchangeInfo;
-		this.SetTradeLotSize();
-		// this.SetInitialPrices(startPrice);
+		this.SortExchangeInfo(exchangeInfo);
 	}
 
 	public UpdatePrice = (price: number): void => {
@@ -62,19 +67,24 @@ export class BotTradeData { // New version of SymbolTraderData
 	}
 
 	public SortBuyData = (transaction: any): void => {			// TODO: Refactor? Pass in details needed only
-		if (transaction.response && transaction.response.fills) {
-			const commission: { total: number; isQuote: boolean; isBase: boolean } = this.LogCommissions(transaction.response.fills);
-			this.CalculateBuyPrice(transaction.response.fills);
-			this.baseQty += transaction.response.executedQty - (commission.isBase ? commission.total : 0);
-			this.quoteQty -= transaction.response.cummulativeQuoteQty;
+		if (transaction.fills) {
+			this.fills.push(...transaction.fills);
+			this.SortCommissions(this.fills);
+			this.CalculateAverageBuyPrice(this.fills);
+
+			this.baseQty += Number(transaction.executedQty);
+			this.quoteQty -= Number(transaction.cummulativeQuoteQty);
+			this.buyTransactionType = transaction.type;
+			this.times.buyTransactionAt = new Date(transaction.transactTime).toISOString();
 		}
 	}
 
 	public SortSellData = (transaction: any): void => {			// TODO: Refactor? Pass in details needed only
 		if (transaction.response && transaction.response.fills) {
-			const commission: { total: number; isQuote: boolean; isBase: boolean } = this.LogCommissions(transaction.response.fills);
+			// const commission: { total: number; isQuote: boolean; isBase: boolean } = this.SortCommissions(transaction.response.fills);
+			this.SortCommissions(transaction.response.fills);
 			this.baseQty -= transaction.response.executedQty;
-			this.quoteQty += transaction.response.cummulativeQuoteQty - (commission.isQuote ? commission.total : 0);
+			// this.quoteQty += transaction.response.cummulativeQuoteQty - (commission.isQuote ? commission.total : 0);
 		}
 	}
 
@@ -90,7 +100,7 @@ export class BotTradeData { // New version of SymbolTraderData
 
 		// qty = this.baseQty - (this.baseQty / 800);
 
-		return qty.toFixed(this.exchangeInfo?.quotePrecision);
+		return qty.toFixed(this.quotePrecision);
 	}
 
 	public Finish = (): void => {
@@ -117,21 +127,17 @@ export class BotTradeData { // New version of SymbolTraderData
 		this.currentPrice = newPrice;
 	}
 
-	private LogCommissions = (fills: TransactionFillCommission[]): { total: number; isQuote: boolean; isBase: boolean } => {
-		this.commissions.push(...fills);
-		let total: number = 0;
-		let isQuote: boolean = false;
-		let isBase: boolean = false;
-		fills.map((c: TransactionFillCommission): void => { // TODO: Check this functionality - Different asset types. Same for buy and sell?
-			console.log(c);
-			isQuote = c.commissionAsset === this.quote; // To be changed - May have multiple commissions
-			isBase = c.commissionAsset === this.base;
-			total += c.commission;
+	private SortCommissions = (fills: TransactionFill[]): void => {
+		fills.map((c: TransactionFill): void => {
+			if (this.commissions[c.commissionAsset]) this.commissions[c.commissionAsset] += Number(c.commission);
+			else this.commissions[c.commissionAsset] = Number(c.commission);
+			if (c.commissionAsset === this.base) this.baseQty -= Number(c.commission);
+			if (c.commissionAsset === this.quote) this.quoteQty += Number(c.commission);
 		});
-		return { total, isQuote, isBase };
+		// return { total, isQuote, isBase };
 	}
 
-	private CalculateBuyPrice = (fills: any[]): void => { // TODO: Check this functionality
+	private CalculateAverageBuyPrice = (fills: TransactionFill[]): void => { // TODO: Check this functionality
 		let total: number = 0;
 		fills.map((c: any): void => total += c.price);
 		if (total) {
@@ -150,13 +156,16 @@ export class BotTradeData { // New version of SymbolTraderData
 	// 	this.getLotSize();
 	// }
 
-	private SetTradeLotSize = (): void => {
-		const lotSizeFilter: any = this.exchangeInfo.filters.find((f: any): boolean => f.filterType === 'LOT_SIZE');
+	private SortExchangeInfo = (exchangeInfo: ExchangeInfoSymbol): void => {
+		this.SetTradeLotSize(exchangeInfo);
+	}
+
+	private SetTradeLotSize = (exchangeInfo: ExchangeInfoSymbol): void => {
+		const lotSizeFilter: any = exchangeInfo.filters.find((f: any): boolean => f.filterType === 'LOT_SIZE');
 		if (lotSizeFilter) {
 			console.log(`${this.symbol} has a step size limit of ${lotSizeFilter.stepSize}`);
 			this.baseMinQty = lotSizeFilter.minQty;
 			this.baseStepSize = lotSizeFilter.stepSize;
 		}
 	}
-
 }

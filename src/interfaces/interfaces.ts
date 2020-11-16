@@ -31,3 +31,7 @@ export interface BinanceBookTickerStreamData extends BinanceStreamResult {
 	a: string, 		// best ask price
 	A: string  		// best ask qty
 }
+
+export interface CommissionTotals {
+	[symbol: string]: number;
+}
