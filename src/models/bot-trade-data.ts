@@ -79,25 +79,34 @@ export class BotTradeData { // New version of SymbolTraderData
 	}
 
 	public UpdatePrice = (price: number): void => {
-		if (this.currentPrice) return this.CalculatePriceChanges(price);
+		const time: string = new Date().toISOString();
+		if (this.currentPrice) return this.CalculatePriceChanges(price, time);
 		this.currentPrice = price;
 	}
 
 	public SortBuyData = (transaction: ExchangeCurrencyTransactionFull): void => {
+		this.startedTrading = true;
+		const time: string = new Date().toISOString();
+		this.times.buyAt = time;
+		this.times.buyAt = time;
+
 		if (transaction.fills) {
 			this.buyFills.push(...transaction.fills);
 			this.SortCommissions(this.buyFills);
-			this.CalculateBuyPrices(this.buyFills);
+			this.CalculateBuyPrices(this.buyFills, time);
 
 			this.baseQty += Number(transaction.executedQty);
 			this.quoteQty -= Number(transaction.cummulativeQuoteQty);
 			this.buyTransactionType = transaction.type;
 			this.times.buyTransactionAt = new Date(transaction.transactTime).toISOString();
 		}
-		this.startedTrading = true;
 	}
 
 	public SortSellData = (transaction: ExchangeCurrencyTransactionFull): void => {
+		this.finishedTrading = true;
+		const time: string = new Date().toISOString();
+		this.times.sellAt = time;
+
 		if (transaction.fills) {
 			this.sellFills.push(...transaction.fills);
 			this.SortCommissions(this.sellFills);
@@ -108,8 +117,6 @@ export class BotTradeData { // New version of SymbolTraderData
 			this.sellTransactionType = transaction.type;
 			this.times.sellTransactionAt = new Date(transaction.transactTime).toISOString();
 		}
-
-		this.finishedTrading = true;
 	}
 
 	public GetSellQuantity = (): string => {
@@ -131,25 +138,37 @@ export class BotTradeData { // New version of SymbolTraderData
 		this.times.finishedAt = new Date().toISOString();
 	}
 
-	private CalculatePriceChanges = (price: number): void => {
+	private CalculatePriceChanges = (price: number, time: string): void => {
 		if (this.startedTrading) {
 			this.percentageDifference = Calculations.PricePercentageDifference(this.startPrice, price);
 			this.percentageDroppedFromHigh = Calculations.PricePercentageDifference(this.highestPriceReached, price);
 		}
 		this.priceDifference = Calculations.PriceDifference(this.currentPrice, price);
-		this.UpdateHighPrices(price);
-		this.UpdateLowPrices(price);
+		this.UpdateHighPrices(price, time);
+		this.UpdateLowPrices(price, time);
 		this.currentPrice = price;
 	}
 
-	private UpdateHighPrices = (price: number): void => {
-		if (price > this.highestPriceReached) this.highestPriceReached = price;
-		if (this.startedTrading && price > this.highestPriceReachedDuringTrade) this.highestPriceReachedDuringTrade = price;
+	private UpdateHighPrices = (price: number, time: string): void => {
+		if (!this.highestPriceReached || price > this.highestPriceReached) {
+			this.highestPriceReached = price;
+			this.times.highestPriceReachedAt = time;
+		}
+		if (this.startedTrading && (!this.highestPriceReachedDuringTrade || price > this.highestPriceReachedDuringTrade)) {
+			this.highestPriceReachedDuringTrade = price;
+			this.times.highestPriceReachedDuringTradeAt = time;
+		}
 	}
 
-	private UpdateLowPrices = (price: number): void => {
-		if (price > this.lowestPriceReached) this.lowestPriceReached = price;
-		if (this.startedTrading && price > this.lowestPriceReachedDuringTrade) this.lowestPriceReachedDuringTrade = price;
+	private UpdateLowPrices = (price: number, time: string): void => {
+		if (!this.lowestPriceReached || price > this.lowestPriceReached) {
+			this.lowestPriceReached = price;
+			this.times.lowestPriceReachedAt = time;
+		}
+		if (this.startedTrading && (!this.lowestPriceReachedDuringTrade || price > this.lowestPriceReachedDuringTrade)) {
+			this.lowestPriceReachedDuringTrade = price;
+			this.times.lowestPriceReachedDuringTradeAt = time;
+		}
 	}
 
 	private SortCommissions = (fills: TransactionFill[]): void => {
@@ -161,15 +180,15 @@ export class BotTradeData { // New version of SymbolTraderData
 		});
 	}
 
-	private CalculateBuyPrices = (fills: TransactionFill[]): void => {
+	private CalculateBuyPrices = (fills: TransactionFill[], time: string): void => {
 		const fillPrices: FillPriceCalculations = this.CalculateFillPrices(fills);
 		this.highestBuyPrice = fillPrices.highest;
 		this.lowestBuyPrice = fillPrices.lowest;
 		this.averageBuyPrice = fillPrices.average;
 		this.startPrice = fillPrices.average;
 		this.currentPrice = fillPrices.average;
-		this.UpdateHighPrices(fillPrices.highest);
-		this.UpdateLowPrices(fillPrices.lowest);
+		this.UpdateHighPrices(fillPrices.highest, time);
+		this.UpdateLowPrices(fillPrices.lowest, time);
 	}
 
 	private CalculateSellPrices = (fills: TransactionFill[]): void => {
@@ -187,8 +206,8 @@ export class BotTradeData { // New version of SymbolTraderData
 		fills.map((c: TransactionFill): void => {
 			const price: number = Number(c.price);
 			total += price;
-			highest = price > highest ? price : highest;
-			lowest = price < lowest ? price : lowest;
+			highest = !highest || price > highest ? price : highest;
+			lowest = !lowest || price < lowest ? price : lowest;
 		});
 		if (total) average = total / fills.length;
 
