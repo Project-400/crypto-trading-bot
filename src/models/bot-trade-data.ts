@@ -3,7 +3,7 @@ import {
 	TransactionFill
 } from '@crypto-tracker/common-types';
 import Calculations from '../utils/calculations';
-import { CommissionTotals } from '../interfaces/interfaces';
+import { CommissionTotals, FillPriceCalculations } from '../interfaces/interfaces';
 
 /*
 *
@@ -23,10 +23,19 @@ export class BotTradeData { // New version of SymbolTraderData
 	public currentPrice: number = 0;									// The current price of the base (measured in quote)
 	public highestPriceReached: number = 0;								// The highest price of the base (measured in quote) reached during trading
 	public lowestPriceReached: number = 0;								// The lowest price of the base (measured in quote) reached during trading
+	public highestPriceReachedDuringTrade: number = 0;					// The highest price of the base (measured in quote) reached during trading
+	public lowestPriceReachedDuringTrade: number = 0;					// The lowest price of the base (measured in quote) reached during trading
+	public highestBuyPrice: number = 0;									// The highest price paid for buying the base currency
+	public lowestBuyPrice: number = 0;									// The lowest price paid for buying the base currency
+	public averageBuyPrice: number = 0;									// The average price paid for buying the base currency
+	public highestSellPrice: number = 0;								// The highest price received for selling the base currency
+	public lowestSellPrice: number = 0;									// The lowest price received for selling the base currency
+	public averageSellPrice: number = 0;								// The average price received for selling the base currency
 	public priceDifference: number = 0;									// The difference in price of the base from the start to the current
 	public percentageDifference: number = 0;							// The percentage difference in price of the base from the start to the current
 	public percentageDroppedFromHigh: number = 0;						// The percentage difference in price of the base from the highest price to the current
-	public fills: TransactionFill[] = [];								// A list of fills (sub-transactions that make up the total transaction) taken by Binance
+	public buyFills: TransactionFill[] = [];							// A list of buy fills (sub-transactions that make up the total transaction) by Binance
+	public sellFills: TransactionFill[] = [];							// A list of sell fills (sub-transactions that make up the total transaction) by Binance
 	public commissions: CommissionTotals = { };							// A map of commissions totals taken by Binance
 	public baseMinQty: number = 0;										// The minimum amount TODO: Should this be the quote instead of base?
 	public baseStepSize: number = 0;									// The minimum step size TODO: Same as above
@@ -34,14 +43,19 @@ export class BotTradeData { // New version of SymbolTraderData
 	public quotePrecision: number = 0;									// The time the trading began (For calculations)
 	public times: {														// Times actions occurred (For DB records)
 		createdAt?: string;													// Trade data object created
+		finishedAt?: string;												// Trade data finished
 		buyAt?: string;														// Buy action started
 		sellAt?: string;													// Sell action started
 		buyTransactionAt?: string;											// Time Binance performed buy transaction
 		sellTransactionAt?: string;											// Time Binance performed sell transaction
-		finishedAt?: string;												// Trade data finished
+		highestPriceReachedAt?: string;
+		lowestPriceReachedAt?: string;
+		highestPriceReachedDuringTradeAt?: string;
+		lowestPriceReachedDuringTradeAt?: string;
 	} = { };
 	public buyTransactionType?: string;									// Buy Transaction type, eg. MARKET
-public sellTransactionType?: string;									// Sell Transaction type, eg. MARKET
+	public sellTransactionType?: string;								// Sell Transaction type, eg. MARKET
+	public sellQty?: string;												// Quantity of the base being sold
 
 	// public baseInitialQty: number = 0; // to do
 	// public quoteQtySpent: number = 0; // to do
@@ -66,11 +80,11 @@ public sellTransactionType?: string;									// Sell Transaction type, eg. MARKE
 		this.SetInitialPrices(price);
 	}
 
-	public SortBuyData = (transaction: any): void => {			// TODO: Refactor? Pass in details needed only
+	public SortBuyData = (transaction: any): void => {
 		if (transaction.fills) {
-			this.fills.push(...transaction.fills);
-			this.SortCommissions(this.fills);
-			this.CalculateAverageBuyPrice(this.fills);
+			this.buyFills.push(...transaction.fills);
+			this.SortCommissions(this.buyFills);
+			this.CalculateBuyPrices(this.buyFills);
 
 			this.baseQty += Number(transaction.executedQty);
 			this.quoteQty -= Number(transaction.cummulativeQuoteQty);
@@ -79,8 +93,12 @@ public sellTransactionType?: string;									// Sell Transaction type, eg. MARKE
 		}
 	}
 
-	public SortSellData = (transaction: any): void => {			// TODO: Refactor? Pass in details needed only
-		if (transaction.response && transaction.response.fills) {
+	public SortSellData = (transaction: any): void => {
+		if (transaction.fills) {
+			this.sellFills.push(...transaction.fills);
+			this.SortCommissions(this.sellFills); // TODO: Confirm should this be used for both buy and sell?
+			this.CalculateSellPrices(this.sellFills);
+
 			// const commission: { total: number; isQuote: boolean; isBase: boolean } = this.SortCommissions(transaction.response.fills);
 			this.SortCommissions(transaction.response.fills);
 			this.baseQty -= transaction.response.executedQty;
@@ -100,7 +118,9 @@ public sellTransactionType?: string;									// Sell Transaction type, eg. MARKE
 
 		// qty = this.baseQty - (this.baseQty / 800);
 
-		return qty.toFixed(this.quotePrecision);
+		this.sellQty = qty.toFixed(this.quotePrecision);
+
+		return this.sellQty;
 	}
 
 	public Finish = (): void => {
@@ -134,17 +154,36 @@ public sellTransactionType?: string;									// Sell Transaction type, eg. MARKE
 			if (c.commissionAsset === this.base) this.baseQty -= Number(c.commission);
 			if (c.commissionAsset === this.quote) this.quoteQty += Number(c.commission);
 		});
-		// return { total, isQuote, isBase };
 	}
 
-	private CalculateAverageBuyPrice = (fills: TransactionFill[]): void => { // TODO: Check this functionality
+	private CalculateBuyPrices = (fills: TransactionFill[]): void => {
+		const fillPrices: FillPriceCalculations = this.CalculateFillPrices(fills);
+		this.highestBuyPrice = fillPrices.highest;
+		this.lowestBuyPrice = fillPrices.lowest;
+		this.averageBuyPrice = fillPrices.average;
+	}
+
+	private CalculateSellPrices = (fills: TransactionFill[]): void => {
+		const fillPrices: FillPriceCalculations = this.CalculateFillPrices(fills);
+		this.highestSellPrice = fillPrices.highest;
+		this.lowestSellPrice = fillPrices.lowest;
+		this.averageSellPrice = fillPrices.average;
+	}
+
+	private CalculateFillPrices = (fills: TransactionFill[]): FillPriceCalculations => {
 		let total: number = 0;
-		fills.map((c: any): void => total += c.price);
-		if (total) {
-			const avgPrice: number = total / fills.length;
-			this.startPrice = avgPrice;
-			this.currentPrice = avgPrice;
-		}
+		let highest: number = 0;
+		let lowest: number = 0;
+		let average: number = 0;
+		fills.map((c: TransactionFill): void => {
+			const price: number = Number(c.price);
+			total += price;
+			highest = price > highest ? price : highest;
+			lowest = price < lowest ? price : lowest;
+		});
+		if (total) average = total / fills.length;
+
+		return { highest, lowest, average };
 	}
 
 	// public getExchangeInfo = async (): Promise<void> => {

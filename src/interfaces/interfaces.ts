@@ -35,3 +35,9 @@ export interface BinanceBookTickerStreamData extends BinanceStreamResult {
 export interface CommissionTotals {
 	[symbol: string]: number;
 }
+
+export interface FillPriceCalculations {
+	highest: number;
+	lowest: number;
+	average: number;
+}
