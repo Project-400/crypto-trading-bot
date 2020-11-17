@@ -46,7 +46,8 @@ export class BotTradeData { // New version of SymbolTraderData
 	public baseMinQty: number = 0;								// Minimum amount of the base that can be purchased
 	public baseStepSize: number = 0;							// Minimum step size (rounding value) of the base that can be purchased
 	public startTime: number;									// Time the trading began (For calculations)
-	public quotePrecision: number = 0;							// Time the trading began (For calculations)
+	public quoteAssetPrecision: number = 0;						// Rounding precision for quote currency
+	public baseAssetPrecision: number = 0;						// Rounding precision for base currency
 	public times: {												// Times actions occurred (For DB records)
 		createdAt?: string;											// Time trade data object created
 		finishedAt?: string;										// Time trade data finished
@@ -121,7 +122,7 @@ export class BotTradeData { // New version of SymbolTraderData
 			qty = this.baseQty;
 		}
 
-		this.sellQty = qty.toFixed(this.quotePrecision);
+		this.sellQty = qty.toFixed(this.quoteAssetPrecision);
 
 		return this.sellQty;
 	}
@@ -196,6 +197,8 @@ export class BotTradeData { // New version of SymbolTraderData
 
 	private SortExchangeInfo = (exchangeInfo: ExchangeInfoSymbol): void => {
 		this.SetTradeLotSize(exchangeInfo);
+		this.quoteAssetPrecision = exchangeInfo.quoteAssetPrecision;
+		this.baseAssetPrecision = exchangeInfo.baseAssetPrecision;
 	}
 
 	private SetTradeLotSize = (exchangeInfo: ExchangeInfoSymbol): void => {
