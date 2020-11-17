@@ -1,4 +1,7 @@
 import {
+	ExchangeCurrencyTransactionFull,
+	ExchangeInfoFilter,
+	ExchangeInfoFilterType,
 	ExchangeInfoSymbol,
 	TransactionFill
 } from '@crypto-tracker/common-types';
@@ -7,58 +10,58 @@ import { CommissionTotals, FillPriceCalculations } from '../interfaces/interface
 
 /*
 *
-* This is an object to contain all of the data related to a specific bot trade session.
+* This is an object to contain all of the trade data related to a specific bot trade session.
+* Includes prices, percentages, times, quantities, commissions, etc.
 *
 * */
 
 export class BotTradeData { // New version of SymbolTraderData
 
-	public symbol: string;												// The trading pair symbol, eg. BTCUSDT
-	public base: string;												// The base currency (The currency being bought), eg. BTC
-	public quote: string;												// The quote currency (The currency being used to spend / trade for the base), eg. USDT
-	public baseQty: number = 0;											// The amount of base currency currently being traded
-	public quoteQty: number = 0;										// The amount of quote currency being used to trade with (Limit set by bot)
-	public profit: number = 0;											// The current / final amount of profit made (measured in the quote currency)
-	public startPrice: number = 0;										// The price of the base (measured in quote) for the initial trade
-	public currentPrice: number = 0;									// The current price of the base (measured in quote)
-	public highestPriceReached: number = 0;								// The highest price of the base (measured in quote) reached during trading
-	public lowestPriceReached: number = 0;								// The lowest price of the base (measured in quote) reached during trading
-	public highestPriceReachedDuringTrade: number = 0;					// The highest price of the base (measured in quote) reached during trading
-	public lowestPriceReachedDuringTrade: number = 0;					// The lowest price of the base (measured in quote) reached during trading
-	public highestBuyPrice: number = 0;									// The highest price paid for buying the base currency
-	public lowestBuyPrice: number = 0;									// The lowest price paid for buying the base currency
-	public averageBuyPrice: number = 0;									// The average price paid for buying the base currency
-	public highestSellPrice: number = 0;								// The highest price received for selling the base currency
-	public lowestSellPrice: number = 0;									// The lowest price received for selling the base currency
-	public averageSellPrice: number = 0;								// The average price received for selling the base currency
-	public priceDifference: number = 0;									// The difference in price of the base from the start to the current
-	public percentageDifference: number = 0;							// The percentage difference in price of the base from the start to the current
-	public percentageDroppedFromHigh: number = 0;						// The percentage difference in price of the base from the highest price to the current
-	public buyFills: TransactionFill[] = [];							// A list of buy fills (sub-transactions that make up the total transaction) by Binance
-	public sellFills: TransactionFill[] = [];							// A list of sell fills (sub-transactions that make up the total transaction) by Binance
-	public commissions: CommissionTotals = { };							// A map of commissions totals taken by Binance
-	public baseMinQty: number = 0;										// The minimum amount TODO: Should this be the quote instead of base?
-	public baseStepSize: number = 0;									// The minimum step size TODO: Same as above
-	public startTime: number;											// The time the trading began (For calculations)
-	public quotePrecision: number = 0;									// The time the trading began (For calculations)
-	public times: {														// Times actions occurred (For DB records)
-		createdAt?: string;													// Trade data object created
-		finishedAt?: string;												// Trade data finished
-		buyAt?: string;														// Buy action started
-		sellAt?: string;													// Sell action started
-		buyTransactionAt?: string;											// Time Binance performed buy transaction
-		sellTransactionAt?: string;											// Time Binance performed sell transaction
-		highestPriceReachedAt?: string;
-		lowestPriceReachedAt?: string;
-		highestPriceReachedDuringTradeAt?: string;
-		lowestPriceReachedDuringTradeAt?: string;
+	public symbol: string;										// Trading pair symbol, eg. BTCUSDT
+	public base: string;										// Base currency (The currency being bought), eg. BTC
+	public quote: string;										// Quote currency (The currency being used to spend / trade for the base), eg. USDT
+	public startedTrading: boolean = false;						// Flag to indicate if trading has started (base currency has been bought)
+	public finishedTrading: boolean = false;					// Flag to indicate if trading has ended (base currency has been bought)
+	public baseQty: number = 0;									// Amount of base currency currently being traded
+	public quoteQty: number = 0;								// Amount of quote currency being used to trade with (Limit set by bot)
+	public profit: number = 0;									// Current / final amount of profit made (measured in the quote currency)
+	public startPrice: number = 0;								// Price of the base (measured in quote) for the initial trade
+	public currentPrice: number = 0;							// Current price of the base (measured in quote)
+	public highestPriceReached: number = 0;						// Highest price of the base (measured in quote) reached during trading
+	public lowestPriceReached: number = 0;						// Lowest price of the base (measured in quote) reached during trading
+	public highestPriceReachedDuringTrade: number = 0;			// Highest price of the base (measured in quote) reached during trading
+	public lowestPriceReachedDuringTrade: number = 0;			// Lowest price of the base (measured in quote) reached during trading
+	public highestBuyPrice: number = 0;							// Highest price paid for buying the base currency
+	public lowestBuyPrice: number = 0;							// Lowest price paid for buying the base currency
+	public averageBuyPrice: number = 0;							// Average price paid for buying the base currency
+	public highestSellPrice: number = 0;						// Highest price received for selling the base currency
+	public lowestSellPrice: number = 0;							// Lowest price received for selling the base currency
+	public averageSellPrice: number = 0;						// Average price received for selling the base currency
+	public priceDifference: number = 0;							// Difference in price of the base from the start to the current
+	public percentageDifference: number = 0;					// Percentage difference in price of the base from the start to the current
+	public percentageDroppedFromHigh: number = 0;				// Percentage difference in price of the base from the highest price to the current
+	public buyFills: TransactionFill[] = [];					// A list of buy fills (sub-transactions that make up the total transaction) by Binance
+	public sellFills: TransactionFill[] = [];					// A list of sell fills (sub-transactions that make up the total transaction) by Binance
+	public commissions: CommissionTotals = { };					// A map of commissions totals taken by Binance
+	public baseMinQty: number = 0;								// Minimum amount of the base that can be purchased
+	public baseStepSize: number = 0;							// Minimum step size (rounding value) of the base that can be purchased
+	public startTime: number;									// Time the trading began (For calculations)
+	public quotePrecision: number = 0;							// Time the trading began (For calculations)
+	public times: {												// Times actions occurred (For DB records)
+		createdAt?: string;											// Time trade data object created
+		finishedAt?: string;										// Time trade data finished
+		buyAt?: string;												// Time buy action started
+		sellAt?: string;											// Time sell action started
+		buyTransactionAt?: string;									// Time Binance performed buy transaction
+		sellTransactionAt?: string;									// Time Binance performed sell transaction
+		highestPriceReachedAt?: string;								// Time highest price reached during trade data lifetime
+		lowestPriceReachedAt?: string;								// Time lowest price reached during trade data lifetime
+		highestPriceReachedDuringTradeAt?: string;					// Time highest price reached during trade
+		lowestPriceReachedDuringTradeAt?: string;					// Time lowest price reached during trade
 	} = { };
-	public buyTransactionType?: string;									// Buy Transaction type, eg. MARKET
-	public sellTransactionType?: string;								// Sell Transaction type, eg. MARKET
-	public sellQty?: string;												// Quantity of the base being sold
-
-	// public baseInitialQty: number = 0; // to do
-	// public quoteQtySpent: number = 0; // to do
+	public buyTransactionType?: string;							// Buy Transaction type, eg. MARKET
+	public sellTransactionType?: string;						// Sell Transaction type, eg. MARKET
+	public sellQty?: string;									// Quantity of the base being sold
 
 	public constructor(
 		symbol: string,
@@ -76,11 +79,10 @@ export class BotTradeData { // New version of SymbolTraderData
 
 	public UpdatePrice = (price: number): void => {
 		if (this.currentPrice) return this.CalculatePriceChanges(price);
-		// return this.calculatePriceChanges(price);
-		this.SetInitialPrices(price);
+		this.currentPrice = price;
 	}
 
-	public SortBuyData = (transaction: any): void => {
+	public SortBuyData = (transaction: ExchangeCurrencyTransactionFull): void => {
 		if (transaction.fills) {
 			this.buyFills.push(...transaction.fills);
 			this.SortCommissions(this.buyFills);
@@ -91,23 +93,26 @@ export class BotTradeData { // New version of SymbolTraderData
 			this.buyTransactionType = transaction.type;
 			this.times.buyTransactionAt = new Date(transaction.transactTime).toISOString();
 		}
+		this.startedTrading = true;
 	}
 
-	public SortSellData = (transaction: any): void => {
+	public SortSellData = (transaction: ExchangeCurrencyTransactionFull): void => {
 		if (transaction.fills) {
 			this.sellFills.push(...transaction.fills);
-			this.SortCommissions(this.sellFills); // TODO: Confirm should this be used for both buy and sell?
+			this.SortCommissions(this.sellFills);
 			this.CalculateSellPrices(this.sellFills);
 
-			// const commission: { total: number; isQuote: boolean; isBase: boolean } = this.SortCommissions(transaction.response.fills);
-			this.SortCommissions(transaction.response.fills);
-			this.baseQty -= transaction.response.executedQty;
-			// this.quoteQty += transaction.response.cummulativeQuoteQty - (commission.isQuote ? commission.total : 0);
+			this.baseQty -= Number(transaction.executedQty);
+			this.quoteQty += Number(transaction.cummulativeQuoteQty);
+			this.sellTransactionType = transaction.type;
+			this.times.sellTransactionAt = new Date(transaction.transactTime).toISOString();
 		}
+
+		this.finishedTrading = true;
 	}
 
 	public GetSellQuantity = (): string => {
-		let qty: number = 0;
+		let qty: number;
 
 		if (this.baseStepSize) {
 			const trim: number = this.baseQty % this.baseStepSize;
@@ -115,8 +120,6 @@ export class BotTradeData { // New version of SymbolTraderData
 		} else {
 			qty = this.baseQty;
 		}
-
-		// qty = this.baseQty - (this.baseQty / 800);
 
 		this.sellQty = qty.toFixed(this.quotePrecision);
 
@@ -127,24 +130,25 @@ export class BotTradeData { // New version of SymbolTraderData
 		this.times.finishedAt = new Date().toISOString();
 	}
 
-	private SetInitialPrices = (price: number): void => {
-		// this.startPrice = price;
+	private CalculatePriceChanges = (price: number): void => {
+		if (this.startedTrading) {
+			this.percentageDifference = Calculations.PricePercentageDifference(this.startPrice, price);
+			this.percentageDroppedFromHigh = Calculations.PricePercentageDifference(this.highestPriceReached, price);
+		}
+		this.priceDifference = Calculations.PriceDifference(this.currentPrice, price);
+		this.UpdateHighPrices(price);
+		this.UpdateLowPrices(price);
 		this.currentPrice = price;
-		this.highestPriceReached = price;
-		this.lowestPriceReached = price;
 	}
 
-	private CalculatePriceChanges = (newPrice: number): void => {
-		this.priceDifference = Calculations.PriceDifference(this.currentPrice, newPrice);
-		this.UpdatePrices(newPrice);
-		this.percentageDifference = Calculations.PricePercentageDifference(this.startPrice, newPrice);
-		this.percentageDroppedFromHigh = Calculations.PricePercentageDifference(this.highestPriceReached, newPrice);
+	private UpdateHighPrices = (price: number): void => {
+		if (price > this.highestPriceReached) this.highestPriceReached = price;
+		if (this.startedTrading && price > this.highestPriceReachedDuringTrade) this.highestPriceReachedDuringTrade = price;
 	}
 
-	private UpdatePrices = (newPrice: number): void => {
-		if (newPrice > this.highestPriceReached) this.highestPriceReached = newPrice;
-		else if (newPrice < this.lowestPriceReached) this.lowestPriceReached = newPrice;
-		this.currentPrice = newPrice;
+	private UpdateLowPrices = (price: number): void => {
+		if (price > this.lowestPriceReached) this.lowestPriceReached = price;
+		if (this.startedTrading && price > this.lowestPriceReachedDuringTrade) this.lowestPriceReachedDuringTrade = price;
 	}
 
 	private SortCommissions = (fills: TransactionFill[]): void => {
@@ -161,6 +165,10 @@ export class BotTradeData { // New version of SymbolTraderData
 		this.highestBuyPrice = fillPrices.highest;
 		this.lowestBuyPrice = fillPrices.lowest;
 		this.averageBuyPrice = fillPrices.average;
+		this.startPrice = fillPrices.average;
+		this.currentPrice = fillPrices.average;
+		this.UpdateHighPrices(fillPrices.highest);
+		this.UpdateLowPrices(fillPrices.lowest);
 	}
 
 	private CalculateSellPrices = (fills: TransactionFill[]): void => {
@@ -186,25 +194,17 @@ export class BotTradeData { // New version of SymbolTraderData
 		return { highest, lowest, average };
 	}
 
-	// public getExchangeInfo = async (): Promise<void> => {
-	// 	const response: any = await CryptoApi.get(`/exchange-info/single/${this.symbol}/${this.quote}`);
-	// 	if (response.success) this.exchangeInfo = response.info;
-	//
-	// 	if (!this.exchangeInfo) console.error(`No exchange info for ${this.symbol}`);
-	//
-	// 	this.getLotSize();
-	// }
-
 	private SortExchangeInfo = (exchangeInfo: ExchangeInfoSymbol): void => {
 		this.SetTradeLotSize(exchangeInfo);
 	}
 
 	private SetTradeLotSize = (exchangeInfo: ExchangeInfoSymbol): void => {
-		const lotSizeFilter: any = exchangeInfo.filters.find((f: any): boolean => f.filterType === 'LOT_SIZE');
+		const lotSizeFilter: ExchangeInfoFilter | undefined = exchangeInfo.filters
+			.find((f: ExchangeInfoFilter): boolean => f.filterType === ExchangeInfoFilterType.LOT_SIZE);
+
 		if (lotSizeFilter) {
-			console.log(`${this.symbol} has a step size limit of ${lotSizeFilter.stepSize}`);
-			this.baseMinQty = lotSizeFilter.minQty;
-			this.baseStepSize = lotSizeFilter.stepSize;
+			this.baseMinQty = Number(lotSizeFilter.minQty);
+			this.baseStepSize = Number(lotSizeFilter.stepSize);
 		}
 	}
 }
