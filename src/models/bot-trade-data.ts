@@ -209,7 +209,8 @@ export class BotTradeData { // New version of SymbolTraderData
 			highest = !highest || price > highest ? price : highest;
 			lowest = !lowest || price < lowest ? price : lowest;
 		});
-		if (total) average = total / fills.length;
+
+		if (total) average = Number((total / fills.length).toFixed(this.baseAssetPrecision));
 
 		return { highest, lowest, average };
 	}
