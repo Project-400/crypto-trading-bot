@@ -66,6 +66,7 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 	public buyTransactionType?: string;							// Buy Transaction type, eg. MARKET
 	public sellTransactionType?: string;						// Sell Transaction type, eg. MARKET
 	public sellQty?: string;									// Quantity of the base being sold
+	public preTradePriceChangeCount: number = 0;				// The amount of times the price updated before the trade
 	public priceChangeCount: number = 0;						// The amount of times the price updated during the trade
 	public priceChangeInterval!: number;						// The interval gap between expected price updates
 
@@ -89,8 +90,7 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 		if (this.finishedTrading) return; // Prevent any data changes
 
 		const time: string = new Date().toISOString();
-		if (this.currentPrice) return this.CalculatePriceChanges(price, time);
-		this.currentPrice = price;
+		this.CalculatePriceChanges(price, time);
 	}
 
 	public SortBuyData = (transaction: ExchangeCurrencyTransactionFull): void => {
@@ -160,12 +160,14 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 			this.percentageDroppedFromHigh = price < this.highestPriceReachedDuringTrade ?
 				Calculations.PricePercentageDifference(this.highestPriceReached, price) :
 				0;
-		}
-		if (this.startedTrading) {
+
 			this.priceChangeCount += 1;
 			this.times.lastPriceUpdateAt = time;
+		} else {
+			this.preTradePriceChangeCount += 1;
+			this.times.lastPriceUpdateAt = time;
 		}
-		this.priceDifference = Calculations.PriceDifference(this.currentPrice, price, this.baseAssetPrecision);
+		if (this.currentPrice) this.priceDifference = Calculations.PriceDifference(this.currentPrice, price, this.baseAssetPrecision);
 		this.UpdateHighPrices(price, time);
 		this.UpdateLowPrices(price, time);
 		this.currentPrice = price;
