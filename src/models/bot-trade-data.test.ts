@@ -1,11 +1,12 @@
-import { BotTradeData, IBotTradeData } from './bot-trade-data';
+import { BotTradeData } from './bot-trade-data';
 import { FakeExchangeInfo } from '../test-data/exchange-info.data';
 import {
 	BinanceTransactionType,
 	ExchangeCurrencyTransactionFull,
 	ExchangeInfoFilter,
 	ExchangeInfoFilterType,
-	ExchangeInfoSymbol
+	ExchangeInfoSymbol,
+	IBotTradeData
 } from '@crypto-tracker/common-types';
 import {
 	FakeBuyTransaction_BNB_Commission,
