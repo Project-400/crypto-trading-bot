@@ -1037,4 +1037,157 @@ describe('Test Bot Trade Data', (): void => {
 		expectTimesToBeBeforeNow(tradeData.times);
 	});
 
+	test('It should update price data when Symbol price change (Single Price Increase) before Buy trade', (): void => {
+		const symbol: string = 'COMPBTC';
+		const base: string = 'COMP';
+		const quote: string = 'BTC';
+		const priceChangeInterval: number = 1000;
+
+		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo };
+		const lotSizeFilter: ExchangeInfoFilter = exchangeInfo.filters
+				.find((f: ExchangeInfoFilter): boolean => f.filterType === ExchangeInfoFilterType.LOT_SIZE) ||
+			{
+				stepSize: '0.00100000',
+				filterType: ExchangeInfoFilterType.LOT_SIZE,
+				maxQty: '10000000.00000000',
+				minQty: '0.00100000'
+			};
+
+		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+
+		// Mock price update from Binance
+		const originalPreBuyPrice: number = 0.00775;
+		tradeData.UpdatePrice(originalPreBuyPrice);
+
+		expect(tradeData).toBeTruthy();
+		expect(tradeData.symbol).toBe(symbol);
+		expect(tradeData.base).toBe(base);
+		expect(tradeData.quote).toBe(quote);
+		expect(tradeData.startedTrading).toBeFalsy();
+		expect(tradeData.finishedTrading).toBeFalsy();
+		expect(tradeData.baseQty).toBe(0);
+		expect(tradeData.quoteQty).toBe(0);
+		expect(tradeData.profit).toBe(0);
+		expect(tradeData.startPrice).toBe(0);
+		expect(tradeData.currentPrice).toBe(originalPreBuyPrice);
+		expect(tradeData.highestPriceReached).toBe(originalPreBuyPrice);
+		expect(tradeData.lowestPriceReached).toBe(originalPreBuyPrice);
+		expect(tradeData.highestPriceReachedDuringTrade).toBe(0);
+		expect(tradeData.lowestPriceReachedDuringTrade).toBe(0);
+		expect(tradeData.highestBuyPrice).toBe(0);
+		expect(tradeData.lowestBuyPrice).toBe(0);
+		expect(tradeData.averageBuyPrice).toBe(0);
+		expect(tradeData.highestSellPrice).toBe(0);
+		expect(tradeData.lowestSellPrice).toBe(0);
+		expect(tradeData.averageSellPrice).toBe(0);
+		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.percentageDifference).toBe(0);
+		expect(tradeData.percentageDroppedFromHigh).toBe(0);
+		expect(tradeData.buyFills).toMatchObject([]);
+		expect(tradeData.buyFills.length).toBe(0);
+		expect(tradeData.sellFills).toMatchObject([]);
+		expect(tradeData.sellFills.length).toBe(0);
+		expect(tradeData.commissions).toMatchObject({ });
+		expect(tradeData.commissions.BNB).toBeUndefined();
+		expect(tradeData.baseMinQty).toBe(Number(lotSizeFilter.minQty));
+		expect(tradeData.baseStepSize).toBe(Number(lotSizeFilter.stepSize));
+		expect(tradeData.startTime).toBeLessThanOrEqual(new Date().getTime());
+		expect(tradeData.quoteAssetPrecision).toBe(exchangeInfo.quoteAssetPrecision);
+		expect(tradeData.baseAssetPrecision).toBe(exchangeInfo.baseAssetPrecision);
+		expect(tradeData.buyTransactionType).toBeUndefined();
+		expect(tradeData.sellTransactionType).toBeUndefined();
+		expect(tradeData.sellQty).toBeUndefined();
+		expect(tradeData.preTradePriceChangeCount).toBe(1);
+		expect(tradeData.priceChangeCount).toBe(0);
+		expect(tradeData.priceChangeInterval).toBe(1000);
+		expect(tradeData.times.createdAt).toBeTruthy();
+		expect(tradeData.times.finishedAt).toBeFalsy();
+		expect(tradeData.times.buyAt).toBeFalsy();
+		expect(tradeData.times.sellAt).toBeFalsy();
+		expect(tradeData.times.buyTransactionAt).toBeFalsy();
+		expect(tradeData.times.sellTransactionAt).toBeFalsy();
+		expect(tradeData.times.highestPriceReachedAt).toBeTruthy();
+		expect(tradeData.times.lowestPriceReachedAt).toBeTruthy();
+		expect(tradeData.times.highestPriceReachedDuringTradeAt).toBeFalsy();
+		expect(tradeData.times.lowestPriceReachedDuringTradeAt).toBeFalsy();
+		expect(tradeData.times.lastPriceUpdateAt).toBeTruthy();
+
+		expectTimesToBeBeforeNow(tradeData.times);
+
+		const transaction: ExchangeCurrencyTransactionFull = { ...FakeBuyTransaction_BNB_Commission };
+
+		const commission: number = Number(transaction.fills[0].commission); // 0.00004442
+		const baseQty: number = Number(transaction.executedQty); // 0.013
+		const quoteQty: number = -Number(transaction.cummulativeQuoteQty); // -0.00010306
+		const averageBuyPrice: number = Number(transaction.fills[0].price); // 0.007928;
+
+		// Ensure test data doesn't change
+		expect(commission).toBe(0.00004442);
+		expect(baseQty).toBe(0.013);
+		expect(quoteQty).toBe(-0.00010306);
+		expect(averageBuyPrice).toBe(0.007928);
+
+		const tradeDataClone: IBotTradeData = JSON.parse(JSON.stringify(tradeData)); // Clone current state of trade data
+
+		tradeData.SortBuyData(transaction);
+
+		// Expectations
+		expect(tradeData).toBeTruthy();
+		expect(tradeData.symbol).toBe(symbol);
+		expect(tradeData.base).toBe(base);
+		expect(tradeData.quote).toBe(quote);
+		expect(tradeData.startedTrading).toBeTruthy();
+		expect(tradeData.finishedTrading).toBeFalsy();
+		expect(tradeData.baseQty).toBe(baseQty);
+		expect(tradeData.quoteQty).toBe(quoteQty);
+		expect(tradeData.profit).toBe(0);
+		expect(tradeData.startPrice).toBe(averageBuyPrice);
+		expect(tradeData.currentPrice).toBe(averageBuyPrice);
+		expect(tradeData.highestPriceReached).toBe(averageBuyPrice);
+		expect(tradeData.lowestPriceReached).toBe(originalPreBuyPrice);
+		expect(tradeData.highestPriceReachedDuringTrade).toBe(averageBuyPrice);
+		expect(tradeData.lowestPriceReachedDuringTrade).toBe(averageBuyPrice);
+		expect(tradeData.highestBuyPrice).toBe(averageBuyPrice);
+		expect(tradeData.lowestBuyPrice).toBe(averageBuyPrice);
+		expect(tradeData.averageBuyPrice).toBe(averageBuyPrice);
+		expect(tradeData.highestSellPrice).toBe(0);
+		expect(tradeData.lowestSellPrice).toBe(0);
+		expect(tradeData.averageSellPrice).toBe(0);
+		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.percentageDifference).toBe(0);
+		expect(tradeData.percentageDroppedFromHigh).toBe(0);
+		expect(tradeData.buyFills).toMatchObject(transaction.fills);
+		expect(tradeData.buyFills.length).toBe(1);
+		expect(tradeData.sellFills).toMatchObject([]);
+		expect(tradeData.sellFills.length).toBe(0);
+		expect(tradeData.commissions).toMatchObject({
+			BNB: commission
+		});
+		expect(tradeData.commissions.BNB).toBe(commission);
+		expect(tradeData.baseMinQty).toBe(Number(lotSizeFilter.minQty));
+		expect(tradeData.baseStepSize).toBe(Number(lotSizeFilter.stepSize));
+		expect(tradeData.startTime).toBeLessThanOrEqual(new Date().getTime());
+		expect(tradeData.quoteAssetPrecision).toBe(exchangeInfo.quoteAssetPrecision);
+		expect(tradeData.baseAssetPrecision).toBe(exchangeInfo.baseAssetPrecision);
+		expect(tradeData.buyTransactionType).toBe(BinanceTransactionType.MARKET);
+		expect(tradeData.sellTransactionType).toBeUndefined();
+		expect(tradeData.sellQty).toBeUndefined();
+		expect(tradeData.preTradePriceChangeCount).toBe(1);
+		expect(tradeData.priceChangeCount).toBe(0);
+		expect(tradeData.priceChangeInterval).toBe(1000);
+		expect(tradeData.times.createdAt).toBe(tradeDataClone.times.createdAt);
+		expect(tradeData.times.finishedAt).toBeFalsy();
+		expect(tradeData.times.buyAt === tradeDataClone.times.buyAt).toBeFalsy();
+		expect(tradeData.times.sellAt).toBeFalsy();
+		expect(tradeData.times.buyTransactionAt === tradeDataClone.times.buyTransactionAt).toBeFalsy();
+		expect(tradeData.times.sellTransactionAt).toBeFalsy();
+		expect(tradeData.times.highestPriceReachedAt === tradeDataClone.times.highestPriceReachedAt).toBeFalsy();
+		expect(tradeData.times.lowestPriceReachedAt).toBe(tradeDataClone.times.lowestPriceReachedAt);
+		expect(tradeData.times.highestPriceReachedDuringTradeAt === tradeDataClone.times.highestPriceReachedDuringTradeAt).toBeFalsy();
+		expect(tradeData.times.lowestPriceReachedDuringTradeAt === tradeDataClone.times.lowestPriceReachedDuringTradeAt).toBeFalsy();
+		expect(tradeData.times.lastPriceUpdateAt).toBe(tradeDataClone.times.lastPriceUpdateAt);
+
+		expectTimesToBeBeforeNow(tradeData.times);
+	});
+
 });
