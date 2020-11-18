@@ -3,10 +3,12 @@ import {
 	ExchangeInfoFilter,
 	ExchangeInfoFilterType,
 	ExchangeInfoSymbol,
-	TransactionFill
+	TransactionFill,
+	IBotTradeData,
+	CommissionTotals
 } from '@crypto-tracker/common-types';
 import Calculations from '../utils/calculations';
-import { CommissionTotals, FillPriceCalculations } from '../interfaces/interfaces';
+import { FillPriceCalculations } from '../interfaces/interfaces';
 
 /*
 *
@@ -15,7 +17,7 @@ import { CommissionTotals, FillPriceCalculations } from '../interfaces/interface
 *
 * */
 
-export class BotTradeData { // New version of SymbolTraderData
+export class BotTradeData implements IBotTradeData { // New version of SymbolTraderData
 
 	public symbol: string;										// Trading pair symbol, eg. BTCUSDT
 	public base: string;										// Base currency (The currency being bought), eg. BTC
