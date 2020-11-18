@@ -59,15 +59,19 @@ export class BotTradeData { // New version of SymbolTraderData
 		lowestPriceReachedAt?: string;								// Time lowest price reached during trade data lifetime
 		highestPriceReachedDuringTradeAt?: string;					// Time highest price reached during trade
 		lowestPriceReachedDuringTradeAt?: string;					// Time lowest price reached during trade
+		lastPriceUpdateAt?: string;									// Time the price last updated during trade
 	} = { };
 	public buyTransactionType?: string;							// Buy Transaction type, eg. MARKET
 	public sellTransactionType?: string;						// Sell Transaction type, eg. MARKET
 	public sellQty?: string;									// Quantity of the base being sold
+	public priceChangeCount: number = 0;						// The amount of times the price updated during the trade
+	public priceChangeInterval!: number;						// The interval gap between expected price updates
 
 	public constructor(
 		symbol: string,
 		base: string,
 		quote: string,
+		priceChangeInterval: number,
 		exchangeInfo: ExchangeInfoSymbol
 	) {
 		this.symbol = symbol;
@@ -75,6 +79,7 @@ export class BotTradeData { // New version of SymbolTraderData
 		this.quote = quote;
 		this.times.createdAt = new Date().toISOString();
 		this.startTime = new Date().getTime();
+		this.priceChangeInterval = priceChangeInterval;
 		this.SortExchangeInfo(exchangeInfo);
 	}
 
@@ -143,7 +148,11 @@ export class BotTradeData { // New version of SymbolTraderData
 			this.percentageDifference = Calculations.PricePercentageDifference(this.startPrice, price);
 			this.percentageDroppedFromHigh = Calculations.PricePercentageDifference(this.highestPriceReached, price);
 		}
-		this.priceDifference = Calculations.PriceDifference(this.currentPrice, price);
+		if (this.startedTrading) {
+			this.priceChangeCount += 1;
+			this.times.lastPriceUpdateAt = time;
+		}
+		this.priceDifference = Calculations.PriceDifference(this.currentPrice, price, this.baseAssetPrecision);
 		this.UpdateHighPrices(price, time);
 		this.UpdateLowPrices(price, time);
 		this.currentPrice = price;
@@ -161,11 +170,11 @@ export class BotTradeData { // New version of SymbolTraderData
 	}
 
 	private UpdateLowPrices = (price: number, time: string): void => {
-		if (!this.lowestPriceReached || price > this.lowestPriceReached) {
+		if (!this.lowestPriceReached || price < this.lowestPriceReached) {
 			this.lowestPriceReached = price;
 			this.times.lowestPriceReachedAt = time;
 		}
-		if (this.startedTrading && (!this.lowestPriceReachedDuringTrade || price > this.lowestPriceReachedDuringTrade)) {
+		if (this.startedTrading && (!this.lowestPriceReachedDuringTrade || price < this.lowestPriceReachedDuringTrade)) {
 			this.lowestPriceReachedDuringTrade = price;
 			this.times.lowestPriceReachedDuringTradeAt = time;
 		}
