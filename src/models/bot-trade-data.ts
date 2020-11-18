@@ -1,11 +1,11 @@
 import {
+	CommissionTotals,
 	ExchangeCurrencyTransactionFull,
 	ExchangeInfoFilter,
 	ExchangeInfoFilterType,
 	ExchangeInfoSymbol,
-	TransactionFill,
 	IBotTradeData,
-	CommissionTotals
+	TransactionFill
 } from '@crypto-tracker/common-types';
 import Calculations from '../utils/calculations';
 import { FillPriceCalculations } from '../interfaces/interfaces';
@@ -86,12 +86,16 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 	}
 
 	public UpdatePrice = (price: number): void => {
+		if (this.finishedTrading) return; // Prevent any data changes
+
 		const time: string = new Date().toISOString();
 		if (this.currentPrice) return this.CalculatePriceChanges(price, time);
 		this.currentPrice = price;
 	}
 
 	public SortBuyData = (transaction: ExchangeCurrencyTransactionFull): void => {
+		if (this.startedTrading) return; // Prevent any data changes
+
 		this.startedTrading = true;
 		const time: string = new Date().toISOString();
 		this.times.buyAt = time;
@@ -110,9 +114,10 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 	}
 
 	public SortSellData = (transaction: ExchangeCurrencyTransactionFull): void => {
+		if (this.finishedTrading) return; // Prevent any data changes
+
 		this.finishedTrading = true;
-		const time: string = new Date().toISOString();
-		this.times.sellAt = time;
+		this.times.sellAt = new Date().toISOString();
 
 		if (transaction.fills) {
 			this.sellFills.push(...transaction.fills);
@@ -127,6 +132,8 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 	}
 
 	public GetSellQuantity = (): string => {
+		if (this.finishedTrading) return ''; // Prevent any data changes
+
 		let qty: number;
 
 		if (this.baseStepSize) {
@@ -142,13 +149,17 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 	}
 
 	public Finish = (): void => {
+		if (this.times.finishedAt) return; // Prevent any data changes
+
 		this.times.finishedAt = new Date().toISOString();
 	}
 
 	private CalculatePriceChanges = (price: number, time: string): void => {
 		if (this.startedTrading) {
 			this.percentageDifference = Calculations.PricePercentageDifference(this.startPrice, price);
-			this.percentageDroppedFromHigh = Calculations.PricePercentageDifference(this.highestPriceReached, price);
+			this.percentageDroppedFromHigh = price < this.highestPriceReachedDuringTrade ?
+				Calculations.PricePercentageDifference(this.highestPriceReached, price) :
+				0;
 		}
 		if (this.startedTrading) {
 			this.priceChangeCount += 1;
