@@ -17,12 +17,12 @@ export class SymbolPairFiltering {
 		tradingPairPriceData.filter(
 			(s: TradingPairPriceData): boolean =>
 			!SymbolPairFiltering.isTinyCurrency(s.symbol, s.prices.now - s.prices.sixtySeconds) &&
-			!SymbolPairFiltering.isLeveraged(s.symbol) &&
+			!SymbolPairFiltering.isETF(s.symbol) &&
 			!SymbolPairFiltering.isIgnoredPair(s.symbol, ignoredPairs) &&
 			SymbolPairFiltering.isAllowedQuote(s.symbol, allowedQuotes)
 		)
 
-	private static isLeveraged = (symbol: string): boolean => symbol.includes('UP') || symbol.includes('DOWN');
+	private static isETF = (symbol: string): boolean => symbol.includes('UP') || symbol.includes('DOWN');
 
 	private static isTinyCurrency = (symbol: string, priceChange: number): boolean => {
 		if (symbol.endsWith('USDT') && priceChange < 0.0006) return true;
