@@ -158,3 +158,28 @@ export const FakeBuyTransaction_Mixed_Commission: ExchangeCurrencyTransactionFul
 	transactTime: 1605512698211,
 	type: BinanceTransactionType.MARKET
 };
+
+export const FakeBuyTransaction_GTO_BNB_Commission: ExchangeCurrencyTransactionFull = {
+	clientOrderId: 'uzY3VWGBmd6IcfozDqrfFn',
+	cummulativeQuoteQty: '0.00010988',
+	executedQty: '268.00000000',
+	fills: [
+		{
+			commission: '0.00005037',
+			commissionAsset: 'BNB',
+			price: '0.00000041',
+			qty: '0.01300000',
+			tradeId: 9072958
+		}
+	],
+	orderId: 66189006,
+	orderListId: -1,
+	origQty: '268.00000000',
+	price: '0.00000000',
+	side: BinanceTransactionSide.BUY,
+	status: BinanceOrderStatus.FILLED,
+	symbol: 'GTOBTC',
+	timeInForce: BinanceTimeInForce.GTC,
+	transactTime: 1606077286556,
+	type: BinanceTransactionType.MARKET
+};
