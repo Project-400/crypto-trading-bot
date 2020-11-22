@@ -1,5 +1,5 @@
 import { BotTradeData } from '../../../models/bot-trade-data';
-import { FakeExchangeInfo } from '../../../test-data/exchange-info.data';
+import { FakeExchangeInfo_COMP } from '../../../test-data/exchange-info.data';
 import {
 	BinanceTransactionType,
 	ExchangeCurrencyTransactionFull,
@@ -23,7 +23,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const quote: string = 'BTC';
 		const priceChangeInterval: number = 1000;
 
-		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo };
+		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo_COMP };
 		const transaction: ExchangeCurrencyTransactionFull = { ...FakeBuyTransaction_BNB_Commission };
 		const lotSizeFilter: ExchangeInfoFilter = exchangeInfo.filters
 				.find((f: ExchangeInfoFilter): boolean => f.filterType === ExchangeInfoFilterType.LOT_SIZE) ||
@@ -114,7 +114,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const quote: string = 'BTC';
 		const priceChangeInterval: number = 1000;
 
-		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo };
+		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo_COMP };
 		const transaction: ExchangeCurrencyTransactionFull = { ...FakeBuyTransaction_COMP_Commission };
 		const lotSizeFilter: ExchangeInfoFilter = exchangeInfo.filters
 				.find((f: ExchangeInfoFilter): boolean => f.filterType === ExchangeInfoFilterType.LOT_SIZE) ||
@@ -205,7 +205,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const quote: string = 'BTC';
 		const priceChangeInterval: number = 1000;
 
-		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo };
+		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo_COMP };
 		const transaction: ExchangeCurrencyTransactionFull = { ...FakeBuyTransaction_BNB_DoubleCommission };
 		const lotSizeFilter: ExchangeInfoFilter = exchangeInfo.filters
 				.find((f: ExchangeInfoFilter): boolean => f.filterType === ExchangeInfoFilterType.LOT_SIZE) ||
@@ -300,7 +300,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const quote: string = 'BTC';
 		const priceChangeInterval: number = 1000;
 
-		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo };
+		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo_COMP };
 		const transaction: ExchangeCurrencyTransactionFull = { ...FakeBuyTransaction_COMP_DoubleCommission };
 		const lotSizeFilter: ExchangeInfoFilter = exchangeInfo.filters
 				.find((f: ExchangeInfoFilter): boolean => f.filterType === ExchangeInfoFilterType.LOT_SIZE) ||
@@ -395,7 +395,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const quote: string = 'BTC';
 		const priceChangeInterval: number = 1000;
 
-		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo };
+		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo_COMP };
 		const transaction: ExchangeCurrencyTransactionFull = { ...FakeBuyTransaction_Mixed_Commission };
 		const lotSizeFilter: ExchangeInfoFilter = exchangeInfo.filters
 				.find((f: ExchangeInfoFilter): boolean => f.filterType === ExchangeInfoFilterType.LOT_SIZE) ||

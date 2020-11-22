@@ -1,5 +1,5 @@
 import { BotTradeData } from '../../../models/bot-trade-data';
-import { FakeExchangeInfo } from '../../../test-data/exchange-info.data';
+import { FakeExchangeInfo_COMP } from '../../../test-data/exchange-info.data';
 import {
 	ExchangeInfoFilter,
 	ExchangeInfoFilterType,
@@ -15,7 +15,7 @@ describe('Bot Trade Data: Setup', (): void => {
 		const quote: string = 'BTC';
 		const priceChangeInterval: number = 1000;
 
-		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo };
+		const exchangeInfo: ExchangeInfoSymbol = { ...FakeExchangeInfo_COMP };
 		const lotSizeFilter: ExchangeInfoFilter = exchangeInfo.filters
 			.find((f: ExchangeInfoFilter): boolean => f.filterType === ExchangeInfoFilterType.LOT_SIZE) ||
 			{
