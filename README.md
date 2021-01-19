@@ -14,3 +14,8 @@ Temporarily removed
 "@babel/preset-typescript": "^7.12.1",
 "@babel/core": "^7.12.3",
 "babel-plugin-transform-runtime": "^6.23.0",
+
+
+```
+    npm run dev
+```

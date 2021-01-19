@@ -1,29 +1,32 @@
 import { Request, Response } from 'express';
-import { LongTradeBot } from '../bots/_retired/long-trade-bot';
+// import { LongTradeBot } from '../bots/_retired/long-trade-bot';
 import { BotManager } from '../bots/bot-manager';
 import ShortTermTraderBot from '../bots/short-term-trader-bot';
 
 export class BotController {
 
-	public static deployBot = (req: Request, res: Response): Response => {
+	public static deployBot = async (req: Request, res: Response): Promise<Response> => {
 		if (!req.body || !req.body.botId) return res.status(400).json({ error: 'Invalid request body' });
 
 		const botId: string = req.body.botId.toString();
-		let bot!: ShortTermTraderBot;
+		let bot: ShortTermTraderBot | undefined;
 
+		console.log(1);
 		try {
-			bot = BotManager.deployNewBot(botId);
+			bot = await BotManager.deployNewBot(botId);
+			console.log(2);
+			console.log(bot);
 		} catch (e) {
 			console.log('Bot failed to deploy');
 			console.log(e);
 
-			if (bot) BotManager.shutdownBot(botId);
+			if (bot) await BotManager.shutdownBot(botId);
 			return res.status(400).json({ success: false });
 		}
-		return res.status(200).json({ success: true, message: 'Started Bot' });
+		return res.status(200).json({ success: true, message: 'Started Bot', bot });
 	}
 
-	public static stopBot = (req: Request, res: Response): Response => {
+	public static stopBot = async (req: Request, res: Response): Promise<Response> => {
 		if (!req.body || !req.body.botId) return res.status(400).json({ error: 'Invalid request body' });
 
 		const botId: string = req.body.botId.toString();
@@ -31,7 +34,7 @@ export class BotController {
 
 		if (!bot) return res.status(404).json({ error: 'Bot not found' });
 
-		BotManager.shutdownBot(botId);
+		await BotManager.shutdownBot(botId);
 
 		return res.status(200).json({ success: true, message: 'Stopped Bot', bot });
 	}
@@ -83,14 +86,18 @@ export class BotController {
 	// 	return res.status(200).json({ status: bot. });
 	// }
 
-	public static longTrade = async (req: Request, res: Response): Promise<void> => {
-		const bot: LongTradeBot = new LongTradeBot('ATOMUSDT', 'ATOM', 'USDT', 10);
-		await bot.start();
-		res.status(200).json({ success: true, state: bot.state });
-	}
+	// public static longTrade = async (req: Request, res: Response): Promise<void> => {
+	// 	const bot: LongTradeBot = new LongTradeBot('ATOMUSDT', 'ATOM', 'USDT', 10);
+	// 	await bot.start();
+	// 	res.status(200).json({ success: true, state: bot.state });
+	// }
 
 	public static openConnection = (req: Request, res: Response): Response => {
 		return res.status(200).json({ success: true, connected: true });
+	}
+
+	public static subscribe = (req: Request, res: Response): Response => {
+		return res.status(200).json({ success: true, subscribed: true });
 	}
 
 }
