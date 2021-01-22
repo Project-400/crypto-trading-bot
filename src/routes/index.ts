@@ -15,5 +15,6 @@ indexRouter.put('/trader-bot/shutdown-all', BotController.shutdownBots);
 // indexRouter.post('/long-trade', BotController.longTrade);
 indexRouter.post('/connect', BotController.openConnection);
 indexRouter.get('/subscribe', BotController.subscribe);
+indexRouter.get('/unsubscribe', BotController.unsubscribe);
 
 export default indexRouter;

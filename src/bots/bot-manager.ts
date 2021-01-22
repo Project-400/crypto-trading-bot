@@ -1,4 +1,5 @@
 import ShortTermTraderBot from './short-term-trader-bot';
+import CrudServiceExchangeInfo, { GetExchangeInfoResponseDto } from '../external-api/crud-service/services/exchange-info';
 
 export class BotManager {
 
@@ -12,19 +13,34 @@ export class BotManager {
 	private static getBotIndex = (botId: string): number =>
 		BotManager.deployedBots.findIndex((b: ShortTermTraderBot): boolean => b.getBotId() === botId)
 
-	public static deployNewBot = (botId: string): ShortTermTraderBot => {
+	public static deployNewBot = async (botId: string, currency: string): Promise<ShortTermTraderBot | undefined> => {
 		if (BotManager.getBot(botId)) throw Error('Bot already exists');
 
-		const bot: ShortTermTraderBot = new ShortTermTraderBot(botId, 'WAVES', 'USDT', 'WAVESUSDT', 10, true);
-		BotManager.deployedBots.push(bot);
-		bot.Start();
+		const exchangeInfo: GetExchangeInfoResponseDto = await CrudServiceExchangeInfo.GetExchangeInfo(currency);
+
+		console.log();
+		console.log(exchangeInfo);
+		console.log();
+		// const exchangeInfo: any = { success: true, info: true };
+		let bot: ShortTermTraderBot | undefined;
+
+		if (exchangeInfo.success) {
+			bot = new ShortTermTraderBot(botId, exchangeInfo.info.baseAsset, exchangeInfo.info.quoteAsset,
+				'currency', 0.0001, true, exchangeInfo.info);
+			BotManager.deployedBots.push(bot);
+			// const buyData: any = await bot.Start(); // To be removed
+			// return buyData;
+		}
+
 		return bot;
 	}
 
-	public static shutdownBot = (botId: string): void => {
+	public static shutdownBot = async (botId: string): Promise<void> => {
 		const botIndex: number = BotManager.getBotIndex(botId);
+		console.log('Stopping bot at index ' + botIndex);
 		if (botIndex > -1) {
-			BotManager.deployedBots[botIndex].Stop();
+			console.log('2) Stopping bot at index ' + botIndex);
+			await BotManager.deployedBots[botIndex].Stop();
 			BotManager.deployedBots.splice(botIndex, 1);
 		}
 	}
@@ -37,7 +53,7 @@ export class BotManager {
 	public static shutdownAllBots = (): number => {
 		const count: number = BotManager.deployedBots.length;
 
-		BotManager.deployedBots.map((bot: ShortTermTraderBot): void => bot.Stop());
+		// BotManager.deployedBots.map((bot: ShortTermTraderBot): void => bot.Stop());
 		BotManager.deployedBots = [];
 
 		return count;

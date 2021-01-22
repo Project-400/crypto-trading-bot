@@ -13,7 +13,7 @@ export class BotController {
 
 		console.log(1);
 		try {
-			bot = await BotManager.deployNewBot(botId);
+			bot = await BotManager.deployNewBot(botId, 'GTOBTC');
 			console.log(2);
 			console.log(bot);
 		} catch (e) {
@@ -96,8 +96,19 @@ export class BotController {
 		return res.status(200).json({ success: true, connected: true });
 	}
 
-	public static subscribe = (req: Request, res: Response): Response => {
-		return res.status(200).json({ success: true, subscribed: true });
+	/* Temp for testing bot */
+	public static subscribe = async (req: Request, res: Response): Promise<Response> => {
+		if (!req.body || !req.query.currency) return res.status(400).json({ error: 'Invalid request params' });
+		const currency: string = req.query.currency.toString();
+
+		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot('FAKE_BOT_ID', currency);
+		return res.status(200).json({ success: true, subscribed: true, bot });
+	}
+
+	/* Temp for testing bot */
+	public static unsubscribe = async (req: Request, res: Response): Promise<Response> => {
+		await BotManager.shutdownBot('FAKE_BOT_ID');
+		return res.status(200).json({ success: true, unsubscribed: true });
 	}
 
 }
