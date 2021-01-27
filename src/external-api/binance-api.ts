@@ -7,4 +7,8 @@ export class BinanceApi {
 		return HTTP.get(`${BinanceAPI}/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
 	}
 
+	public static async getCurrentPrice(symbol: string): Promise<any> {
+		return HTTP.get(`${BinanceAPI}/api/v3/ticker/price?symbol=${symbol}`);
+	}
+
 }
