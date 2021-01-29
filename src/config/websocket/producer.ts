@@ -5,12 +5,15 @@ import { AddressInfo } from 'ws';
 import express from 'express';
 import { v4 as uuid } from 'uuid';
 
+interface IdentifiableWebsocketClient extends WebSocket {
+	id: string;
+}
+
 export class WebsocketProducer {
 
 	private static server: http.Server;
 	private static wss: WebSocket.Server;
-	// private static webS: WebSocket;
-	private static connectedSockets: WebSocket[] = []; // List of connected clients
+	private static connectedSockets: IdentifiableWebsocketClient[] = []; // List of connected clients
 
 	public static setup = (app: express.Application): void => {
 		WebsocketProducer.server = http.createServer(app);
@@ -19,17 +22,14 @@ export class WebsocketProducer {
 		console.log('SETUP');
 		console.log(WebsocketProducer);
 
-		WebsocketProducer.wss.on('connection', (ws: WebSocket): void => {
-			// WebsocketProducer.webS = ws;
-			// tslint:disable-next-line:ban-ts-ignore
-			// @ts-ignore
+		WebsocketProducer.wss.on('connection', (ws: IdentifiableWebsocketClient): void => {
 			ws.id = uuid();
 			WebsocketProducer.connectedSockets.push(ws);
 			console.log(WebsocketProducer.connectedSockets);
 
 			ws.on('message', (message: string): void => {
-				console.log('received: %s', message);
-				ws.send(`Hello, you sent -> ${message}`);
+				console.log('Received: %s', message);
+				ws.send(`RE: ${message}`);
 			});
 
 			ws.send('Connected to the trader bot service.');
@@ -64,22 +64,36 @@ export class WebsocketProducer {
 		});
 	}
 
-	public static sendMessage = (msg: string): void => {
+	public static send = (msg: string, clientId: string): void => {
+		const clientSocket: IdentifiableWebsocketClient | undefined =
+			WebsocketProducer.connectedSockets.find((s: IdentifiableWebsocketClient): boolean => s.id === clientId);
+
 		try {
-			// WebsocketProducer.webS.send(msg);
-			WebsocketProducer.connectedSockets.map((socket: WebSocket): void => {
-				// tslint:disable-next-line:ban-ts-ignore
-				// @ts-ignore
+			if (clientSocket) WebsocketProducer.produceMessage(clientSocket, msg);
+		} catch (e) {
+			console.error(`The error likely occurred because there are no clients subscribed to the Websocket. Error: ${e.message}`);
+		}
+	}
+
+	public static broadcast = (msg: string): void => {
+		try {
+			WebsocketProducer.connectedSockets.map((socket: IdentifiableWebsocketClient): void => {
 				if (socket.CLOSED) console.log(`Connection ${socket.id} is closed`);
 				if (socket.OPEN) {
-					// tslint:disable-next-line:ban-ts-ignore
-					// @ts-ignore
 					console.log(`Connection ${socket.id} is open`);
 					socket.send(msg);
 				}
 			});
 		} catch (e) {
 			console.error(`The error likely occurred because there are no clients subscribed to the Websocket. Error: ${e.message}`);
+		}
+	}
+
+	private static produceMessage = (client: IdentifiableWebsocketClient, msg: string): void => {
+		if (client.CLOSED) console.log(`Connection ${client.id} is closed`);
+		if (client.OPEN) {
+			console.log(`Connection ${client.id} is open`);
+			client.send(msg);
 		}
 	}
 
