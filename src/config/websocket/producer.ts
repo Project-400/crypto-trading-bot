@@ -19,20 +19,17 @@ export class WebsocketProducer {
 		WebsocketProducer.server = http.createServer(app);
 		WebsocketProducer.wss = new WebSocket.Server({ server: WebsocketProducer.server });
 
-		console.log('SETUP');
-		console.log(WebsocketProducer);
-
 		WebsocketProducer.wss.on('connection', (ws: IdentifiableWebsocketClient): void => {
 			ws.id = uuid();
 			WebsocketProducer.connectedSockets.push(ws);
-			console.log(WebsocketProducer.connectedSockets);
 
 			ws.on('message', (message: string): void => {
 				console.log('Received: %s', message);
 				ws.send(`RE: ${message}`);
 			});
 
-			ws.send('Connected to the trader bot service.');
+			ws.send(`Connected to the trader bot service. Connected Client Id: ${ws.id}`);
+			ws.send(JSON.stringify({ clientSocketId: ws.id }));
 		});
 
 		WebsocketProducer.wss.on('close', (ws: WebSocket): void => {
