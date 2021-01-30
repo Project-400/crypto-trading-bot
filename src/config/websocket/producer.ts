@@ -72,25 +72,30 @@ export class WebsocketProducer {
 		}
 	}
 
+	public static sendMultiple = (msg: string, clientIds: string[]): void => {
+		clientIds.map((clientId: string): void => {
+			const clientSocket: IdentifiableWebsocketClient | undefined =
+				WebsocketProducer.connectedSockets.find((s: IdentifiableWebsocketClient): boolean => s.id === clientId);
+
+			if (clientSocket) WebsocketProducer.produceMessage(clientSocket, msg);
+		});
+	}
+
 	public static broadcast = (msg: string): void => {
-		try {
-			WebsocketProducer.connectedSockets.map((socket: IdentifiableWebsocketClient): void => {
-				if (socket.CLOSED) console.log(`Connection ${socket.id} is closed`);
-				if (socket.OPEN) {
-					console.log(`Connection ${socket.id} is open`);
-					socket.send(msg);
-				}
-			});
-		} catch (e) {
-			console.error(`The error likely occurred because there are no clients subscribed to the Websocket. Error: ${e.message}`);
-		}
+		WebsocketProducer.connectedSockets.map((client: IdentifiableWebsocketClient): void => {
+			WebsocketProducer.produceMessage(client, msg);
+		});
 	}
 
 	private static produceMessage = (client: IdentifiableWebsocketClient, msg: string): void => {
-		if (client.CLOSED) console.log(`Connection ${client.id} is closed`);
-		if (client.OPEN) {
-			console.log(`Connection ${client.id} is open`);
-			client.send(msg);
+		try {
+			if (client.CLOSED) console.log(`Connection ${client.id} is closed`);
+			if (client.OPEN) {
+				console.log(`Connection ${client.id} is open`);
+				client.send(msg);
+			}
+		} catch (e) {
+			console.error(`The error likely occurred because there are no clients subscribed to the Websocket. Error: ${e.message}`);
 		}
 	}
 
