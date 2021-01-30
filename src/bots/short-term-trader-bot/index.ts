@@ -1,8 +1,9 @@
-import { ExchangeInfoSymbol, PositionState, TradingBotState } from '@crypto-tracker/common-types';
-import { CrudServiceApi } from '../../external-api/crud-service-api';
+import { ExchangeInfoSymbol, TradingBotState } from '@crypto-tracker/common-types';
 import { Logger } from '../../config/logger/logger';
 import PriceListener from './price-listener';
 import { BotTradeData } from '../../models/bot-trade-data';
+import CrudServiceTransactions from '../../external-api/crud-service/services/transactions';
+import CrudServiceBots from '../../external-api/crud-service/services/bots';
 
 /*
 *
@@ -27,14 +28,15 @@ export default class ShortTermTraderBot {
 	private readonly repeatedlyTrade!: boolean;					// Flat to indicate whether to continuously buy and sell (true) or shutdown after first sell (false)
 	private tradeData?: BotTradeData;
 	private readonly priceListener: PriceListener;
-	private currentPrice: number = 0;
-	public exchangeInfo: ExchangeInfoSymbol;						// The Binance details related to this trading pair - Limits, rounding, etc.
+	public currentPrice: number = 0;
+	private readonly exchangeInfo: ExchangeInfoSymbol;						// The Binance details related to this trading pair - Limits, rounding, etc.
+	public priceChangeInterval: number = 1000;						// The interval gap between expected price updates
+	private subscribedClients: string[] = [];
 
 	public getBotId = (): string => this.botId;
 	public getBotState = (): TradingBotState => this.botState;
 
 	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number, repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol) {
-		// TODO: Exchange info and other external calls to be passed in before starting
 		this.botId = botId;
 		this.tradingPairSymbol = tradingPairSymbol;
 		this.base = base;
@@ -46,15 +48,18 @@ export default class ShortTermTraderBot {
 		this.SetState(TradingBotState.WAITING);
 	}
 
-	public Start = (): void => {
+	public Start = async (): Promise<BotTradeData | undefined> => {
 		this.SetState(TradingBotState.STARTING);
 		this.priceListener.ConnectAndListen();
 		this.BeginCheckingUpdates();
+		// await this.BuyCurrency(0.00011);
+		return this.tradeData;
 	}
 
-	public Stop = (): void => {
-		if (this.updateChecker) clearInterval(this.updateChecker);
-		this.priceListener.StopListening();
+	public Stop = async (): Promise<void> => {
+		// if (this.updateChecker) clearInterval(this.updateChecker);
+		// this.priceListener.StopListening();
+		await this.SellCurrency();
 	}
 
 	public Pause = (): void => {
@@ -65,7 +70,7 @@ export default class ShortTermTraderBot {
 		this.updateChecker = setInterval(async (): Promise<void> => {
 			if (this.priceListener.Price() !== 0) {
 				if (this.botState === TradingBotState.STARTING) this.SetState(TradingBotState.WAITING);
-				await this.makeDecision();
+				// await this.makeDecision();
 			}
 
 			if (this.priceListener.Price() !== 0) console.log(`CURRENT PRICE IS ${this.priceListener.Price()}`);
@@ -80,34 +85,25 @@ export default class ShortTermTraderBot {
 	private saveTradeData = async (): Promise<void> => {
 		// if (this.saved) return;
 		// this.saved = true;
-		return CrudServiceApi.post('/bots/trade/save', {
-			tradeData: this.tradeData
-		});
+		if (!this.tradeData) return;
+		return CrudServiceBots.SaveBotTradeData(this.tradeData);
 	}
 
 	private makeDecision = async (): Promise<void> => {
-		// console.log('-------------------------------');
-		// console.log(`Symbol: ${this.tradeData.symbol}`);
-		// // console.log(`Type: ${this.symbolType}`);
-		// console.log(`Price is: ${this.tradeData.currentPrice}`);
-		// console.log(`Price diff: ${this.tradeData.percentageDifference}%`);
-		// console.log(`Price drop diff: ${this.tradeData.percentageDroppedFromHigh}%`);
-		// console.log(`The bot is: ${this.state}`);
-		// console.log(`Trade position state: ${this.tradeData.state}`);
 		console.log(`Bot is ${this.botState}`);
 		// Logger.info(`${this.tradeData.symbol} ($${this.tradeData.currentPrice} -- Percentage change: ${this.tradeData.percentageDifference}%`);
 
 		if (this.botState === TradingBotState.WAITING) {
-			this.tradeData = new BotTradeData(this.tradingPairSymbol, this.base, this.quote, this.exchangeInfo);
+			this.tradeData = new BotTradeData(this.tradingPairSymbol, this.base, this.quote, this.priceChangeInterval, this.exchangeInfo);
 
 			console.log(`BUY CURRENCY: ${this.tradingPairSymbol}`);
 			const buy: any = await this.BuyCurrency(this.quoteQty);
 			this.SetState(TradingBotState.TRADING);
 
-			if (buy.success && buy.transaction) {
-				this.tradeData.SortBuyData(buy.transaction);
-				this.currentPrice = this.tradeData.currentPrice; // TODO: Is this needed?
-			}
+			// if (buy.success && buy.transaction) {
+			// 	this.tradeData.SortBuyData(buy.transaction);
+			// 	this.currentPrice = this.tradeData.currentPrice; // TODO: Is this needed?
+			// }
 		}
 
 		if (
@@ -130,7 +126,7 @@ export default class ShortTermTraderBot {
 		}
 
 		if (this.botState === TradingBotState.FINISHED) {
-			this.tradeData.Finish();
+			this.tradeData?.Finish();
 
 			console.log(this.tradeData);
 			// await this.saveTradeData();
@@ -139,30 +135,44 @@ export default class ShortTermTraderBot {
 		}
 	}
 
-	private BuyCurrency = async (quantity: number): Promise<void> =>  { // TODO: Buy through CRUD service - Log data there
+	private BuyCurrency = async (quantity: number): Promise<void> =>  {
 		Logger.info(`Buying ${this.base} with ${quantity} ${this.quote}`);
 
-		return CrudServiceApi.post('/transactions/buy', {
-			symbol: this.tradingPairSymbol,
-			base: this.base,
-			quote: this.quote,
-			quantity,
-			isTest: false
-		});
+		if (!quantity) return Logger.error(`Unable to buy ${this.base} - Invalid buy quantity: ${quantity}`);
+
+		this.tradeData = new BotTradeData(this.tradingPairSymbol, this.base, this.quote, this.priceChangeInterval, this.exchangeInfo);
+		const buy: any = await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote, quantity.toString());
+
+		if (buy.success && buy.transaction && this.tradeData) {
+			this.tradeData.SortBuyData(buy.transaction.response);
+			this.currentPrice = this.tradeData.currentPrice; // TODO: Is this needed?
+		} else {
+			console.log('FAILED TO BUY');
+		}
+
+		// this.tradeData.SortBuyData(this.testTransactions[3]);
 	}
 
-	private SellCurrency = async (): Promise<void> => { // TODO: Buy through CRUD service - Log data there
-		if (!this.tradeData) return console.error('The Trade Date object for this bot does not exist');
+	private SellCurrency = async (): Promise<void> => {
+		if (!this.tradeData) return Logger.error('The Trade Data object for this bot does not exist');
 
-		Logger.info(`Selling ${this.tradeData.GetSellQuantity()} ${this.tradeData.base}`);
+		const sellQty: string = this.tradeData.GetSellQuantity();
 
-		return CrudServiceApi.post('/transactions/sell', {
-			symbol: this.tradingPairSymbol,
-			base: this.base,
-			quote: this.quote,
-			quantity: this.tradeData.GetSellQuantity(),
-			isTest: false
-		});
+		if (!sellQty) return Logger.error(`Unable to sell ${this.base} - Invalid sell quantity: ${sellQty}`);
+		Logger.info(`Selling ${sellQty} ${this.tradeData.base}`);
+
+		const sell: any = await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.tradeData.GetSellQuantity());
+		console.log('SOLD');
+
+		console.log(sell);
+	}
+
+	public subscribeClient = (socketClientId: string): void => {
+		this.subscribedClients.push(socketClientId);
+	}
+
+	public unsubscribeClient = (socketClientId: string): void => {
+		this.subscribedClients.splice(this.subscribedClients.indexOf(socketClientId), 1);
 	}
 
 }
