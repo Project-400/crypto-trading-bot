@@ -4,6 +4,7 @@ import PriceListener from './price-listener';
 import { BotTradeData } from '../../models/bot-trade-data';
 import CrudServiceTransactions from '../../external-api/crud-service/services/transactions';
 import CrudServiceBots from '../../external-api/crud-service/services/bots';
+import { WebsocketProducer } from '../../config/websocket/producer';
 
 /*
 *
@@ -32,6 +33,7 @@ export default class ShortTermTraderBot {
 	private readonly exchangeInfo: ExchangeInfoSymbol;						// The Binance details related to this trading pair - Limits, rounding, etc.
 	public priceChangeInterval: number = 1000;						// The interval gap between expected price updates
 	private subscribedClients: string[] = [];
+	private lastPublishedPrice: number = 0;
 
 	public getBotId = (): string => this.botId;
 	public getBotState = (): TradingBotState => this.botState;
@@ -68,13 +70,20 @@ export default class ShortTermTraderBot {
 
 	private BeginCheckingUpdates = (): void => {
 		this.updateChecker = setInterval(async (): Promise<void> => {
-			if (this.priceListener.Price() !== 0) {
+			const currentPrice: number = this.priceListener.Price();
+
+			if (currentPrice !== 0) {
 				if (this.botState === TradingBotState.STARTING) this.SetState(TradingBotState.WAITING);
 				// await this.makeDecision();
 			}
 
-			if (this.priceListener.Price() !== 0) console.log(`CURRENT PRICE IS ${this.priceListener.Price()}`);
+			if (currentPrice !== 0) console.log(`CURRENT PRICE IS ${this.priceListener.Price()}`);
 			else console.log('PRICE is still 0');
+
+			if (this.lastPublishedPrice !== currentPrice) {
+				WebsocketProducer.sendMultiple(JSON.stringify({ price: currentPrice }), this.subscribedClients);
+				this.lastPublishedPrice = currentPrice;
+			}
 		}, 1000);
 	}
 
