@@ -19,8 +19,8 @@ import { WebsocketProducer } from '../../config/websocket/producer';
 
 export default class ShortTermTraderBot {
 
-	private botState: TradingBotState = TradingBotState.WAITING;
 	private readonly botId: string;								// Unique Id generated when the Bot entity is created in the CRUD service
+	private botState: TradingBotState = TradingBotState.WAITING;
 	private readonly tradingPairSymbol: string;					// The symbol the bot should trade with, eg. USDTBTC
 	public readonly base: string;											// The base currency (The currency being bought), eg. BTC
 	public readonly quote: string;											// The quote currency (The currency being used to spend / trade for the base), eg. USDT
@@ -170,7 +170,8 @@ export default class ShortTermTraderBot {
 		if (!sellQty) return Logger.error(`Unable to sell ${this.base} - Invalid sell quantity: ${sellQty}`);
 		Logger.info(`Selling ${sellQty} ${this.tradeData.base}`);
 
-		const sell: any = await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.tradeData.GetSellQuantity());
+		const sell: any = await CrudServiceTransactions
+			.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.tradeData.GetSellQuantity());
 		console.log('SOLD');
 
 		console.log(sell);
@@ -183,5 +184,17 @@ export default class ShortTermTraderBot {
 	public unsubscribeClient = (socketClientId: string): void => {
 		this.subscribedClients.splice(this.subscribedClients.indexOf(socketClientId), 1);
 	}
+
+	public BOT_DETAILS = (): object => ({
+		botId: this.botId,
+		botState: this.botState,
+		tradingPairSymbol: this.tradingPairSymbol,
+		base: this.base,
+		quote: this.quote,
+		quoteQty: this.quoteQty,
+		repeatedlyTrade: this.repeatedlyTrade,
+		currentPrice: this.currentPrice,
+		priceChangeInterval: this.priceChangeInterval
+	})
 
 }

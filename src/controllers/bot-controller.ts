@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 // import { LongTradeBot } from '../bots/_retired/long-trade-bot';
 import { BotManager } from '../bots/bot-manager';
 import ShortTermTraderBot from '../bots/short-term-trader-bot';
+import { Logger } from '../config/logger/logger';
+import PriceListener from '../bots/short-term-trader-bot/price-listener';
+import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api';
 
 export class BotController {
 
@@ -98,12 +101,28 @@ export class BotController {
 
 	/* Temp for testing bot */
 	public static subscribe = async (req: Request, res: Response): Promise<Response> => {
-		if (!req.body || !req.query.currency || !req.query.quoteAmount) return res.status(400).json({ error: 'Invalid request params' });
+		if (!req.body || !req.query.currency || !req.query.quoteAmount || !req.query.clientSocketId) return res.status(400).json({ error: 'Invalid request params' });
 		const currency: string = req.query.currency.toString();
 		const quoteAmount: number = parseFloat(req.query.quoteAmount.toString());
+		const clientSocketId: string = req.query.clientSocketId.toString();
+
+		const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
 
 		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot('FAKE_BOT_ID', currency, quoteAmount);
-		return res.status(200).json({ success: true, subscribed: true, bot });
+		if (bot) bot.subscribeClient(clientSocketId);
+
+		// let clonedBot!: ShortTermTraderBot;
+		//
+		// if (bot) {
+		// 	clonedBot = { ...bot } as ShortTermTraderBot;
+		// 	console.log(clonedBot);
+		// 	delete clonedBot.priceListener;
+		// }
+
+		console.log('bot?.BOT_DETAILS');
+		console.log(bot?.BOT_DETAILS());
+
+		return res.status(200).json({ success: true, subscribed: true, bot: bot?.BOT_DETAILS(), priceInfo });
 	}
 
 	/* Temp for testing bot */
