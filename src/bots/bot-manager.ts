@@ -29,7 +29,7 @@ export class BotManager {
 
 		if (exchangeInfo.success) {
 			bot = new ShortTermTraderBot(botId, exchangeInfo.info.baseAsset, exchangeInfo.info.quoteAsset,
-				currency, quoteAmount, true, exchangeInfo.info, 5.3);
+				currency, quoteAmount, false, exchangeInfo.info, 5.2);
 			if (bot) clonedBot = { ...bot } as ShortTermTraderBot;
 			BotManager.deployedBots.push(bot);
 			await bot.Start();

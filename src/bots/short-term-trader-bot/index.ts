@@ -61,10 +61,10 @@ export default class ShortTermTraderBot {
 		return this.tradeData;
 	}
 
-	public Stop = async (): Promise<void> => {
+	public Stop = (): void => {
 		if (this.updateChecker) clearInterval(this.updateChecker);
-		this.priceListener.StopListening();
-		await this.SellCurrency();
+		if (this.priceListener.isListening) this.priceListener.StopListening();
+		// await this.SellCurrency();
 	}
 
 	public Pause = (): void => {
@@ -124,37 +124,32 @@ export default class ShortTermTraderBot {
 			// }
 		}
 
-		if (
-			this.botState === TradingBotState.TRADING // &&
-			// (
-			// 	this.tradeData.state === PositionState.SELL ||
-			// 	this.tradeData.state === PositionState.TIMEOUT_SELL
-			// )
-		) {
-
+		if (this.botState === TradingBotState.TRADING) {
 			console.log('Deciding whether to sell or not but not much happening...');
 
 			if (this.tradeData?.percentageDifference <= -this.sellAtLossPercentage) {
 				console.log('DO THE SELL');
+				console.log(`SELL CURRENCY: ${this.tradingPairSymbol}`);
+
+				this.SetState(TradingBotState.PAUSED);
+				const sell: ExchangeCurrencyTransactionFull = await this.SellCurrency();
+
+				this.tradeData.SortSellData(sell);
+
+				if (!this.repeatedlyTrade) {
+					this.Stop();
+					this.SetState(TradingBotState.FINISHED); // TEMPORARY
+				}
 			}
-			// const sell: any = await this.SellCurrency();
-			// this.SetState(TradingBotState.PAUSED);
-			//
-			// console.log(`SELL CURRENCY: ${this.tradingPairSymbol}`);
-			//
-			// if (sell && sell.success && sell.transaction) {
-			// 	this.tradeData?.SortSellData(sell.transaction);
-			// 	this.SetState(TradingBotState.FINISHED); // TEMPORARY
-			// }
 		}
 
 		if (this.botState === TradingBotState.FINISHED) {
-			this.tradeData?.Finish();
+			// this.tradeData.Finish();
 
-			console.log(this.tradeData);
+			console.log('FINISHING & STOPPING');
 			// await this.saveTradeData();
 
-			await this.Stop();
+			// await this.Stop();
 		}
 	}
 
@@ -182,12 +177,12 @@ export default class ShortTermTraderBot {
 		return buy.transaction.response;
 	}
 
-	private SellCurrency = async (): Promise<void> => {
-		if (!this.tradeData) return Logger.error('The Trade Data object for this bot does not exist');
+	private SellCurrency = async (): Promise<ExchangeCurrencyTransactionFull> => {
+		// if (!this.tradeData) return Logger.error('The Trade Data object for this bot does not exist');
 
 		const sellQty: string = this.tradeData.GetSellQuantity();
 
-		if (!sellQty) return Logger.error(`Unable to sell ${this.base} - Invalid sell quantity: ${sellQty}`);
+		if (!sellQty) throw Error(`Unable to sell ${this.base} - Invalid sell quantity: ${sellQty}`);
 		Logger.info(`Selling ${sellQty} ${this.tradeData.base}`);
 
 		// const sell: TransactionResponseDto = await CrudServiceTransactions
@@ -196,6 +191,8 @@ export default class ShortTermTraderBot {
 		console.log('SOLD');
 
 		console.log(sell);
+
+		return sell.transaction.response;
 	}
 
 	public subscribeClient = (socketClientId: string): void => {
