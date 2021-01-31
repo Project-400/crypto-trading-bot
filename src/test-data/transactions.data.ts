@@ -183,3 +183,53 @@ export const FakeBuyTransaction_GTO_BNB_Commission: ExchangeCurrencyTransactionF
 	transactTime: 1606077286556,
 	type: BinanceTransactionType.MARKET
 };
+
+export const FakeBuyTransaction_CELO: ExchangeCurrencyTransactionFull = {
+	symbol: 'CELOBTC',
+	orderId: 8480088,
+	orderListId: -1,
+	clientOrderId: 'N6NnFlZkn6ntiA28ZrNwld',
+	transactTime: 1612094725871,
+	price: '0.00000000',
+	origQty: '11.50000000',
+	executedQty: '11.50000000',
+	cummulativeQuoteQty: '0.00099417',
+	status: BinanceOrderStatus.FILLED,
+	timeInForce: BinanceTimeInForce.GTC,
+	type: BinanceTransactionType.MARKET,
+	side: BinanceTransactionSide.BUY,
+	fills: [
+		{
+			price: '0.00008999',
+			qty: '11.50000000',
+			commission: '0.00055652',
+			commissionAsset: 'BNB',
+			tradeId: 351318
+		}
+	]
+};
+
+export const FakeSellTransaction_CELO: ExchangeCurrencyTransactionFull = {
+	symbol: 'CELOBTC',
+	orderId: 8480618,
+	orderListId: -1,
+	clientOrderId: 'dqkMINdxF8s8OqZ4AolqZm',
+	transactTime: 1612095150285,
+	price: '0.00000000',
+	origQty: '11.50000000',
+	executedQty: '11.50000000',
+	cummulativeQuoteQty: '0.00099015',
+	status: BinanceOrderStatus.FILLED,
+	timeInForce: BinanceTimeInForce.GTC,
+	type: BinanceTransactionType.MARKET,
+	side: BinanceTransactionSide.SELL,
+	fills: [
+		{
+			price: '0.00008610',
+			qty: '11.50000000',
+			commission: '0.00055801',
+			commissionAsset: 'BNB',
+			tradeId: 351320
+		}
+	]
+};
