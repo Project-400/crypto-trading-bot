@@ -110,8 +110,8 @@ export class BotController {
 
 		const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
 
-		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade);
-		if (bot) bot.subscribeClient(clientSocketId);
+		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId);
+		// if (bot) bot.subscribeClient(clientSocketId);
 
 		return res.status(200).json({ success: true, subscribed: true, bot: bot?.BOT_DETAILS(), priceInfo });
 	}

@@ -15,7 +15,7 @@ export class BotManager {
 	private static getBotIndex = (botId: string): number =>
 		BotManager.deployedBots.findIndex((b: ShortTermTraderBot): boolean => b.getBotId() === botId)
 
-	public static deployNewBot = async (currency: string, quoteAmount: number, repeatedlyTrade: boolean): Promise<ShortTermTraderBot | undefined> => {
+	public static deployNewBot = async (currency: string, quoteAmount: number, repeatedlyTrade: boolean, clientSocketId?: string): Promise<ShortTermTraderBot | undefined> => {
 		const botId: string = uuid();
 
 		const exchangeInfo: GetExchangeInfoResponseDto = await CrudServiceExchangeInfo.GetExchangeInfo(currency);
@@ -26,7 +26,7 @@ export class BotManager {
 
 		if (exchangeInfo.success) {
 			bot = new ShortTermTraderBot(botId, exchangeInfo.info.baseAsset, exchangeInfo.info.quoteAsset,
-				currency, quoteAmount, repeatedlyTrade, exchangeInfo.info, 4);
+				currency, quoteAmount, repeatedlyTrade, exchangeInfo.info, 4, clientSocketId ? [ clientSocketId ] : undefined);
 			if (bot) clonedBot = { ...bot } as ShortTermTraderBot;
 			BotManager.deployedBots.push(bot);
 			await bot.Start();
