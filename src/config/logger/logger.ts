@@ -7,10 +7,10 @@ export class Logger {
 		WebsocketProducer.broadcast(msg);
 	}
 
-	public static test = (CLIENTSOCKETID: string, msg: string): void => {
-		console.log(msg);
-		WebsocketProducer.send(msg, CLIENTSOCKETID);
-	}
+	// public static test = (CLIENTSOCKETID: string, msg: string): void => {
+	// 	console.log(msg);
+	// 	WebsocketProducer.send(msg, CLIENTSOCKETID);
+	// }
 
 	public static error = (msg: string): void => {
 		console.error(msg);
