@@ -28,18 +28,19 @@ export default class ShortTermTraderBot {
 	private readonly quoteQty: number;							// The limit of how much of the quote currency the bot can use, eg. 10 USDT
 	private updateChecker: NodeJS.Timeout | undefined;		// A SetTimeout that will trigger updates
 	private readonly repeatedlyTrade!: boolean;					// Flat to indicate whether to continuously buy and sell (true) or shutdown after first sell (false)
-	private tradeData?: BotTradeData;
+	private tradeData!: BotTradeData;
 	private readonly priceListener: PriceListener;
 	public currentPrice: number = 0;
 	private readonly exchangeInfo: ExchangeInfoSymbol;						// The Binance details related to this trading pair - Limits, rounding, etc.
 	public priceChangeInterval: number = 1000;						// The interval gap between expected price updates
 	private subscribedClients: string[] = [];
-	private lastPublishedPrice: number = 0;
+	private lastPublishedPrice: number = 0;						// Last time the price has been published to clients
+	private sellAtLossPercentage: number = 1;					// By default, see when the price drops by 1% (-1%)
 
 	public getBotId = (): string => this.botId;
 	public getBotState = (): TradingBotState => this.botState;
 
-	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number, repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol) {
+	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number, repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol, sellAtLossPercentage?: number) {
 		this.botId = botId;
 		this.tradingPairSymbol = tradingPairSymbol;
 		this.base = base;
@@ -48,6 +49,7 @@ export default class ShortTermTraderBot {
 		this.repeatedlyTrade = repeatedlyTrade;
 		this.priceListener = new PriceListener(this.tradingPairSymbol);
 		this.exchangeInfo = exchangeInfo;
+		if (sellAtLossPercentage) this.sellAtLossPercentage = sellAtLossPercentage;
 		this.SetState(TradingBotState.WAITING);
 	}
 
@@ -131,6 +133,10 @@ export default class ShortTermTraderBot {
 		) {
 
 			console.log('Deciding whether to sell or not but not much happening...');
+
+			if (this.tradeData?.percentageDifference <= -this.sellAtLossPercentage) {
+				console.log('DO THE SELL');
+			}
 			// const sell: any = await this.SellCurrency();
 			// this.SetState(TradingBotState.PAUSED);
 			//

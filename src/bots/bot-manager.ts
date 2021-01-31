@@ -1,5 +1,7 @@
 import ShortTermTraderBot from './short-term-trader-bot';
 import CrudServiceExchangeInfo, { GetExchangeInfoResponseDto } from '../external-api/crud-service/services/exchange-info';
+import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api';
+import { v4 as uuid } from 'uuid';
 
 export class BotManager {
 
@@ -13,26 +15,29 @@ export class BotManager {
 	private static getBotIndex = (botId: string): number =>
 		BotManager.deployedBots.findIndex((b: ShortTermTraderBot): boolean => b.getBotId() === botId)
 
-	public static deployNewBot = async (botId: string, currency: string, quoteAmount: number): Promise<ShortTermTraderBot | undefined> => {
-		if (BotManager.getBot(botId)) throw Error('Bot already exists');
+	public static deployNewBot = async (currency: string, quoteAmount: number): Promise<ShortTermTraderBot | undefined> => {
+		// if (BotManager.getBot(botId)) throw Error('Bot already exists');
+		const botId: string = uuid();
 
 		const exchangeInfo: GetExchangeInfoResponseDto = await CrudServiceExchangeInfo.GetExchangeInfo(currency);
 
-		console.log();
 		console.log(exchangeInfo);
-		console.log();
+
 		// const exchangeInfo: any = { success: true, info: true };
 		let bot: ShortTermTraderBot | undefined;
+		let clonedBot: ShortTermTraderBot | undefined;
 
 		if (exchangeInfo.success) {
 			bot = new ShortTermTraderBot(botId, exchangeInfo.info.baseAsset, exchangeInfo.info.quoteAsset,
-				'currency', quoteAmount, true, exchangeInfo.info);
+				currency, quoteAmount, true, exchangeInfo.info, 5.3);
+			if (bot) clonedBot = { ...bot } as ShortTermTraderBot;
 			BotManager.deployedBots.push(bot);
+			await bot.Start();
 			// const buyData: any = await bot.Start(); // To be removed
 			// return buyData;
 		}
 
-		return bot;
+		return clonedBot;
 	}
 
 	public static shutdownBot = async (botId: string): Promise<void> => {
