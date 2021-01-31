@@ -9,14 +9,15 @@ import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api
 export class BotController {
 
 	public static deployBot = async (req: Request, res: Response): Promise<Response> => {
-		if (!req.body || !req.body.botId) return res.status(400).json({ error: 'Invalid request body' });
+		// if (!req.body || !req.body.botId) return res.status(400).json({ error: 'Invalid request body' });
+		// if (!req.body) return res.status(400).json({ error: 'Invalid request body' });
 
 		const botId: string = req.body.botId.toString();
 		let bot: ShortTermTraderBot | undefined;
 
 		console.log(1);
 		try {
-			bot = await BotManager.deployNewBot(botId, 'GTOBTC', 0.0001);
+			bot = await BotManager.deployNewBot('GTOBTC', 0.0001, false);
 			console.log(2);
 			console.log(bot);
 		} catch (e) {
@@ -101,33 +102,26 @@ export class BotController {
 
 	/* Temp for testing bot */
 	public static subscribe = async (req: Request, res: Response): Promise<Response> => {
-		if (!req.body || !req.query.currency || !req.query.quoteAmount || !req.query.clientSocketId) return res.status(400).json({ error: 'Invalid request params' });
+		if (!req.body || !req.query.currency || !req.query.quoteAmount || !req.query.repeatedlyTrade || !req.query.clientSocketId) return res.status(400).json({ error: 'Invalid request params' });
 		const currency: string = req.query.currency.toString();
 		const quoteAmount: number = parseFloat(req.query.quoteAmount.toString());
 		const clientSocketId: string = req.query.clientSocketId.toString();
+		const repeatedlyTrade: boolean = req.query.repeatedlyTrade.toString() === 'true';
 
 		const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
 
-		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot('FAKE_BOT_ID', currency, quoteAmount);
+		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade);
 		if (bot) bot.subscribeClient(clientSocketId);
-
-		// let clonedBot!: ShortTermTraderBot;
-		//
-		// if (bot) {
-		// 	clonedBot = { ...bot } as ShortTermTraderBot;
-		// 	console.log(clonedBot);
-		// 	delete clonedBot.priceListener;
-		// }
-
-		console.log('bot?.BOT_DETAILS');
-		console.log(bot?.BOT_DETAILS());
 
 		return res.status(200).json({ success: true, subscribed: true, bot: bot?.BOT_DETAILS(), priceInfo });
 	}
 
 	/* Temp for testing bot */
 	public static unsubscribe = async (req: Request, res: Response): Promise<Response> => {
-		await BotManager.shutdownBot('FAKE_BOT_ID');
+		if (!req.body || !req.query.botId) return res.status(400).json({ error: 'Invalid request params' });
+		const botId: string = req.query.botId.toString();
+
+		await BotManager.shutdownBot(botId);
 		return res.status(200).json({ success: true, unsubscribed: true });
 	}
 

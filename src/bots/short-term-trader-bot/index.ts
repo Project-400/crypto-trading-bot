@@ -107,7 +107,6 @@ export default class ShortTermTraderBot {
 
 	private makeDecision = async (): Promise<void> => {
 		console.log(`Bot is ${this.botState}`);
-		// Logger.info(`${this.tradeData.symbol} ($${this.tradeData.currentPrice} -- Percentage change: ${this.tradeData.percentageDifference}%`);
 
 		if (this.botState === TradingBotState.WAITING) {
 			this.tradeData = new BotTradeData(this.tradingPairSymbol, this.base, this.quote, this.priceChangeInterval, this.exchangeInfo);
@@ -117,11 +116,6 @@ export default class ShortTermTraderBot {
 			const transaction: ExchangeCurrencyTransactionFull = await this.BuyCurrency(this.quoteQty);
 			this.SetState(TradingBotState.TRADING);
 			this.tradeData.SortBuyData(transaction);
-
-			// if (buy.success && buy.transaction) {
-			// 	this.tradeData.SortBuyData(buy.transaction);
-			// 	// this.currentPrice = this.tradeData.currentPrice; // TODO: Is this needed?
-			// }
 		}
 
 		if (this.botState === TradingBotState.TRADING) {
