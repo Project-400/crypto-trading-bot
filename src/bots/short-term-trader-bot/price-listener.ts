@@ -7,6 +7,7 @@ export default class PriceListener {
 
 	private binanceWsConnection?: SocketConnection;		// Websocket Connection to Binance
 	private currentPrice: number = 0;					// The current price for the symbol being watched
+	public isListening: boolean = false;				// Lowercase version of the symbol, eg. btcusdt
 	private readonly symbol: string;					// The symbol string, eg. BTCUSDT
 	private readonly lowercaseSymbol: string;			// Lowercase version of the symbol, eg. btcusdt
 
@@ -32,10 +33,13 @@ export default class PriceListener {
 	public StopListening = (): void => {
 		this.binanceWsConnection?.Close();
 		this.binanceWsConnection = undefined;
+		this.isListening = true;
 	}
 
 	private SocketOpen = (): void => {
 		Logger.info('Trader Bot connected to Binance WebSocket');
+
+		this.isListening = true;
 
 		const data: BinanceWebsocketSubscription = {
 			method: 'SUBSCRIBE',
@@ -48,6 +52,7 @@ export default class PriceListener {
 
 	private SocketClose = (): void => {
 		Logger.info(`Trader Bot disconnected from Binance`);
+		this.isListening = true;
 	}
 
 	private SocketMessage = (msg: SocketMessage): void => {
