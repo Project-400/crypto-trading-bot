@@ -16,12 +16,9 @@ export class BotManager {
 		BotManager.deployedBots.findIndex((b: ShortTermTraderBot): boolean => b.getBotId() === botId)
 
 	public static deployNewBot = async (currency: string, quoteAmount: number, repeatedlyTrade: boolean): Promise<ShortTermTraderBot | undefined> => {
-		// if (BotManager.getBot(botId)) throw Error('Bot already exists');
 		const botId: string = uuid();
 
 		const exchangeInfo: GetExchangeInfoResponseDto = await CrudServiceExchangeInfo.GetExchangeInfo(currency);
-
-		console.log(exchangeInfo);
 
 		// const exchangeInfo: any = { success: true, info: true };
 		let bot: ShortTermTraderBot | undefined;
@@ -33,8 +30,6 @@ export class BotManager {
 			if (bot) clonedBot = { ...bot } as ShortTermTraderBot;
 			BotManager.deployedBots.push(bot);
 			await bot.Start();
-			// const buyData: any = await bot.Start(); // To be removed
-			// return buyData;
 		}
 
 		return clonedBot;

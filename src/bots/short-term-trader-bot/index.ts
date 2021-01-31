@@ -20,27 +20,29 @@ import { FakeBuyTransaction_CELO, FakeBuyTransaction_COMP_Commission, FakeSellTr
 
 export default class ShortTermTraderBot {
 
-	private readonly botId: string;								// Unique Id generated when the Bot entity is created in the CRUD service
-	private botState: TradingBotState = TradingBotState.WAITING;
-	private readonly tradingPairSymbol: string;					// The symbol the bot should trade with, eg. USDTBTC
-	public readonly base: string;											// The base currency (The currency being bought), eg. BTC
-	public readonly quote: string;											// The quote currency (The currency being used to spend / trade for the base), eg. USDT
-	private readonly quoteQty: number;							// The limit of how much of the quote currency the bot can use, eg. 10 USDT
-	private updateChecker: NodeJS.Timeout | undefined;		// A SetTimeout that will trigger updates
-	private readonly repeatedlyTrade!: boolean;					// Flat to indicate whether to continuously buy and sell (true) or shutdown after first sell (false)
-	private tradeData!: BotTradeData;
-	private readonly priceListener: PriceListener;
-	public currentPrice: number = 0;
-	private readonly exchangeInfo: ExchangeInfoSymbol;						// The Binance details related to this trading pair - Limits, rounding, etc.
-	public priceChangeInterval: number = 1000;						// The interval gap between expected price updates
-	private subscribedClients: string[] = [];
-	private lastPublishedPrice: number = 0;						// Last time the price has been published to clients
-	private sellAtLossPercentage: number = 1;					// By default, see when the price drops by 1% (-1%)
+	private readonly botId: string;									// Unique Id generated when the Bot entity is created in the CRUD service
+	private botState: TradingBotState = TradingBotState.WAITING;	// Current state of the bot
+	private readonly tradingPairSymbol: string;						// The symbol the bot should trade with, eg. USDTBTC
+	private readonly base: string;									// The base currency (The currency being bought), eg. BTC
+	private readonly quote: string;									// The quote currency (The currency being used to spend / trade for the base), eg. USDT
+	private readonly quoteQty: number;								// The limit of how much of the quote currency the bot can use, eg. 10 USDT
+	private updateChecker: NodeJS.Timeout | undefined;				// A SetTimeout that will trigger updates
+	private readonly repeatedlyTrade!: boolean;						// Flat to indicate whether to continuously buy and sell (true) or shutdown after first sell (false)
+	private tradeData!: BotTradeData;								// Numerical trade data
+	private readonly priceListener: PriceListener;					// Price listener
+	private currentPrice: number = 0;								// The current price for the symbol
+	private readonly exchangeInfo: ExchangeInfoSymbol;				// The Binance details related to this trading pair - Limits, rounding, etc.
+	private priceChangeInterval: number = 1000;						// The interval gap between expected price updates
+	private subscribedClients: string[] = [];						// Websocket Client Ids listening for bot updates
+	private lastPublishedPrice: number = 0;							// Last time the price has been published to clients
+	private sellAtLossPercentage: number = 1;						// By default, see when the price drops by 1% (-1%)
+	private IN_TEST_MODE: boolean = true;							// Flag for whether the bot is in test mode or not
 
 	public getBotId = (): string => this.botId;
 	public getBotState = (): TradingBotState => this.botState;
 
-	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number, repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol, sellAtLossPercentage?: number) {
+	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number,
+					   repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol, sellAtLossPercentage?: number) {
 		this.botId = botId;
 		this.tradingPairSymbol = tradingPairSymbol;
 		this.base = base;
@@ -57,19 +59,16 @@ export default class ShortTermTraderBot {
 		this.SetState(TradingBotState.STARTING);
 		this.priceListener.ConnectAndListen();
 		this.BeginCheckingUpdates();
-		// await this.BuyCurrency(0.00011);
 		return this.tradeData;
 	}
 
-	public Stop = (): void => {
+	public Stop = async (forceSell: boolean = false): Promise<void> => {
 		if (this.updateChecker) clearInterval(this.updateChecker);
 		if (this.priceListener.isListening) this.priceListener.StopListening();
-		// await this.SellCurrency();
+		if (forceSell) await this.SellCurrency();
 	}
 
-	public Pause = (): void => {
-		this.SetState(TradingBotState.PAUSED);
-	}
+	public Pause = (): TradingBotState => this.SetState(TradingBotState.PAUSED);
 
 	private BeginCheckingUpdates = (): void => {
 		this.updateChecker = setInterval(async (): Promise<void> => {
@@ -84,24 +83,23 @@ export default class ShortTermTraderBot {
 			else console.log('PRICE is still 0');
 
 			if (this.lastPublishedPrice !== currentPrice) {
-				console.log('New Price...');
 				this.tradeData?.UpdatePrice(currentPrice);
 
-				WebsocketProducer.sendMultiple(JSON.stringify({ price: currentPrice }), this.subscribedClients);
-				WebsocketProducer.sendMultiple(JSON.stringify({ botUpdate: this.BOT_DETAILS(), tradeData: this.tradeData }), this.subscribedClients);
+				WebsocketProducer.sendMultiple(JSON.stringify({
+					price: currentPrice,
+					botUpdate: this.BOT_DETAILS(),
+					tradeData: this.tradeData
+				}), this.subscribedClients);
+
 				this.lastPublishedPrice = currentPrice;
 			}
-		}, 1000);
+		}, this.priceChangeInterval);
 	}
 
-	private SetState = (state: TradingBotState): void => {
-		this.botState = state;
-	}
+	private SetState = (state: TradingBotState): TradingBotState => this.botState = state;
 
 	private saveTradeData = async (): Promise<void> => {
-		// if (this.saved) return;
-		// this.saved = true;
-		if (!this.tradeData) return;
+		if (!this.tradeData || this.IN_TEST_MODE) return;
 		return CrudServiceBots.SaveBotTradeData(this.tradeData);
 	}
 
@@ -111,62 +109,44 @@ export default class ShortTermTraderBot {
 		if (this.botState === TradingBotState.WAITING) {
 			this.tradeData = new BotTradeData(this.tradingPairSymbol, this.base, this.quote, this.priceChangeInterval, this.exchangeInfo);
 
-			console.log(`BUY CURRENCY: ${this.tradingPairSymbol}`);
-
-			const transaction: ExchangeCurrencyTransactionFull = await this.BuyCurrency(this.quoteQty);
-			this.SetState(TradingBotState.TRADING);
-			this.tradeData.SortBuyData(transaction);
+			await this.BuyCurrency(this.quoteQty);
 		}
 
 		if (this.botState === TradingBotState.TRADING) {
-			console.log('Deciding whether to sell or not but not much happening...');
-
-			if (this.tradeData?.percentageDifference <= -this.sellAtLossPercentage) {
-				console.log('DO THE SELL');
-				console.log(`SELL CURRENCY: ${this.tradingPairSymbol}`);
-
-				this.SetState(TradingBotState.PAUSED);
-				const sell: ExchangeCurrencyTransactionFull = await this.SellCurrency();
-
-				this.tradeData.SortSellData(sell);
+			if (this.tradeData.percentageDifference <= -this.sellAtLossPercentage) {
+				await this.SellCurrency();
 
 				if (!this.repeatedlyTrade) {
-					this.Stop();
 					this.SetState(TradingBotState.FINISHED); // TEMPORARY
 				}
 			}
 		}
 
 		if (this.botState === TradingBotState.FINISHED) {
-			// this.tradeData.Finish();
-
 			console.log('FINISHING & STOPPING');
-			// await this.saveTradeData();
 
-			// await this.Stop();
+			this.tradeData.Finish();
+			await this.saveTradeData();
+			await this.Stop(false);
 		}
 	}
 
 	private BuyCurrency = async (quantity: number): Promise<ExchangeCurrencyTransactionFull> =>  {
-		Logger.info(`Buying ${this.base} with ${quantity} ${this.quote}`);
+		Logger.info(`BUYING ${this.base} with ${quantity} ${this.quote}`);
 
 		// if (!quantity) return Logger.error(`Unable to buy ${this.base} - Invalid buy quantity: ${quantity}`);
 
-		// this.tradeData = new BotTradeData(this.tradingPairSymbol, this.base, this.quote, this.priceChangeInterval, this.exchangeInfo);
-
-		// const buy: TransactionResponseDto =
-		// 	await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote, quantity.toString());
-		const buy: TransactionResponseDto = { success: true, transaction: { response: FakeBuyTransaction_CELO } };
+		const buy: TransactionResponseDto =
+			this.IN_TEST_MODE ?
+			{ success: true, transaction: { response: FakeBuyTransaction_CELO } } :
+			await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote, quantity.toString());
 
 		if (buy.success && buy.transaction && this.tradeData) {
+			this.SetState(TradingBotState.TRADING);
 			this.tradeData.SortBuyData(buy.transaction.response);
-			// this.currentPrice = this.tradeData.currentPrice; // TODO: Is this needed?
-			// this.SetState(TradingBotState.TRADING);
 		} else {
 			console.log('FAILED TO BUY');
 		}
-
-		// this.tradeData.SortBuyData(this.testTransactions[3]);
 
 		return buy.transaction.response;
 	}
@@ -175,16 +155,20 @@ export default class ShortTermTraderBot {
 		// if (!this.tradeData) return Logger.error('The Trade Data object for this bot does not exist');
 
 		const sellQty: string = this.tradeData.GetSellQuantity();
-
 		if (!sellQty) throw Error(`Unable to sell ${this.base} - Invalid sell quantity: ${sellQty}`);
-		Logger.info(`Selling ${sellQty} ${this.tradeData.base}`);
+		Logger.info(`SELLING ${sellQty} ${this.tradeData.base}`);
 
-		// const sell: TransactionResponseDto = await CrudServiceTransactions
-		// 	.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.tradeData.GetSellQuantity());
-		const sell: TransactionResponseDto = { success: true, transaction: { response: FakeSellTransaction_CELO } };
-		console.log('SOLD');
+		const sell: TransactionResponseDto =
+			this.IN_TEST_MODE ?
+				{ success: true, transaction: { response: FakeSellTransaction_CELO } } :
+				await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.tradeData.GetSellQuantity());
 
-		console.log(sell);
+		if (sell.success && sell.transaction && this.tradeData) {
+			this.SetState(TradingBotState.PAUSED);
+			this.tradeData.SortSellData(sell.transaction.response);
+		} else {
+			console.log('FAILED TO SELL');
+		}
 
 		return sell.transaction.response;
 	}
