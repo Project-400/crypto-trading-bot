@@ -5,6 +5,7 @@ import ShortTermTraderBot from '../bots/short-term-trader-bot';
 import { Logger } from '../config/logger/logger';
 import PriceListener from '../bots/short-term-trader-bot/price-listener';
 import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api';
+import { BotTradeData } from '../models/bot-trade-data';
 
 export class BotController {
 
@@ -109,9 +110,7 @@ export class BotController {
 		const repeatedlyTrade: boolean = req.query.repeatedlyTrade.toString() === 'true';
 
 		const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
-
 		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId);
-		// if (bot) bot.subscribeClient(clientSocketId);
 
 		return res.status(200).json({ success: true, subscribed: true, bot: bot?.BOT_DETAILS(), priceInfo });
 	}
@@ -123,6 +122,18 @@ export class BotController {
 
 		await BotManager.shutdownBot(botId);
 		return res.status(200).json({ success: true, unsubscribed: true });
+	}
+
+	public static getBotTradeData = async (req: Request, res: Response): Promise<Response> => {
+		if (!req.body || !req.query.botId) return res.status(400).json({ error: 'Invalid request params' });
+		const botId: string = req.query.botId.toString();
+
+		const bot: ShortTermTraderBot | undefined = BotManager.getBot(botId);
+
+		if (!bot) return res.status(404).json({ error: 'Bot not found' });
+		const tradeData: BotTradeData = bot.getTradeData();
+
+		return res.status(200).json({ success: true, tradeData });
 	}
 
 }

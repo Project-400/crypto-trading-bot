@@ -41,6 +41,7 @@ export default class ShortTermTraderBot {
 
 	public getBotId = (): string => this.botId;
 	public getBotState = (): TradingBotState => this.botState;
+	public getTradeData = (): BotTradeData => this.tradeData;
 
 	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number,
 					   repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol, sellAtLossPercentage?: number, clientSocketIds?: string[]) {
@@ -128,6 +129,13 @@ export default class ShortTermTraderBot {
 
 		if (this.botState === TradingBotState.TRADING) {
 			if (this.tradeData.percentageDifference <= -this.sellAtLossPercentage) {
+				this.publishDataToClients({
+					botLog: JSON.stringify({
+						log: `Profit / Loss is at -${this.sellAtLossPercentage}%\nBot is selling ${this.tradeData.base}`,
+						time: new Date().toISOString()
+					})
+				});
+
 				await this.SellCurrency();
 
 				if (!this.repeatedlyTrade) {

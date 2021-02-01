@@ -6,7 +6,7 @@ export default class CrudServiceExchangeInfo extends CrudService {
 	private static SERVICE_PATH: string = '/exchange-info';
 
 	public static GetExchangeInfo = async (symbol: string): Promise<GetExchangeInfoResponseDto> =>
-		CrudService.get(`${CrudServiceExchangeInfo.SERVICE_PATH}/single/${symbol}`)
+		CrudService.get(`${CrudServiceExchangeInfo.SERVICE_PATH}/${symbol}`)
 
 }
 

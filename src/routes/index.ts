@@ -6,6 +6,7 @@ const indexRouter: Router = express.Router();
 indexRouter.get('/health', HealthController.health);
 
 indexRouter.get('/trader-bot', BotController.getBot);
+indexRouter.get('/trader-bot/trade-data', BotController.getBotTradeData);
 indexRouter.get('/trader-bot/all', BotController.getAllBots);
 indexRouter.post('/trader-bot', BotController.deployBot);
 indexRouter.put('/trader-bot/stop', BotController.stopBot);
