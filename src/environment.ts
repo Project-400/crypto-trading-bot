@@ -7,3 +7,4 @@ export const BINANCE_WS: string = process.env.BINANCE_WS as string;
 export const BinanceAPI: string = process.env.BINANCE_API as string; // Deprecated
 export const BINANCE_API: string = process.env.BINANCE_API as string;
 export const CRUD_SERVICE_URL: string = process.env.CRUD_SERVICE_URL as string;
+export const CRUD_SERVICE_URL_TRADE_DATA: string = process.env.CRUD_SERVICE_URL_TRADE_DATA as string; // Temporary

@@ -82,8 +82,8 @@ export default class ShortTermTraderBot {
 				await this.makeDecision();
 			}
 
-			if (currentPrice !== 0) console.log(`CURRENT PRICE IS ${this.priceListener.Price()}`);
-			else console.log('PRICE is still 0');
+			// if (currentPrice !== 0) console.log(`CURRENT PRICE IS ${this.priceListener.Price()}`);
+			// else console.log('PRICE is still 0');
 
 			if (this.lastPublishedPrice !== currentPrice) {
 				this.tradeData?.UpdatePrice(currentPrice);
@@ -114,7 +114,7 @@ export default class ShortTermTraderBot {
 	}
 
 	private saveTradeData = async (): Promise<void> => {
-		if (!this.tradeData || this.IN_TEST_MODE) return;
+		// if (!this.tradeData || this.IN_TEST_MODE) return;
 		return CrudServiceBots.SaveBotTradeData(this.tradeData);
 	}
 
@@ -122,7 +122,7 @@ export default class ShortTermTraderBot {
 		console.log(`Bot is ${this.botState}`);
 
 		if (this.botState === TradingBotState.WAITING) {
-			this.tradeData = new BotTradeData(this.tradingPairSymbol, this.base, this.quote, this.priceChangeInterval, this.exchangeInfo);
+			this.tradeData = new BotTradeData(this.botId, this.tradingPairSymbol, this.base, this.quote, this.priceChangeInterval, this.exchangeInfo);
 
 			await this.BuyCurrency(this.quoteQty);
 		}
@@ -148,7 +148,7 @@ export default class ShortTermTraderBot {
 			console.log('FINISHING & STOPPING');
 
 			this.tradeData.Finish();
-			await this.saveTradeData();
+			// await this.saveTradeData();
 			await this.Stop(false);
 		}
 	}
@@ -202,6 +202,8 @@ export default class ShortTermTraderBot {
 					time: new Date().toISOString()
 				})
 			});
+
+			await this.saveTradeData();
 		} else {
 			console.log('FAILED TO SELL');
 		}

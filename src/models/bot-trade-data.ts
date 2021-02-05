@@ -19,11 +19,14 @@ import { FillPriceCalculations } from '../interfaces/interfaces';
 
 export class BotTradeData implements IBotTradeData { // New version of SymbolTraderData
 
+	public botId: string;										// The unique Bot ID
 	public symbol: string;										// Trading pair symbol, eg. BTCUSDT
 	public base: string;										// Base currency (The currency being bought), eg. BTC
 	public quote: string;										// Quote currency (The currency being used to spend / trade for the base), eg. USDT
 	public startedTrading: boolean = false;						// Flag to indicate if trading has started (base currency has been bought)
 	public finishedTrading: boolean = false;					// Flag to indicate if trading has ended (base currency has been bought)
+	public buyDataSet: boolean = false;							// Flag to indicate if buy has occurred and data is set
+	public sellDataSet: boolean = false;						// Flag to indicate if sell has occurred and data is set
 	public baseQty: number = 0;									// Amount of base currency currently being traded
 	public quoteQty: number = 0;								// Amount of quote currency being used to trade with (Limit set by bot)
 	public profit: number = 0;									// Current / final amount of profit made (measured in the quote currency)
@@ -71,12 +74,14 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 	public priceChangeInterval!: number;						// The interval gap between expected price updates
 
 	public constructor(
+		botId: string,
 		symbol: string,
 		base: string,
 		quote: string,
 		priceChangeInterval: number,
 		exchangeInfo: ExchangeInfoSymbol
 	) {
+		this.botId = botId;
 		this.symbol = symbol;
 		this.base = base;
 		this.quote = quote;
@@ -167,7 +172,8 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 			this.preTradePriceChangeCount += 1;
 			this.times.lastPriceUpdateAt = time;
 		}
-		if (this.currentPrice) this.priceDifference = Calculations.PriceDifference(this.currentPrice, price, this.baseAssetPrecision);
+
+		if (this.startPrice) this.priceDifference = Calculations.PriceDifference(price, this.startPrice, this.baseAssetPrecision);
 		this.UpdateHighPrices(price, time);
 		this.UpdateLowPrices(price, time);
 		this.currentPrice = price;
