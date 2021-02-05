@@ -8,10 +8,12 @@ import {
 	ExchangeInfoSymbol,
 	IBotTradeData
 } from '@crypto-tracker/common-types';
-import { FakeBuyTransaction_BNB_Commission, } from '../../../test-data/transactions.data';
+import { FakeBuyTransaction_BNB_Commission } from '../../../test-data/transactions.data';
 import CommonExpectations from '../../common';
 
 describe('Bot Trade Data: Price Changes', (): void => {
+
+	const FAKE_BOT_ID: string = 'FAKE_BOT_ID';
 
 	test('It should update price data when Symbol price changes after Buy trade (Single Price Increase)', (): void => {
 		const symbol: string = 'COMPBTC';
@@ -35,7 +37,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		const quoteQty: number = -Number(transaction.cummulativeQuoteQty); // -0.00010306
 		const averageStartPrice: number = Number(transaction.fills[0].price); // 0.007928;
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 		tradeData.SortBuyData(transaction);
 
 		// Ensure test data doesn't change
@@ -188,7 +190,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		const quoteQty: number = -Number(transaction.cummulativeQuoteQty); // -0.00010306
 		const averageStartPrice: number = Number(transaction.fills[0].price); // 0.007928;
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 		tradeData.SortBuyData(transaction);
 
 		// Ensure test data doesn't change
@@ -340,7 +342,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 				minQty: '0.00100000'
 			};
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 
 		// Mock price update from Binance
 		const originalPreBuyPrice: number = 0.008;
@@ -493,7 +495,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 				minQty: '0.00100000'
 			};
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 
 		// Mock price update from Binance
 		const originalPreBuyPrice: number = 0.00775;
@@ -646,7 +648,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 				minQty: '0.00100000'
 			};
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 
 		// Mock price update from Binance
 		const originalPreBuyPrice: number = 0.00775;

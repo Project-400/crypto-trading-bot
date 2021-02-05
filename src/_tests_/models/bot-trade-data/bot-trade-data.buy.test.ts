@@ -17,6 +17,8 @@ import CommonExpectations from '../../common';
 
 describe('Bot Trade Data: Buy Transactions', (): void => {
 
+	const FAKE_BOT_ID: string = 'FAKE_BOT_ID';
+
 	test('It should populate and calculate buy data when currency is bought (Single BNB Commission)', (): void => {
 		const symbol: string = 'COMPBTC';
 		const base: string = 'COMP';
@@ -39,7 +41,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const quoteQty: number = -Number(transaction.cummulativeQuoteQty); // -0.00010306
 		const averagePrice: number = Number(transaction.fills[0].price); // 0.007928;
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 		tradeData.SortBuyData(transaction);
 
 		// Expectations
@@ -130,7 +132,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const quoteQty: number = -Number(transaction.cummulativeQuoteQty); // -0.00010480
 		const averagePrice: number = Number(transaction.fills[0].price);
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 		tradeData.SortBuyData(transaction);
 
 		// Expectations
@@ -223,7 +225,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const highestPrice: number = Number(transaction.fills[1].price); // 0.007929;
 		const lowestPrice: number = Number(transaction.fills[0].price); // 0.007928;
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 		tradeData.SortBuyData(transaction);
 
 		// Expectations
@@ -318,7 +320,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const highestPrice: number = Number(transaction.fills[0].price); // 0.007486;
 		const lowestPrice: number = Number(transaction.fills[1].price); // 0.007485;
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 		tradeData.SortBuyData(transaction);
 
 		// Expectations
@@ -418,7 +420,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		const highestPrice: number = Number(transaction.fills[2].price); // 0.007486;
 		const lowestPrice: number = Number(transaction.fills[0].price); // 0.007485;
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 		tradeData.SortBuyData(transaction);
 
 		// Expectations

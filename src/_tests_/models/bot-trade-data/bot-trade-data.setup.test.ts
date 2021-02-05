@@ -9,6 +9,8 @@ import CommonExpectations from '../../common';
 
 describe('Bot Trade Data: Setup', (): void => {
 
+	const FAKE_BOT_ID: string = 'FAKE_BOT_ID';
+
 	test('It should populate initial values when Trade Data is created', (): void => {
 		const symbol: string = 'COMPBTC';
 		const base: string = 'COMP';
@@ -25,7 +27,7 @@ describe('Bot Trade Data: Setup', (): void => {
 				minQty: '0.00100000'
 			};
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 
 		// Expectations
 

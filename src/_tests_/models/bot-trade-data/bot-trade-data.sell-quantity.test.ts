@@ -8,6 +8,8 @@ import { FakeBuyTransaction_GTO_BNB_Commission } from '../../../test-data/transa
 
 describe('Bot Trade Data: Sell Quantity', (): void => {
 
+	const FAKE_BOT_ID: string = 'FAKE_BOT_ID';
+
 	test('It should calculate the sell quantity when BNB commission was used for buy transaction', (): void => {
 		const symbol: string = 'COMPBTC';
 		const base: string = 'COMP';
@@ -22,7 +24,7 @@ describe('Bot Trade Data: Sell Quantity', (): void => {
 		const quoteQty: number = -Number(transaction.cummulativeQuoteQty); // -0.00010988
 		const averageStartPrice: number = Number(transaction.fills[0].price); // 0.00000041;
 
-		const tradeData: BotTradeData = new BotTradeData(symbol, base, quote, priceChangeInterval, exchangeInfo);
+		const tradeData: BotTradeData = new BotTradeData(FAKE_BOT_ID, symbol, base, quote, priceChangeInterval, exchangeInfo);
 		tradeData.SortBuyData(transaction);
 
 		// Ensure test data doesn't change
