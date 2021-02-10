@@ -73,7 +73,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);
@@ -164,7 +164,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);
@@ -259,7 +259,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);
@@ -354,7 +354,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);
@@ -455,7 +455,7 @@ describe('Bot Trade Data: Buy Transactions', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);

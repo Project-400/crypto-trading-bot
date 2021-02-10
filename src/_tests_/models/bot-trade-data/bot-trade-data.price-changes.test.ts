@@ -67,7 +67,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);
@@ -105,7 +105,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 
 		// Mock price update from Binance
 		const updatedPrice: number = 0.008;
-		const priceDifference: number = Number((updatedPrice - averageStartPrice).toFixed(exchangeInfo.baseAssetPrecision)); // 0.000072
+		const priceDifference: string = (updatedPrice - averageStartPrice).toFixed(exchangeInfo.baseAssetPrecision); // 0.000072
 		const percentageDifference: number = 0.9082;
 		tradeData.UpdatePrice(updatedPrice);
 
@@ -220,7 +220,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);
@@ -260,7 +260,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 
 		// Mock price update from Binance
 		const updatedPrice: number = 0.00775;
-		const priceDifference: number = Number((updatedPrice - averageStartPrice).toFixed(exchangeInfo.baseAssetPrecision)); // 0.000072
+		const priceDifference: string = (updatedPrice - averageStartPrice).toFixed(exchangeInfo.baseAssetPrecision); // 0.000072
 		const percentageDifference: number = -2.2452;
 		tradeData.UpdatePrice(updatedPrice);
 
@@ -369,7 +369,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject([]);
@@ -442,7 +442,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);
@@ -522,7 +522,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject([]);
@@ -595,7 +595,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);
@@ -675,7 +675,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject([]);
@@ -748,7 +748,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 		expect(tradeData.highestSellPrice).toBe(0);
 		expect(tradeData.lowestSellPrice).toBe(0);
 		expect(tradeData.averageSellPrice).toBe(0);
-		expect(tradeData.priceDifference).toBe(0);
+		expect(tradeData.priceDifference).toBe('0');
 		expect(tradeData.percentageDifference).toBe(0);
 		expect(tradeData.percentageDroppedFromHigh).toBe(0);
 		expect(tradeData.buyFills).toMatchObject(transaction.fills);
@@ -786,7 +786,7 @@ describe('Bot Trade Data: Price Changes', (): void => {
 
 		const tradeDataClone2: IBotTradeData = JSON.parse(JSON.stringify(tradeData)); // Clone current state of trade data
 		const updatedPrice: number = 0.0082;
-		const priceDifference: number = Number((updatedPrice - averageBuyPrice).toFixed(exchangeInfo.baseAssetPrecision)); // 0.000272
+		const priceDifference: string = (updatedPrice - averageBuyPrice).toFixed(exchangeInfo.baseAssetPrecision); // 0.000272
 		const percentageDifference: number = 3.4309;
 		tradeData.UpdatePrice(updatedPrice); // Mock price update from Binance
 
