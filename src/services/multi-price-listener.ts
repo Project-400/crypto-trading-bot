@@ -10,6 +10,7 @@ export interface SymbolPriceData {
 	priceNumerical: number;
 	subscriptionId: number;
 	subscriptionConfirmed: boolean;
+	subscriptionCount: number;
 }
 
 export class MultiPriceListener {
@@ -18,9 +19,13 @@ export class MultiPriceListener {
 	public static isListening: boolean = false;					// Lowercase version of the symbol, eg. btcusdt
 	private static symbols: SymbolPriceData[] = [];				// The symbol string, eg. BTCUSDT
 
-	public static AddSymbol = (symbol: string): SymbolPriceData => {
+	public static SubscribeToSymbol = (symbol: string): SymbolPriceData => {
 		let symbolPriceData: SymbolPriceData | undefined = MultiPriceListener.GetSymbolPriceData(symbol);
-		if (symbolPriceData) return symbolPriceData;
+
+		if (symbolPriceData) {
+			symbolPriceData = MultiPriceListener.IncrementSubscriptionCount(symbolPriceData);
+			return symbolPriceData;
+		}
 
 		symbolPriceData = {
 			symbol,
@@ -28,29 +33,60 @@ export class MultiPriceListener {
 			price: '0',
 			priceNumerical: 0,
 			subscriptionId: new Date().getMilliseconds(),
-			subscriptionConfirmed: false
+			subscriptionConfirmed: false,
+			subscriptionCount: 1
 		};
 
 		MultiPriceListener.symbols.push(symbolPriceData);
-		MultiPriceListener.SubscribeToSymbol(symbol);
+		MultiPriceListener.SymbolSubUnsub(symbolPriceData, true);
 
 		return symbolPriceData;
 	}
 
-	private static SubscribeToSymbol = (symbol: string): void => {
+	public static UnsubscribeToSymbol = (symbol: string): void => {
+		let symbolPriceData: SymbolPriceData | undefined = MultiPriceListener.GetSymbolPriceData(symbol);
+
+		if (!symbolPriceData) return;
+
+		symbolPriceData = MultiPriceListener.DecrementSubscriptionCount(symbolPriceData);
+
+		if (symbolPriceData.subscriptionCount <= 0) {
+			MultiPriceListener.SymbolSubUnsub(symbolPriceData, false);
+			MultiPriceListener.RemoveSymbol(symbol);
+		}
+	}
+
+	private static RemoveSymbol = (symbol: string): void => {
+		const symbolIndex: number = MultiPriceListener.GetSymbolPriceDataIndex(symbol);
+
+		if (symbolIndex > -1) MultiPriceListener.symbols.splice(symbolIndex, 1);
+	}
+
+	private static SymbolSubUnsub = (symbolPriceData: SymbolPriceData, isSub: boolean): void => {
 		const data: BinanceWebsocketSubscription = {
-			method: 'SUBSCRIBE',
-			params: [ `${symbol}@bookTicker` ],
-			id: 1
+			method: isSub ? 'SUBSCRIBE' : 'UNSUBSCRIBE',
+			params: [ `${symbolPriceData.symbol}@bookTicker` ],
+			id: symbolPriceData.subscriptionId
 		};
 
 		MultiPriceListener.binanceWsConnection?.SendData(data);
+
+	}
+
+	private static IncrementSubscriptionCount = (symbolPriceData: SymbolPriceData): SymbolPriceData => {
+		symbolPriceData.subscriptionCount = symbolPriceData.subscriptionCount + 1;
+		return symbolPriceData;
+	}
+
+	private static DecrementSubscriptionCount = (symbolPriceData: SymbolPriceData): SymbolPriceData => {
+		symbolPriceData.subscriptionCount = symbolPriceData.subscriptionCount - 1;
+		return symbolPriceData;
 	}
 
 	private static GetSymbolPriceData = (symbol: string): SymbolPriceData => {
 		let symbolPriceData: SymbolPriceData | undefined =
 			MultiPriceListener.symbols.find((s: SymbolPriceData): boolean => s.symbol === symbol);
-		if (!symbolPriceData) symbolPriceData = MultiPriceListener.AddSymbol(symbol);
+		if (!symbolPriceData) symbolPriceData = MultiPriceListener.SubscribeToSymbol(symbol);
 		return symbolPriceData;
 	}
 
