@@ -8,6 +8,8 @@ export interface SymbolPriceData {
 	lowercaseSymbol: string;
 	price: string;
 	priceNumerical: number;
+	subscriptionId: number;
+	subscriptionConfirmed: boolean;
 }
 
 export class MultiPriceListener {
@@ -24,7 +26,9 @@ export class MultiPriceListener {
 			symbol,
 			lowercaseSymbol: symbol.toLowerCase(),
 			price: '0',
-			priceNumerical: 0
+			priceNumerical: 0,
+			subscriptionId: new Date().getMilliseconds(),
+			subscriptionConfirmed: false
 		};
 
 		MultiPriceListener.symbols.push(symbolPriceData);
@@ -50,6 +54,9 @@ export class MultiPriceListener {
 		return symbolPriceData;
 	}
 
+	private static GetSymbolPriceDataById = (subscriptionId: number): SymbolPriceData | undefined =>
+		MultiPriceListener.symbols.find((s: SymbolPriceData): boolean => s.subscriptionId === subscriptionId)
+
 	private static GetSymbolPriceDataIndex = (symbol: string): number =>
 		MultiPriceListener.symbols.findIndex((s: SymbolPriceData): boolean => s.symbol === symbol)
 
@@ -64,6 +71,11 @@ export class MultiPriceListener {
 
 		symbolPriceData.price = price;
 		symbolPriceData.priceNumerical = Number(price);
+	}
+
+	private static ConfirmSymbolSubscription = (subscriptionId: number): void => {
+		const symbolPriceData: SymbolPriceData | undefined = MultiPriceListener.GetSymbolPriceDataById(subscriptionId);
+		if (symbolPriceData) symbolPriceData.subscriptionConfirmed = true;
 	}
 
 	public ConnectAndListen = (): void => {
@@ -96,7 +108,7 @@ export class MultiPriceListener {
 
 	private SocketMessage = (msg: SocketMessage): void => {
 		const msgData: BinanceBookTickerStreamData = JSON.parse(msg.data as string);
-		if (msgData.result === null) return;
+		if (msgData.result === null && msgData.id !== undefined) MultiPriceListener.ConfirmSymbolSubscription(msgData.id);
 		MultiPriceListener.UpdatePrice(msgData.s, msgData.a); // TODO: Clarify whether to use msgData.a or msgData.b?
 	}
 
