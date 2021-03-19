@@ -4,8 +4,6 @@ import { Consumer, SQSMessage } from 'sqs-consumer';
 
 AWS.config.update({
 	region: 'eu-west-1'
-	// accessKeyId: '...',
-	// secretAccessKey: '...'
 });
 
 export class SQSConsumer {
@@ -82,7 +80,8 @@ export class SQSConsumer {
 		const params: AWS.SQS.CreateQueueRequest = {
 			QueueName: queueName,
 			Attributes: {
-				MessageRetentionPeriod: '86400'
+				MessageRetentionPeriod: '86400',
+				Policy: `{"Version":"2012-10-17","Id":"arn:aws:sqs:eu-west-1:068475715603:undefined/SQSDefaultPolicy","Statement":[{"Sid":"topic-subscription-arn:aws:sns:eu-west-1:068475715603:TestTopic","Effect":"Allow","Principal":{"AWS":"*"},"Action":"SQS:SendMessage","Resource":"arn:aws:sqs:eu-west-1:068475715603:crypto-bot-${instanceId}","Condition":{"ArnLike":{"aws:SourceArn":"arn:aws:sns:eu-west-1:068475715603:TestTopic"}}}]}`
 			}
 		};
 
