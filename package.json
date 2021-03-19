@@ -11,7 +11,7 @@
     "tsc": "tsc",
     "test": "jest --notify --verbose",
     "start": "node ./build/bin/www",
-    "dev": "npm run tsc && npm start"
+    "dev": "npm run tsc && NODE_ENV=LOCAL npm start"
   },
   "dependencies": {
     "@babel/cli": "^7.10.5",

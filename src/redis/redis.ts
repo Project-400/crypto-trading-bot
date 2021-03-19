@@ -3,50 +3,49 @@ import Redis from 'ioredis';
 
 export class RedisActions {
 
-	private static RedisParams: Redis.RedisOptions = {
-		host: 'crypto-bot-data.tgmeob.ng.0001.euw1.cache.amazonaws.com',
-		port: 6379,
-		autoResubscribe: true,
-		maxRetriesPerRequest: 5
-	};
-	private static redis: Redis.Redis = new Redis(RedisActions.RedisParams);
+	private static redis: Redis.Redis;
 
-	private static localValues: { [key: string]: string | number } = { };
+	public static SetupRedisConnection = (): void => {
+		console.log('Setting up Redis Connection');
 
-	public static SetValue = (key: string, value: string): void => {
-		if (ENV.IS_LOCAL) {
-			RedisActions.localValues[key] = value;
-		} else {
-			RedisActions.redis.set(key, value, (err: Error | null, reply: any): void => {
-				console.log(reply);
-			});
+		if (ENV.IS_LOCAL) { 					// Connect to local instance of Redis Server
+			RedisActions.redis = new Redis();
+
+			console.log('Successfully connected to local instance of Redis Server');
+		} else {								// Connect to remote AWS Redis Server
+			const redisOptions: Redis.RedisOptions = {
+				host: ENV.AWS_REDIS_URL,
+				port: 6379,
+				autoResubscribe: true,
+				maxRetriesPerRequest: 5
+			};
+
+			RedisActions.redis = new Redis(redisOptions);
+
+			console.log('Successfully connected to remote AWS Redis Server');
 		}
 	}
 
-	public static GetValue = (key: string): Promise<string | number> | string | number => {
-		if (ENV.IS_LOCAL) {
-			return RedisActions.localValues[key];
-		}
+	public static set = (key: string, value: string): void => {
+		RedisActions.redis.set(key, value, (err: Error | null, reply: any): void => {
+			console.log(reply);
+		});
+	}
 
-		return new Promise((resolve: any, reject: any): void => {
+	public static get = (key: string): Promise<string | number> | string | number =>
+		new Promise((resolve: any, reject: any): void => {
 			RedisActions.redis.get(key, (err: Error | null, reply: any): void => {
 				console.log(reply);
 				resolve(reply);
 			});
-		});
-	}
+		})
 
-	public static DeleteValue = (key: string): Promise<boolean> | boolean => {
-		if (ENV.IS_LOCAL) {
-			return delete RedisActions.localValues[key];
-		}
-
-		return new Promise((resolve: any, reject: any): void => {
+	public static delete = (key: string): Promise<boolean> | boolean =>
+		new Promise((resolve: any, reject: any): void => {
 			RedisActions.redis.del(key, (err: Error | null, reply: any): void => {
 				console.log(reply);
 				resolve(reply);
 			});
-		});
-	}
+		})
 
 }
