@@ -6,6 +6,7 @@ import { WebsocketProducer } from './config/websocket/producer';
 import { SQSConsumer } from './sns-sqs/consumer';
 import * as AWS from 'aws-sdk';
 import { v4 as uuid } from 'uuid';
+import { CurrencySuggestionsManager } from './services/currency-suggestions-manager';
 
 const app: express.Application = express();
 
@@ -31,7 +32,8 @@ if (process.env.IS_LOCAL) {
 	});
 }
 
-WebsocketProducer.setup(app);
+CurrencySuggestionsManager.SetupExpirationChecker();
+// WebsocketProducer.setup(app);
 
 app.listen(3001, '0.0.0.0', (): void => {
 	console.log('Listening to port: ' + 3000);

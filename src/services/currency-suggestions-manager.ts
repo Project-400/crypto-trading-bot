@@ -1,4 +1,5 @@
 import { CurrencySuggestion } from '@crypto-tracker/common-types';
+import moment from 'moment';
 
 /*
 *
@@ -18,14 +19,32 @@ export class CurrencySuggestionsManager {
 	public static AddSuggestion = (suggestion: CurrencySuggestion): void => {
 		console.log('Received Suggestion: ', suggestion);
 
-		const existingSymbolSuggestionIndex: number =
-			CurrencySuggestionsManager.suggestions.findIndex((s: CurrencySuggestion): boolean => s.symbol === suggestion.symbol);
-
-		if (existingSymbolSuggestionIndex > -1) CurrencySuggestionsManager.suggestions.splice(existingSymbolSuggestionIndex, 1);
-
+		CurrencySuggestionsManager.RemoveSuggestion(suggestion.symbol);
 		CurrencySuggestionsManager.suggestions.push(suggestion);
 
 		console.log('All Suggestions: ', CurrencySuggestionsManager.suggestions);
+	}
+
+	public static RemoveSuggestion = (symbol: string): void => {
+		const existingSymbolSuggestionIndex: number =
+			CurrencySuggestionsManager.suggestions.findIndex((s: CurrencySuggestion): boolean => s.symbol === symbol);
+
+		if (existingSymbolSuggestionIndex > -1) CurrencySuggestionsManager.suggestions.splice(existingSymbolSuggestionIndex, 1);
+	}
+
+	public static SetupExpirationChecker = (): void => {
+		setInterval((): void => {
+			if (!CurrencySuggestionsManager.suggestions.length) return;
+
+			const date: moment.Moment = moment(new Date());
+
+			CurrencySuggestionsManager.suggestions = [
+				...CurrencySuggestionsManager.suggestions.filter((s: CurrencySuggestion): boolean =>
+					date.isBefore(moment(s.expirationTime)))
+			];
+		}, 10000);
+
+		console.log('Successfully set up Price Suggestions expiration checker.');
 	}
 
 }
