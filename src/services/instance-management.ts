@@ -1,5 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import * as AWS from 'aws-sdk';
+import { ENV } from '../environment';
 
 export class InstanceManagement {
 
@@ -8,8 +9,8 @@ export class InstanceManagement {
 	public static SetInstanceId = async (): Promise<void> => {
 		console.log('Setting InstanceId');
 
-		if (process.env.IS_LOCAL) {
-			InstanceManagement.InstanceId = uuid();
+		if (ENV.IS_LOCAL) {
+			InstanceManagement.InstanceId = ENV.REUSE_LOCAL_INSTANCE_ID ? 'reusable-test-instance-id' : uuid();
 		} else {
 			const meta: any = new AWS.MetadataService();
 

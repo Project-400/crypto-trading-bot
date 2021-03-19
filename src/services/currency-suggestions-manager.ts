@@ -31,7 +31,6 @@ export class CurrencySuggestionsManager {
 
 	public static SetupExpirationChecker = (): void => {
 		setInterval((): void => {
-			console.log('CHECK');
 			if (!CurrencySuggestionsManager.suggestions.length) return;
 
 			const date: moment.Moment = moment(new Date());
