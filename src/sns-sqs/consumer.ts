@@ -1,12 +1,13 @@
 import https from 'https';
 import * as AWS from 'aws-sdk';
 import { Consumer, SQSMessage } from 'sqs-consumer';
-import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID } from '../environment';
+import { AWS_ACCESS_KEY_ID, AWS_ACCOUNT_ID, AWS_PRICE_SUGGESTIONS_SNS_TOPIC, AWS_REGION, AWS_SECRET_ACCESS_KEY_ID } from '../environment';
 import { CurrencySuggestion } from '@crypto-tracker/common-types';
 import { CurrencySuggestionsManager } from '../services/currency-suggestions-manager';
+import { SQSPolicy } from './policy';
 
 AWS.config.update({
-	region: 'eu-west-1',
+	region: AWS_REGION,
 	accessKeyId: AWS_ACCESS_KEY_ID,
 	secretAccessKey: AWS_SECRET_ACCESS_KEY_ID
 });
@@ -15,15 +16,13 @@ export class SQSConsumer {
 
 	public static SetupConsumer = async (instanceId: string): Promise<void> => {
 		const queueName: string = await SQSConsumer.CreateQueue(instanceId);
+		await SQSConsumer.SubscribeToSNSTopic(queueName);
 		SQSConsumer.ListenToQueue(queueName);
-		setTimeout(async (): Promise<void> => {
-			await SQSConsumer.SubscribeToSNSTopic(queueName);
-		}, 3000);
 	}
 
 	public static ListenToQueue = (queueName: string): void => {
 		const consumer: Consumer = Consumer.create({
-			queueUrl: `https://sqs.eu-west-1.amazonaws.com/068475715603/${queueName}`,
+			queueUrl: `https://sqs.${AWS_REGION}.amazonaws.com/${AWS_ACCOUNT_ID}/${queueName}`,
 			handleMessage: async (message: SQSMessage): Promise<void> => {
 				await SQSConsumer.HandleMessage(message);
 			},
@@ -44,18 +43,14 @@ export class SQSConsumer {
 			console.error(err.message);
 		});
 
-		consumer.on('processing_error', (err: Error): void => {
-			console.error(err.message);
-		});
-
 		consumer.start();
 	}
 
 	private static SubscribeToSNSTopic = (queueName: string): Promise<boolean> => {
 		const sns: AWS.SNS = new AWS.SNS();
 
-		const topicArn: string = 'arn:aws:sns:eu-west-1:068475715603:TestTopic';
-		const sqsEndpoint: string = `arn:aws:sqs:eu-west-1:068475715603:${queueName}`;
+		const topicArn: string = `arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:${AWS_PRICE_SUGGESTIONS_SNS_TOPIC}`;
+		const sqsEndpoint: string = `arn:aws:sqs:${AWS_REGION}:${AWS_ACCOUNT_ID}:${queueName}`;
 
 		const params: AWS.SNS.SubscribeInput = {
 			Protocol: 'sqs',
@@ -86,7 +81,7 @@ export class SQSConsumer {
 			QueueName: queueName,
 			Attributes: {
 				MessageRetentionPeriod: '86400',
-				Policy: `{"Version":"2012-10-17","Id":"arn:aws:sqs:eu-west-1:068475715603:undefined/SQSDefaultPolicy","Statement":[{"Sid":"topic-subscription-arn:aws:sns:eu-west-1:068475715603:TestTopic","Effect":"Allow","Principal":{"AWS":"*"},"Action":"SQS:SendMessage","Resource":"arn:aws:sqs:eu-west-1:068475715603:crypto-bot-${instanceId}","Condition":{"ArnLike":{"aws:SourceArn":"arn:aws:sns:eu-west-1:068475715603:TestTopic"}}}]}`
+				Policy: SQSPolicy(queueName)
 			}
 		};
 
@@ -104,22 +99,19 @@ export class SQSConsumer {
 	}
 
 	private static HandleMessage = (message: SQSMessage): void => {
-		console.log('HANDLE MESSAGE FROM SQS');
-		console.log(message);
-		// let messageText: any;
 		let messageBody: any;
+
 		try {
-			if (message.Body) {
-				messageBody = JSON.parse(message.Body);
-				// messageText = JSON.parse(messageBody.Message);
-			}
+			if (message.Body) messageBody = JSON.parse(message.Body);
 		} catch (err) {
 			console.error(`Failed to parse SQS message: ${err}`);
 		}
 
-		const currencySuggestion: CurrencySuggestion = JSON.parse(messageBody.Message);
+		if (messageBody) {
+			const currencySuggestion: CurrencySuggestion = JSON.parse(messageBody.Message);
 
-		if (currencySuggestion.symbol) CurrencySuggestionsManager.AddSuggestion(currencySuggestion);
+			if (currencySuggestion.symbol) CurrencySuggestionsManager.AddSuggestion(currencySuggestion);
+		}
 	}
 
 }

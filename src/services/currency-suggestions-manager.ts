@@ -1,5 +1,6 @@
 import { CurrencySuggestion } from '@crypto-tracker/common-types';
 import moment from 'moment';
+import { PRICE_SUGGESTION_EXPIRATION_CHECK_INTERVAL } from '../environment';
 
 /*
 *
@@ -17,12 +18,8 @@ export class CurrencySuggestionsManager {
 	public static suggestions: CurrencySuggestion[] = [];
 
 	public static AddSuggestion = (suggestion: CurrencySuggestion): void => {
-		console.log('Received Suggestion: ', suggestion);
-
 		CurrencySuggestionsManager.RemoveSuggestion(suggestion.symbol);
 		CurrencySuggestionsManager.suggestions.push(suggestion);
-
-		console.log('All Suggestions: ', CurrencySuggestionsManager.suggestions);
 	}
 
 	public static RemoveSuggestion = (symbol: string): void => {
@@ -34,6 +31,7 @@ export class CurrencySuggestionsManager {
 
 	public static SetupExpirationChecker = (): void => {
 		setInterval((): void => {
+			console.log('CHECK');
 			if (!CurrencySuggestionsManager.suggestions.length) return;
 
 			const date: moment.Moment = moment(new Date());
@@ -42,7 +40,7 @@ export class CurrencySuggestionsManager {
 				...CurrencySuggestionsManager.suggestions.filter((s: CurrencySuggestion): boolean =>
 					date.isBefore(moment(s.expirationTime)))
 			];
-		}, 10000);
+		}, PRICE_SUGGESTION_EXPIRATION_CHECK_INTERVAL);
 
 		console.log('Successfully set up Price Suggestions expiration checker.');
 	}
