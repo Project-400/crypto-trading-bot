@@ -1,9 +1,12 @@
 import https from 'https';
 import * as AWS from 'aws-sdk';
 import { Consumer, SQSMessage } from 'sqs-consumer';
+import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID } from '../environment';
 
 AWS.config.update({
-	region: 'eu-west-1'
+	region: 'eu-west-1',
+	accessKeyId: AWS_ACCESS_KEY_ID,
+	secretAccessKey: AWS_SECRET_ACCESS_KEY_ID
 });
 
 export class SQSConsumer {
