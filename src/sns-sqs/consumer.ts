@@ -101,6 +101,8 @@ export class SQSConsumer {
 	private static HandleMessage = (message: SQSMessage): void => {
 		let messageBody: any;
 
+		console.log(message);
+
 		try {
 			if (message.Body) messageBody = JSON.parse(message.Body);
 		} catch (err) {

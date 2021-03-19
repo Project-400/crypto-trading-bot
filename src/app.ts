@@ -7,6 +7,7 @@ import { SQSConsumer } from './sns-sqs/consumer';
 import * as AWS from 'aws-sdk';
 import { v4 as uuid } from 'uuid';
 import { CurrencySuggestionsManager } from './services/currency-suggestions-manager';
+import { InstanceManagement } from './services/instance-management';
 
 const app: express.Application = express();
 
@@ -17,23 +18,12 @@ app.use(cookieParser());
 // app.use(session({ secret: 'test-secret' }));
 app.use('/v1', indexRouter);
 
-console.log('process.env.IS_LOCAL');
-console.log(process.env.IS_LOCAL);
-
-if (process.env.IS_LOCAL) {
-	const instanceId: string = uuid();
-	SQSConsumer.SetupConsumer(instanceId);
-} else {
-	const meta: any = new AWS.MetadataService();
-
-	meta.request('/latest/meta-data/instance-id', (err: Error, instanceId: string): void => {
-		console.log(`Instance Id: ${instanceId}`);
-		SQSConsumer.SetupConsumer(instanceId);
-	});
-}
+InstanceManagement.SetInstanceId().then(async (): Promise<void> => {
+	await SQSConsumer.SetupConsumer(InstanceManagement.InstanceId);
+});
 
 CurrencySuggestionsManager.SetupExpirationChecker();
-// WebsocketProducer.setup(app);
+WebsocketProducer.setup(app);
 
 app.listen(3001, '0.0.0.0', (): void => {
 	console.log('Listening to port: ' + 3000);
