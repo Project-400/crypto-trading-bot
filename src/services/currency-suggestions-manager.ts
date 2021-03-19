@@ -11,7 +11,7 @@ import { CurrencySuggestion } from '@crypto-tracker/common-types';
 *
 * */
 
-export class CurrencySuggestions {
+export class CurrencySuggestionsManager {
 
 	public static suggestions: CurrencySuggestion[] = [];
 
@@ -19,13 +19,13 @@ export class CurrencySuggestions {
 		console.log('Received Suggestion: ', suggestion);
 
 		const existingSymbolSuggestionIndex: number =
-			CurrencySuggestions.suggestions.findIndex((s: CurrencySuggestion): boolean => s.symbol === suggestion.symbol);
+			CurrencySuggestionsManager.suggestions.findIndex((s: CurrencySuggestion): boolean => s.symbol === suggestion.symbol);
 
-		if (existingSymbolSuggestionIndex > -1) CurrencySuggestions.suggestions.splice(existingSymbolSuggestionIndex, 1);
+		if (existingSymbolSuggestionIndex > -1) CurrencySuggestionsManager.suggestions.splice(existingSymbolSuggestionIndex, 1);
 
-		CurrencySuggestions.suggestions.push(suggestion);
+		CurrencySuggestionsManager.suggestions.push(suggestion);
 
-		console.log('All Suggestions: ', CurrencySuggestions.suggestions);
+		console.log('All Suggestions: ', CurrencySuggestionsManager.suggestions);
 	}
 
 }

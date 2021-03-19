@@ -2,6 +2,8 @@ import https from 'https';
 import * as AWS from 'aws-sdk';
 import { Consumer, SQSMessage } from 'sqs-consumer';
 import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID } from '../environment';
+import { CurrencySuggestion } from '@crypto-tracker/common-types';
+import { CurrencySuggestionsManager } from '../services/currency-suggestions-manager';
 
 AWS.config.update({
 	region: 'eu-west-1',
@@ -104,17 +106,20 @@ export class SQSConsumer {
 	private static HandleMessage = (message: SQSMessage): void => {
 		console.log('HANDLE MESSAGE FROM SQS');
 		console.log(message);
-		let messageText: any;
+		// let messageText: any;
+		let messageBody: any;
 		try {
 			if (message.Body) {
-				const messageBody: any = JSON.parse(message.Body);
-				messageText = JSON.parse(messageBody.Message);
+				messageBody = JSON.parse(message.Body);
+				// messageText = JSON.parse(messageBody.Message);
 			}
 		} catch (err) {
 			console.error(`Failed to parse SQS message: ${err}`);
 		}
 
-		console.log(messageText);
+		const currencySuggestion: CurrencySuggestion = JSON.parse(messageBody.Message);
+
+		if (currencySuggestion.symbol) CurrencySuggestionsManager.AddSuggestion(currencySuggestion);
 	}
 
 }
