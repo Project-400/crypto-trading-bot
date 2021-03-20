@@ -1,6 +1,5 @@
 import { ExchangeCurrencyTransactionFull, ExchangeInfoSymbol, PositionState, TradingBotState } from '@crypto-tracker/common-types';
 import { Logger } from '../../config/logger/logger';
-import PriceListener from './price-listener';
 import { BotTradeData } from '../../models/bot-trade-data';
 import CrudServiceTransactions, { TransactionResponseDto } from '../../external-api/crud-service/services/transactions';
 import CrudServiceBots from '../../external-api/crud-service/services/bots';
@@ -8,6 +7,7 @@ import { WebsocketProducer } from '../../config/websocket/producer';
 import { FakeBuyTransaction_CELO, FakeBuyTransaction_COMP_Commission, FakeSellTransaction_CELO } from '../../test-data/transactions.data';
 import { RedisActions } from '../../redis/redis';
 import { ENV, FAKE_TRANSACTIONS_ON } from '../../environment';
+import { MultiPriceListener } from '../../services/multi-price-listener';
 
 /*
 *
@@ -29,7 +29,6 @@ export default class ShortTermTraderBot {
 	private readonly quoteQty: number;								// The limit of how much of the quote currency the bot can use, eg. 10 USDT
 	private readonly sellAtLossPercentage: number = 1;				// By default, see when the price drops by 1% (-1%)
 	private readonly repeatedlyTrade!: boolean;						// Flat to indicate whether to continuously buy and sell (true) or shutdown after first sell (false)
-	private readonly priceListener: PriceListener;					// Price listener
 	private readonly exchangeInfo: ExchangeInfoSymbol;				// The Binance details related to this trading pair - Limits, rounding, etc.
 	private botState: TradingBotState = TradingBotState.WAITING;	// Current state of the bot
 	private updateChecker: NodeJS.Timeout | undefined;				// A SetTimeout that will trigger updates
@@ -52,7 +51,6 @@ export default class ShortTermTraderBot {
 		this.quote = quote;
 		this.quoteQty = quoteQty;
 		this.repeatedlyTrade = repeatedlyTrade;
-		this.priceListener = new PriceListener(this.tradingPairSymbol);
 		this.exchangeInfo = exchangeInfo;
 		if (sellAtLossPercentage) this.sellAtLossPercentage = sellAtLossPercentage;
 		if (clientSocketIds && clientSocketIds.length) this.subscribedClients = clientSocketIds;
@@ -61,14 +59,14 @@ export default class ShortTermTraderBot {
 
 	public Start = async (): Promise<BotTradeData | undefined> => {
 		this.SetState(TradingBotState.STARTING);
-		this.priceListener.ConnectAndListen();
+		MultiPriceListener.SubscribeToSymbol(this.tradingPairSymbol);
 		this.BeginCheckingUpdates();
 		return this.tradeData;
 	}
 
 	public Stop = async (forceSell: boolean = false): Promise<void> => {
 		if (this.updateChecker) clearInterval(this.updateChecker);
-		if (this.priceListener.isListening) this.priceListener.StopListening();
+		if (MultiPriceListener.isListening) MultiPriceListener.UnsubscribeToSymbol(this.tradingPairSymbol);
 		if (forceSell) await this.SellCurrency();
 
 		RedisActions.delete(`bot#${this.getBotId()}`);
@@ -81,7 +79,7 @@ export default class ShortTermTraderBot {
 
 	private BeginCheckingUpdates = (): void => {
 		this.updateChecker = setInterval(async (): Promise<void> => {
-			const currentPrice: number = this.priceListener.Price();
+			const currentPrice: number = Number(MultiPriceListener.GetPrice(this.tradingPairSymbol));
 
 			if (currentPrice !== 0) {
 				if (this.botState === TradingBotState.STARTING) this.SetState(TradingBotState.WAITING);
