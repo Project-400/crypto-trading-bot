@@ -2,6 +2,8 @@ import ShortTermTraderBot from './short-term-trader-bot';
 import CrudServiceExchangeInfo, { GetExchangeInfoResponseDto } from '../external-api/crud-service/services/exchange-info';
 import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api';
 import { v4 as uuid } from 'uuid';
+import { RedisActions } from '../redis/redis';
+import { InstanceManagement } from '../services/instance-management';
 
 export class BotManager {
 
@@ -27,6 +29,9 @@ export class BotManager {
 		if (exchangeInfo.success) {
 			bot = new ShortTermTraderBot(botId, exchangeInfo.info.baseAsset, exchangeInfo.info.quoteAsset,
 				currency, quoteAmount, repeatedlyTrade, exchangeInfo.info, percentageLoss, clientSocketId ? [ clientSocketId ] : undefined);
+
+			RedisActions.set(`bot#${bot.getBotId()}`, 'true');
+
 			if (bot) clonedBot = { ...bot } as ShortTermTraderBot;
 			BotManager.deployedBots.push(bot);
 			await bot.Start();

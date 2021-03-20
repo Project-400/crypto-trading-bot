@@ -6,6 +6,8 @@ import CrudServiceTransactions, { TransactionResponseDto } from '../../external-
 import CrudServiceBots from '../../external-api/crud-service/services/bots';
 import { WebsocketProducer } from '../../config/websocket/producer';
 import { FakeBuyTransaction_CELO, FakeBuyTransaction_COMP_Commission, FakeSellTransaction_CELO } from '../../test-data/transactions.data';
+import { RedisActions } from '../../redis/redis';
+import { ENV, FAKE_TRANSACTIONS_ON } from '../../environment';
 
 /*
 *
@@ -36,7 +38,6 @@ export default class ShortTermTraderBot {
 	private priceChangeInterval: number = 1000;						// The interval gap between expected price updates
 	private subscribedClients: string[] = [];						// Websocket Client Ids listening for bot updates
 	private lastPublishedPrice: number = 0;							// Last time the price has been published to clients
-	private IN_TEST_MODE: boolean = true;							// Flag for whether the bot is in test mode or not
 	private botLogs: string[] = [];									// TODO: History of bot logs
 
 	public getBotId = (): string => this.botId;
@@ -69,6 +70,11 @@ export default class ShortTermTraderBot {
 		if (this.updateChecker) clearInterval(this.updateChecker);
 		if (this.priceListener.isListening) this.priceListener.StopListening();
 		if (forceSell) await this.SellCurrency();
+
+		RedisActions.delete(`bot#${this.getBotId()}`);
+		RedisActions.delete(`bot#${this.getBotId()}/state`);
+		RedisActions.delete(`bot#${this.getBotId()}/price-percentage-difference`);
+		RedisActions.delete(`bot#${this.getBotId()}/price-percentage-from-high`);
 	}
 
 	public Pause = (): void => this.SetState(TradingBotState.PAUSED);
@@ -86,7 +92,10 @@ export default class ShortTermTraderBot {
 			// else console.log('PRICE is still 0');
 
 			if (this.lastPublishedPrice !== currentPrice) {
-				this.tradeData?.UpdatePrice(currentPrice);
+				this.tradeData.UpdatePrice(currentPrice);
+
+				RedisActions.set(`bot#${this.getBotId()}/price-percentage-difference`, this.tradeData.percentageDifference.toString());
+				RedisActions.set(`bot#${this.getBotId()}/price-percentage-from-high`, this.tradeData.percentageDroppedFromHigh.toString());
 
 				this.publishDataToClients({
 					botId: this.botId,
@@ -103,6 +112,8 @@ export default class ShortTermTraderBot {
 	private SetState = (state: TradingBotState): void => {
 		this.botState = state;
 
+		RedisActions.set(`bot#${this.getBotId()}/state`, this.botState);
+
 		this.publishDataToClients({
 			botId: this.botId,
 			botState: this.botState,
@@ -114,21 +125,22 @@ export default class ShortTermTraderBot {
 	}
 
 	private saveTradeData = async (): Promise<void> => {
-		// if (!this.tradeData || this.IN_TEST_MODE) return;
+		if (!this.tradeData || ENV.BOT_TEST_MODE_ON) return;
 		return CrudServiceBots.SaveBotTradeData(this.tradeData);
 	}
 
 	private makeDecision = async (): Promise<void> => {
-		console.log(`Bot is ${this.botState}`);
+		// console.log(`Bot is ${this.botState}`);
 
 		if (this.botState === TradingBotState.WAITING) {
-			this.tradeData = new BotTradeData(this.botId, this.tradingPairSymbol, this.base, this.quote, this.priceChangeInterval, this.exchangeInfo);
+			this.tradeData = new BotTradeData(this.botId, this.tradingPairSymbol, this.base,
+				this.quote, this.priceChangeInterval, this.exchangeInfo);
 
 			await this.BuyCurrency(this.quoteQty);
 		}
 
 		if (this.botState === TradingBotState.TRADING) {
-			if (this.tradeData.percentageDifference <= -this.sellAtLossPercentage) {
+			if (this.tradeData.percentageDroppedFromHigh <= -this.sellAtLossPercentage) {
 				this.publishDataToClients({
 					botLog: JSON.stringify({
 						log: `Profit / Loss is at -${this.sellAtLossPercentage}%\nBot is selling ${this.tradeData.base}`,
@@ -153,13 +165,13 @@ export default class ShortTermTraderBot {
 		}
 	}
 
-	private BuyCurrency = async (quantity: number): Promise<ExchangeCurrencyTransactionFull> =>  {
+	private BuyCurrency = async (quantity: number): Promise<ExchangeCurrencyTransactionFull> => {
 		Logger.info(`BUYING ${this.base} with ${quantity} ${this.quote}`);
 
 		// if (!quantity) return Logger.error(`Unable to buy ${this.base} - Invalid buy quantity: ${quantity}`);
 
 		const buy: TransactionResponseDto =
-			this.IN_TEST_MODE ?
+			ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON ?
 			{ success: true, transaction: { response: FakeBuyTransaction_CELO } } :
 			await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote, quantity.toString());
 
@@ -188,9 +200,9 @@ export default class ShortTermTraderBot {
 		Logger.info(`SELLING ${sellQty} ${this.tradeData.base}`);
 
 		const sell: TransactionResponseDto =
-			this.IN_TEST_MODE ?
-				{ success: true, transaction: { response: FakeSellTransaction_CELO } } :
-				await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.tradeData.GetSellQuantity());
+			ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON ?
+			{ success: true, transaction: { response: FakeSellTransaction_CELO } } :
+			await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.tradeData.GetSellQuantity());
 
 		if (sell.success && sell.transaction && this.tradeData) {
 			this.SetState(TradingBotState.PAUSED);

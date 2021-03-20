@@ -19,12 +19,14 @@ app.use('/v1', indexRouter);
 
 InstanceManagement.SetInstanceId().then(async (): Promise<void> => {
 	await SQSConsumer.SetupConsumer(InstanceManagement.InstanceId);
+
+	RedisActions.SetupRedisConnection();
+
+	RedisActions.set(`running-instance#${InstanceManagement.InstanceId}`, 'true');
 });
 
-RedisActions.SetupRedisConnection();
-
-CurrencySuggestionsManager.SetupExpirationChecker();
 WebsocketProducer.setup(app);
+CurrencySuggestionsManager.SetupExpirationChecker();
 
 app.listen(3001, '0.0.0.0', (): void => {
 	console.log('Listening to port: ' + 3000);
