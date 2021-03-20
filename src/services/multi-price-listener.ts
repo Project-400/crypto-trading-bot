@@ -1,7 +1,7 @@
-import { Logger } from '../config/logger/logger';
-import { BINANCE_WS } from '../environment';
+import { BINANCE_WS, ENV } from '../environment';
 import SocketConnection, { SocketMessage } from '../config/websocket/connector';
 import { BinanceBookTickerStreamData, BinanceWebsocketSubscription } from '../interfaces/interfaces';
+import { FakePriceSocket } from './fake-price-socket';
 
 export interface SymbolPriceData {
 	symbol: string;
@@ -33,14 +33,14 @@ export class MultiPriceListener {
 	}
 
 	public static UnsubscribeToSymbol = (symbol: string): void => {
-		let symbolPriceData: SymbolPriceData = MultiPriceListener.GetSymbolPriceData(symbol, true);
+		let symbolPriceData: SymbolPriceData = MultiPriceListener.GetSymbolPriceData(symbol);
 
 		if (!symbolPriceData) return;
 
 		symbolPriceData = MultiPriceListener.DecrementSubscriptionCount(symbolPriceData);
 
 		if (symbolPriceData.subscriptionCount <= 0) {
-			MultiPriceListener.SymbolSubUnsub(symbolPriceData, false);
+			if (!ENV.SIMULATE_PRICE_LISTENER) MultiPriceListener.SymbolSubUnsub(symbolPriceData, false);
 			MultiPriceListener.RemoveSymbol(symbol);
 		}
 	}
@@ -63,7 +63,7 @@ export class MultiPriceListener {
 		};
 
 		MultiPriceListener.symbols.push(symbolPriceData);
-		MultiPriceListener.SymbolSubUnsub(symbolPriceData, true);
+		if (!ENV.SIMULATE_PRICE_LISTENER) MultiPriceListener.SymbolSubUnsub(symbolPriceData, true);
 
 		return symbolPriceData;
 	}
@@ -88,7 +88,7 @@ export class MultiPriceListener {
 		return symbolPriceData;
 	}
 
-	private static GetSymbolPriceData = (symbol: string, unsub: boolean = false): SymbolPriceData => {
+	private static GetSymbolPriceData = (symbol: string): SymbolPriceData => {
 		let symbolPriceData: SymbolPriceData | undefined =
 			MultiPriceListener.symbols.find((s: SymbolPriceData): boolean => s.symbol === symbol);
 		if (!symbolPriceData) symbolPriceData = MultiPriceListener.CreateSub(symbol);
@@ -120,41 +120,49 @@ export class MultiPriceListener {
 	}
 
 	public static ConnectAndListen = (): void => {
-		Logger.info('Opening Connection to Binance WebSocket');
-
-		MultiPriceListener.binanceWsConnection = new SocketConnection(
-			BINANCE_WS,
-			MultiPriceListener.SocketOpen,
-			MultiPriceListener.SocketClose,
-			MultiPriceListener.SocketMessage,
-			MultiPriceListener.SocketError
-		);
+		if (ENV.SIMULATE_PRICE_LISTENER) {
+			console.log('Setting up Simulated Price Listener');
+			MultiPriceListener.isListening = true;
+			FakePriceSocket.SimulateWebsocketMessages(MultiPriceListener.symbols, MultiPriceListener.SocketMessage);
+		} else {
+			console.log('Setting up Price Listener - Opening Connection to Binance WebSocket');
+			MultiPriceListener.binanceWsConnection = new SocketConnection(
+				BINANCE_WS,
+				MultiPriceListener.SocketOpen,
+				MultiPriceListener.SocketClose,
+				MultiPriceListener.SocketMessage,
+				MultiPriceListener.SocketError
+			);
+		}
 	}
 
 	public static StopListening = (): void => {
-		MultiPriceListener.binanceWsConnection?.Close();
-		MultiPriceListener.binanceWsConnection = undefined;
-		MultiPriceListener.isListening = true;
+		if (!ENV.SIMULATE_PRICE_LISTENER) {
+			MultiPriceListener.binanceWsConnection?.Close();
+			MultiPriceListener.binanceWsConnection = undefined;
+		}
+		MultiPriceListener.isListening = false;
 	}
 
 	private static SocketOpen = (): void => {
-		Logger.info('Trader Bot connected to Binance WebSocket');
+		console.log('Price Listener connected to Binance WebSocket');
 		MultiPriceListener.isListening = true;
 	}
 
 	private static SocketClose = (): void => {
-		Logger.info(`Trader Bot disconnected from Binance`);
+		console.log(`Price Listener disconnected from Binance Websocket`);
 		MultiPriceListener.isListening = false;
 	}
 
 	private static SocketMessage = (msg: SocketMessage): void => {
 		const msgData: BinanceBookTickerStreamData = JSON.parse(msg.data as string);
+		console.log(msgData);
 		if (msgData.result === null && msgData.id !== undefined) return MultiPriceListener.ConfirmSymbolSubscription(msgData.id);
 		MultiPriceListener.UpdatePrice(msgData.s, msgData.a); // TODO: Clarify whether to use msgData.a or msgData.b?
 	}
 
 	private static SocketError = (): void => {
-		Logger.info(`Trader Bot encountered an error while connected to Binance`);
+		console.log(`Trader Bot encountered an error while connected to Binance`);
 	}
 
 }

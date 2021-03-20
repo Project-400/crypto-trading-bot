@@ -11,6 +11,8 @@ export const REUSE_LOCAL_INSTANCE_ID: boolean = process.env.REUSE_LOCAL_INSTANCE
 // Use fake transaction JSON to mimic currency buy & sell
 export const FAKE_TRANSACTIONS_ON: boolean = process.env.FAKE_TRANSACTIONS_ON as string === 'true';
 
+export const SIMULATE_PRICE_LISTENER: boolean = process.env.SIMULATE_PRICE_LISTENER as string === 'true';
+
 // Prevent saving details to DB while testing bot functionality
 export const BOT_TEST_MODE_ON: boolean = process.env.BOT_TEST_MODE_ON as string === 'true';
 
@@ -35,6 +37,7 @@ export const ENV: { [key: string]: any } = {
 	IS_LOCAL,
 	REUSE_LOCAL_INSTANCE_ID,
 	FAKE_TRANSACTIONS_ON,
+	SIMULATE_PRICE_LISTENER,
 	BOT_TEST_MODE_ON,
 	AWS: {
 		AWS_ACCOUNT_ID,
