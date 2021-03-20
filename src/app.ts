@@ -7,6 +7,7 @@ import { SQSConsumer } from './sns-sqs/consumer';
 import { CurrencySuggestionsManager } from './services/currency-suggestions-manager';
 import { InstanceManagement } from './services/instance-management';
 import { RedisActions } from './redis/redis';
+import { MultiPriceListener } from './services/multi-price-listener';
 
 const app: express.Application = express();
 
@@ -27,6 +28,7 @@ InstanceManagement.SetInstanceId().then(async (): Promise<void> => {
 
 WebsocketProducer.setup(app);
 CurrencySuggestionsManager.SetupExpirationChecker();
+MultiPriceListener.ConnectAndListen();
 
 app.listen(3001, '0.0.0.0', (): void => {
 	console.log('Listening to port: ' + 3000);
