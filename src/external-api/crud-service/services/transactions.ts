@@ -12,7 +12,7 @@ export default class CrudServiceTransactions extends CrudService {
 
 	public static BuyCurrency = async (symbol: string, base: string, quote: string, quantity: string)
 		: Promise<TransactionResponseDto> =>
-		CrudService.post2('/transactions/buy', {
+		CrudService.post4('/transactions/buy', {
 			symbol,
 			base,
 			quote,
@@ -22,7 +22,7 @@ export default class CrudServiceTransactions extends CrudService {
 
 	public static SellCurrency = async (symbol: string, base: string, quote: string, quantity: string)
 		: Promise<TransactionResponseDto> =>
-		CrudService.post2('/transactions/buy', {
+		CrudService.post4('/transactions/sell', {
 			symbol,
 			base,
 			quote,

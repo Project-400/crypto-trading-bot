@@ -3,7 +3,6 @@ import { Request, Response } from 'express';
 import { BotManager } from '../bots/bot-manager';
 import ShortTermTraderBot from '../bots/short-term-trader-bot';
 import { Logger } from '../config/logger/logger';
-import PriceListener from '../bots/short-term-trader-bot/price-listener';
 import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api';
 import { BotTradeData } from '../models/bot-trade-data';
 
@@ -74,6 +73,12 @@ export class BotController {
 		return res.status(200).json({ success: true, bots });
 	}
 
+	public static getBotCount = (req: Request, res: Response): Response => {
+		const botCount: number = BotManager.getBotCount();
+
+		return res.status(200).json({ success: true, botCount });
+	}
+
 	public static shutdownBots = (req: Request, res: Response): Response => {
 		const count: number = BotManager.shutdownAllBots();
 
@@ -103,14 +108,21 @@ export class BotController {
 
 	/* Temp for testing bot */
 	public static subscribe = async (req: Request, res: Response): Promise<Response> => {
-		if (!req.body || !req.query.currency || !req.query.quoteAmount || !req.query.repeatedlyTrade || !req.query.clientSocketId) return res.status(400).json({ error: 'Invalid request params' });
+		if (!req.body || !req.query.currency || !req.query.quoteAmount || !req.query.repeatedlyTrade || !req.query.clientSocketId)
+			return res.status(400).json({ error: 'Invalid request params' });
+
 		const currency: string = req.query.currency.toString();
 		const quoteAmount: number = parseFloat(req.query.quoteAmount.toString());
 		const clientSocketId: string = req.query.clientSocketId.toString();
 		const repeatedlyTrade: boolean = req.query.repeatedlyTrade.toString() === 'true';
 
+		let percentageLoss: number;
+		if (req.query.percentageLoss) percentageLoss = parseFloat(req.query.percentageLoss.toString());
+
 		const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
-		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId);
+		// tslint:disable-next-line:ban-ts-ignore
+		// @ts-ignore
+		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId, percentageLoss);
 
 		return res.status(200).json({ success: true, subscribed: true, bot: bot?.BOT_DETAILS(), priceInfo });
 	}

@@ -4,9 +4,9 @@ import { BotTradeData } from '../../models/bot-trade-data';
 import CrudServiceTransactions, { TransactionResponseDto } from '../../external-api/crud-service/services/transactions';
 import CrudServiceBots from '../../external-api/crud-service/services/bots';
 import { WebsocketProducer } from '../../config/websocket/producer';
-import { FakeBuyTransaction_CELO, FakeBuyTransaction_COMP_Commission, FakeSellTransaction_CELO } from '../../test-data/transactions.data';
+import { FakeBuyTransaction_CELO, FakeSellTransaction_CELO } from '../../test-data/transactions.data';
 import { RedisActions } from '../../redis/redis';
-import { ENV, FAKE_TRANSACTIONS_ON } from '../../environment';
+import { ENV } from '../../environment';
 import { MultiPriceListener } from '../../services/multi-price-listener';
 
 /*
@@ -126,13 +126,11 @@ export default class ShortTermTraderBot {
 	}
 
 	private saveTradeData = async (): Promise<void> => {
-		if (!this.tradeData || ENV.BOT_TEST_MODE_ON) return;
+		if (ENV.BOT_TEST_MODE_ON) return;
 		return CrudServiceBots.SaveBotTradeData(this.tradeData);
 	}
 
 	private makeDecision = async (): Promise<void> => {
-		// console.log(`Bot is ${this.botState}`);
-
 		if (this.botState === TradingBotState.WAITING) {
 			await this.BuyCurrency(this.quoteQty);
 		}

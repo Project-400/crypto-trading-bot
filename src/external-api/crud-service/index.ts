@@ -19,6 +19,10 @@ export default class CrudService {
 		return HTTP.post(`${CRUD_SERVICE_URL_TRADE_DATA}${path}`, postData);
 	}
 
+	protected static async post4(path: string, postData: any): Promise<any> {
+		return HTTP.post(`http://localhost:15005${path}`, postData);
+	}
+
 }
 
 export interface CrudServiceResponse {

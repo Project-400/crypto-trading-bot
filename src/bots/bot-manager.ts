@@ -1,15 +1,15 @@
 import ShortTermTraderBot from './short-term-trader-bot';
 import CrudServiceExchangeInfo, { GetExchangeInfoResponseDto } from '../external-api/crud-service/services/exchange-info';
-import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api';
 import { v4 as uuid } from 'uuid';
 import { RedisActions } from '../redis/redis';
-import { InstanceManagement } from '../services/instance-management';
 
 export class BotManager {
 
 	private static deployedBots: ShortTermTraderBot[] = [];
 
 	public static getAllBots = (): ShortTermTraderBot[] => BotManager.deployedBots;
+
+	public static getBotCount = (): number => BotManager.deployedBots.length;
 
 	public static getBot = (botId: string): ShortTermTraderBot | undefined =>
 		BotManager.deployedBots.find((b: ShortTermTraderBot): boolean => b.getBotId() === botId)
@@ -28,7 +28,8 @@ export class BotManager {
 
 		if (exchangeInfo.success) {
 			bot = new ShortTermTraderBot(botId, exchangeInfo.info.baseAsset, exchangeInfo.info.quoteAsset,
-				currency, quoteAmount, repeatedlyTrade, exchangeInfo.info, percentageLoss, clientSocketId ? [ clientSocketId ] : undefined);
+				currency, quoteAmount, repeatedlyTrade, exchangeInfo.info,
+				percentageLoss, clientSocketId ? [ clientSocketId ] : undefined);
 
 			RedisActions.set(`bot#${bot.getBotId()}`, 'true');
 
@@ -46,7 +47,7 @@ export class BotManager {
 		if (botIndex > -1) {
 			console.log('2) Stopping bot at index ' + botIndex);
 			await BotManager.deployedBots[botIndex].Stop(true);
-			// BotManager.deployedBots.splice(botIndex, 1);
+			BotManager.deployedBots.splice(botIndex, 1);
 		}
 	}
 
@@ -58,7 +59,7 @@ export class BotManager {
 	public static shutdownAllBots = (): number => {
 		const count: number = BotManager.deployedBots.length;
 
-		// BotManager.deployedBots.map((bot: ShortTermTraderBot): void => bot.Stop());
+		BotManager.deployedBots.map(async (bot: ShortTermTraderBot): Promise<void> => bot.Stop());
 		BotManager.deployedBots = [];
 
 		return count;

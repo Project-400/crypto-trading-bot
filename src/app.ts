@@ -8,7 +8,6 @@ import { CurrencySuggestionsManager } from './services/currency-suggestions-mana
 import { InstanceManagement } from './services/instance-management';
 import { RedisActions } from './redis/redis';
 import { MultiPriceListener } from './services/multi-price-listener';
-import { ENV } from './environment';
 
 const app: express.Application = express();
 
@@ -27,7 +26,6 @@ InstanceManagement.SetInstanceId().then(async (): Promise<void> => {
 	RedisActions.set(`running-instance#${InstanceManagement.InstanceId}`, 'true');
 });
 
-console.log(JSON.parse(`{"u":123,"s":"ALPHABTC","b":"0","B":"0","a":"0","A":"0"}`));
 WebsocketProducer.setup(app);
 CurrencySuggestionsManager.SetupExpirationChecker();
 MultiPriceListener.ConnectAndListen();
