@@ -20,31 +20,20 @@ export class MultiPriceListener {
 	private static symbols: SymbolPriceData[] = [];				// The symbol string, eg. BTCUSDT
 
 	public static SubscribeToSymbol = (symbol: string): SymbolPriceData => {
-		let symbolPriceData: SymbolPriceData | undefined = MultiPriceListener.GetSymbolPriceData(symbol);
+		let symbolPriceData: SymbolPriceData = MultiPriceListener.GetSymbolPriceData(symbol);
 
 		if (symbolPriceData) {
 			symbolPriceData = MultiPriceListener.IncrementSubscriptionCount(symbolPriceData);
 			return symbolPriceData;
 		}
 
-		symbolPriceData = {
-			symbol,
-			lowercaseSymbol: symbol.toLowerCase(),
-			price: '0',
-			priceNumerical: 0,
-			subscriptionId: new Date().getMilliseconds(),
-			subscriptionConfirmed: false,
-			subscriptionCount: 1
-		};
-
-		MultiPriceListener.symbols.push(symbolPriceData);
-		MultiPriceListener.SymbolSubUnsub(symbolPriceData, true);
+		symbolPriceData = MultiPriceListener.CreateSub(symbol);
 
 		return symbolPriceData;
 	}
 
 	public static UnsubscribeToSymbol = (symbol: string): void => {
-		let symbolPriceData: SymbolPriceData | undefined = MultiPriceListener.GetSymbolPriceData(symbol);
+		let symbolPriceData: SymbolPriceData = MultiPriceListener.GetSymbolPriceData(symbol, true);
 
 		if (!symbolPriceData) return;
 
@@ -62,15 +51,31 @@ export class MultiPriceListener {
 		if (symbolIndex > -1) MultiPriceListener.symbols.splice(symbolIndex, 1);
 	}
 
+	private static CreateSub = (symbol: string): SymbolPriceData => {
+		const symbolPriceData: SymbolPriceData = {
+			symbol,
+			lowercaseSymbol: symbol.toLowerCase(),
+			price: '0',
+			priceNumerical: 0,
+			subscriptionId: new Date().getTime(),
+			subscriptionConfirmed: false,
+			subscriptionCount: 1
+		};
+
+		MultiPriceListener.symbols.push(symbolPriceData);
+		MultiPriceListener.SymbolSubUnsub(symbolPriceData, true);
+
+		return symbolPriceData;
+	}
+
 	private static SymbolSubUnsub = (symbolPriceData: SymbolPriceData, isSub: boolean): void => {
 		const data: BinanceWebsocketSubscription = {
 			method: isSub ? 'SUBSCRIBE' : 'UNSUBSCRIBE',
-			params: [ `${symbolPriceData.symbol}@bookTicker` ],
+			params: [ `${symbolPriceData.lowercaseSymbol}@bookTicker` ],
 			id: symbolPriceData.subscriptionId
 		};
 
 		MultiPriceListener.binanceWsConnection?.SendData(data);
-
 	}
 
 	private static IncrementSubscriptionCount = (symbolPriceData: SymbolPriceData): SymbolPriceData => {
@@ -83,10 +88,10 @@ export class MultiPriceListener {
 		return symbolPriceData;
 	}
 
-	private static GetSymbolPriceData = (symbol: string): SymbolPriceData => {
+	private static GetSymbolPriceData = (symbol: string, unsub: boolean = false): SymbolPriceData => {
 		let symbolPriceData: SymbolPriceData | undefined =
 			MultiPriceListener.symbols.find((s: SymbolPriceData): boolean => s.symbol === symbol);
-		if (!symbolPriceData) symbolPriceData = MultiPriceListener.SubscribeToSymbol(symbol);
+		if (!symbolPriceData) symbolPriceData = MultiPriceListener.CreateSub(symbol);
 		return symbolPriceData;
 	}
 
@@ -114,15 +119,15 @@ export class MultiPriceListener {
 		if (symbolPriceData) symbolPriceData.subscriptionConfirmed = true;
 	}
 
-	public ConnectAndListen = (): void => {
+	public static ConnectAndListen = (): void => {
 		Logger.info('Opening Connection to Binance WebSocket');
 
 		MultiPriceListener.binanceWsConnection = new SocketConnection(
 			BINANCE_WS,
-			this.SocketOpen,
-			this.SocketClose,
-			this.SocketMessage,
-			this.SocketError
+			MultiPriceListener.SocketOpen,
+			MultiPriceListener.SocketClose,
+			MultiPriceListener.SocketMessage,
+			MultiPriceListener.SocketError
 		);
 	}
 
@@ -132,23 +137,23 @@ export class MultiPriceListener {
 		MultiPriceListener.isListening = true;
 	}
 
-	private SocketOpen = (): void => {
+	private static SocketOpen = (): void => {
 		Logger.info('Trader Bot connected to Binance WebSocket');
 		MultiPriceListener.isListening = true;
 	}
 
-	private SocketClose = (): void => {
+	private static SocketClose = (): void => {
 		Logger.info(`Trader Bot disconnected from Binance`);
 		MultiPriceListener.isListening = false;
 	}
 
-	private SocketMessage = (msg: SocketMessage): void => {
+	private static SocketMessage = (msg: SocketMessage): void => {
 		const msgData: BinanceBookTickerStreamData = JSON.parse(msg.data as string);
-		if (msgData.result === null && msgData.id !== undefined) MultiPriceListener.ConfirmSymbolSubscription(msgData.id);
+		if (msgData.result === null && msgData.id !== undefined) return MultiPriceListener.ConfirmSymbolSubscription(msgData.id);
 		MultiPriceListener.UpdatePrice(msgData.s, msgData.a); // TODO: Clarify whether to use msgData.a or msgData.b?
 	}
 
-	private SocketError = (): void => {
+	private static SocketError = (): void => {
 		Logger.info(`Trader Bot encountered an error while connected to Binance`);
 	}
 
