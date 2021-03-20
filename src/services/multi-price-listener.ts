@@ -24,10 +24,7 @@ export class MultiPriceListener {
 
 		if (symbolPriceData) {
 			symbolPriceData = MultiPriceListener.IncrementSubscriptionCount(symbolPriceData);
-			return symbolPriceData;
 		}
-
-		symbolPriceData = MultiPriceListener.CreateSub(symbol);
 
 		return symbolPriceData;
 	}
@@ -59,7 +56,7 @@ export class MultiPriceListener {
 			priceNumerical: 0,
 			subscriptionId: new Date().getTime(),
 			subscriptionConfirmed: false,
-			subscriptionCount: 1
+			subscriptionCount: 0
 		};
 
 		MultiPriceListener.symbols.push(symbolPriceData);
@@ -156,7 +153,7 @@ export class MultiPriceListener {
 
 	private static SocketMessage = (msg: SocketMessage): void => {
 		const msgData: BinanceBookTickerStreamData = JSON.parse(msg.data as string);
-		console.log(msgData);
+		if (ENV.SIMULATE_PRICE_LISTENER) console.log(msgData);
 		if (msgData.result === null && msgData.id !== undefined) return MultiPriceListener.ConfirmSymbolSubscription(msgData.id);
 		MultiPriceListener.UpdatePrice(msgData.s, msgData.a); // TODO: Clarify whether to use msgData.a or msgData.b?
 	}

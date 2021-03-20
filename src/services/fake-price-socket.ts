@@ -12,17 +12,10 @@ export class FakePriceSocket {
 
 	public static SimulateWebsocketMessages = (symbols: SymbolPriceData[], receiveFunc: (msg: SocketMessage) => void): void => {
 		FakePriceSocket.messageInterval = setInterval((): void => {
-			console.log('Run check');
-			console.log(symbols);
-
 			symbols.map((s: SymbolPriceData): void => {
 				const currentPrice: number = FakePriceSocket.prevPrices[s.symbol];
-				console.log('currentPrice');
-				console.log(currentPrice);
 				const newPrice: number = currentPrice + (currentPrice * 0.005);
-				console.log(newPrice);
 				FakePriceSocket.prevPrices[s.symbol] = newPrice;
-
 				receiveFunc({
 					data: `{"u":123,"s":"${s.symbol}","b":"${newPrice}","B":"0","a":"${newPrice}","A":"0"}`
 				});

@@ -44,7 +44,8 @@ export default class ShortTermTraderBot {
 	public getTradeData = (): BotTradeData => this.tradeData;
 
 	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number,
-					   repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol, sellAtLossPercentage?: number, clientSocketIds?: string[]) {
+					   repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol,
+					   sellAtLossPercentage?: number, clientSocketIds?: string[]) {
 		this.botId = botId;
 		this.tradingPairSymbol = tradingPairSymbol;
 		this.base = base;
@@ -52,6 +53,8 @@ export default class ShortTermTraderBot {
 		this.quoteQty = quoteQty;
 		this.repeatedlyTrade = repeatedlyTrade;
 		this.exchangeInfo = exchangeInfo;
+		this.tradeData = new BotTradeData(this.botId, this.tradingPairSymbol, this.base,
+			this.quote, this.priceChangeInterval, this.exchangeInfo);
 		if (sellAtLossPercentage) this.sellAtLossPercentage = sellAtLossPercentage;
 		if (clientSocketIds && clientSocketIds.length) this.subscribedClients = clientSocketIds;
 		this.SetState(TradingBotState.WAITING);
@@ -66,7 +69,7 @@ export default class ShortTermTraderBot {
 
 	public Stop = async (forceSell: boolean = false): Promise<void> => {
 		if (this.updateChecker) clearInterval(this.updateChecker);
-		if (MultiPriceListener.isListening) MultiPriceListener.UnsubscribeToSymbol(this.tradingPairSymbol);
+		MultiPriceListener.UnsubscribeToSymbol(this.tradingPairSymbol);
 		if (forceSell) await this.SellCurrency();
 
 		RedisActions.delete(`bot#${this.getBotId()}`);
@@ -131,9 +134,6 @@ export default class ShortTermTraderBot {
 		// console.log(`Bot is ${this.botState}`);
 
 		if (this.botState === TradingBotState.WAITING) {
-			this.tradeData = new BotTradeData(this.botId, this.tradingPairSymbol, this.base,
-				this.quote, this.priceChangeInterval, this.exchangeInfo);
-
 			await this.BuyCurrency(this.quoteQty);
 		}
 
