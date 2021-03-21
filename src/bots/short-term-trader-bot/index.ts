@@ -208,12 +208,8 @@ export default class ShortTermTraderBot {
 	private BuyCurrency = async (quantity: number): Promise<ExchangeCurrencyTransactionFull> => {
 		Logger.info(`BUYING ${this.base} with ${quantity} ${this.quote}`);
 
-		// if (!quantity) return Logger.error(`Unable to buy ${this.base} - Invalid buy quantity: ${quantity}`);
-
 		const buy: TransactionResponseDto = await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote,
 				quantity.toString(), ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON);
-
-		console.log(buy);
 
 		if (buy.success && buy.transaction && this.currentTradeData) {
 			this.SetState(TradingBotState.TRADING);

@@ -1,14 +1,12 @@
 import { SymbolPriceData } from './multi-price-listener';
 import { SocketMessage } from '../config/websocket/connector';
+import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api';
 
 export class FakePriceSocket {
 
 	private static messageInterval: NodeJS.Timeout | undefined;
 	private static messageIntervalPeriod: number = 10000;
-	private static prevPrices: { [symbol: string]: number } = {
-		ALPHABTC: 2.5,
-		SUSHIUSDT: 32
-	};
+	private static prevPrices: { [symbol: string]: number } = { };
 
 	public static SimulateWebsocketMessages = (symbols: SymbolPriceData[], receiveFunc: (msg: SocketMessage) => void): void => {
 		FakePriceSocket.messageInterval = setInterval((): void => {
@@ -21,6 +19,12 @@ export class FakePriceSocket {
 				});
 			});
 		}, FakePriceSocket.messageIntervalPeriod);
+	}
+
+	public static AddFakePrice = async (symbol: string): Promise<void> => {
+		const priceDto: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(symbol);
+		const price: string = priceDto.price;
+		FakePriceSocket.prevPrices[symbol] = Number(price);
 	}
 
 }

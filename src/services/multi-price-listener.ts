@@ -26,6 +26,8 @@ export class MultiPriceListener {
 			symbolPriceData = MultiPriceListener.IncrementSubscriptionCount(symbolPriceData);
 		}
 
+		if (ENV.SIMULATE_PRICE_LISTENER) FakePriceSocket.AddFakePrice(symbol);
+
 		return symbolPriceData;
 	}
 
