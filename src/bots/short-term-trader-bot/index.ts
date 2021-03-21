@@ -1,4 +1,4 @@
-import { ExchangeCurrencyTransactionFull, ExchangeInfoSymbol, PositionState, TradingBotState } from '@crypto-tracker/common-types';
+import { ExchangeCurrencyTransactionFull, ExchangeInfoSymbol, TradingBotState } from '@crypto-tracker/common-types';
 import { Logger } from '../../config/logger/logger';
 import { BotTradeData } from '../../models/bot-trade-data';
 import CrudServiceTransactions, { TransactionResponseDto } from '../../external-api/crud-service/services/transactions';
@@ -28,11 +28,13 @@ export default class ShortTermTraderBot {
 	private readonly quote: string;									// The quote currency (The currency being used to spend / trade for the base), eg. USDT
 	private readonly quoteQty: number;								// The limit of how much of the quote currency the bot can use, eg. 10 USDT
 	private readonly sellAtLossPercentage: number = 1;				// By default, see when the price drops by 1% (-1%)
+	private readonly maxAtLossPercentage: number = 3;				// The complete total % between trades that the user is willing to lose - If null, bot continues to trade
 	private readonly repeatedlyTrade!: boolean;						// Flat to indicate whether to continuously buy and sell (true) or shutdown after first sell (false)
 	private readonly exchangeInfo: ExchangeInfoSymbol;				// The Binance details related to this trading pair - Limits, rounding, etc.
 	private botState: TradingBotState = TradingBotState.WAITING;	// Current state of the bot
 	private updateChecker: NodeJS.Timeout | undefined;				// A SetTimeout that will trigger updates
-	private tradeData!: BotTradeData;								// Numerical trade data
+	private previousTradeDatas: BotTradeData[] = [];				// Numerical trade data - Previous multiple trades
+	private currentTradeData!: BotTradeData;						// Numerical trade data - Current trade
 	private currentPrice: number = 0;								// The current price for the symbol
 	private priceChangeInterval: number = 1000;						// The interval gap between expected price updates
 	private subscribedClients: string[] = [];						// Websocket Client Ids listening for bot updates
@@ -41,7 +43,8 @@ export default class ShortTermTraderBot {
 
 	public getBotId = (): string => this.botId;
 	public getBotState = (): TradingBotState => this.botState;
-	public getTradeData = (): BotTradeData => this.tradeData;
+	public getAllTradeData = (): BotTradeData[] => this.previousTradeDatas;
+	public getCurrentTradeData = (): BotTradeData => this.currentTradeData;
 
 	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number,
 					   repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol,
@@ -53,18 +56,25 @@ export default class ShortTermTraderBot {
 		this.quoteQty = quoteQty;
 		this.repeatedlyTrade = repeatedlyTrade;
 		this.exchangeInfo = exchangeInfo;
-		this.tradeData = new BotTradeData(this.botId, this.tradingPairSymbol, this.base,
-			this.quote, this.priceChangeInterval, this.exchangeInfo);
+		this.CreateTradeData();
 		if (sellAtLossPercentage) this.sellAtLossPercentage = sellAtLossPercentage;
 		if (clientSocketIds && clientSocketIds.length) this.subscribedClients = clientSocketIds;
 		this.SetState(TradingBotState.WAITING);
 	}
 
-	public Start = async (): Promise<BotTradeData | undefined> => {
+	private CreateTradeData = (): void => {
+		this.currentTradeData = new BotTradeData(this.botId, this.tradingPairSymbol, this.base,
+			this.quote, this.priceChangeInterval, this.exchangeInfo);
+	}
+
+	public Start = (): void => {
 		this.SetState(TradingBotState.STARTING);
 		MultiPriceListener.SubscribeToSymbol(this.tradingPairSymbol);
 		this.BeginCheckingUpdates();
-		return this.tradeData;
+
+		RedisActions.set(`bot#${this.getBotId()}`, 'true');
+		RedisActions.set(`bot#${this.getBotId()}/current-trade`, this.currentTradeData.tradeDataId);
+		// return this.currentTradeData;
 	}
 
 	public Stop = async (forceSell: boolean = false): Promise<void> => {
@@ -72,43 +82,49 @@ export default class ShortTermTraderBot {
 		MultiPriceListener.UnsubscribeToSymbol(this.tradingPairSymbol);
 		if (forceSell) await this.SellCurrency();
 
+		this.DeleteRedisData();
+	}
+
+	private DeleteRedisData = (): void => {
 		RedisActions.delete(`bot#${this.getBotId()}`);
 		RedisActions.delete(`bot#${this.getBotId()}/state`);
 		RedisActions.delete(`bot#${this.getBotId()}/price-percentage-difference`);
 		RedisActions.delete(`bot#${this.getBotId()}/price-percentage-from-high`);
+		RedisActions.delete(`bot#${this.getBotId()}/current-trade`);
 	}
 
 	public Pause = (): void => this.SetState(TradingBotState.PAUSED);
 
 	private BeginCheckingUpdates = (): void => {
 		this.updateChecker = setInterval(async (): Promise<void> => {
+			console.log('Iterate', this.botState);
 			const currentPrice: number = Number(MultiPriceListener.GetPrice(this.tradingPairSymbol));
 
-			if (currentPrice !== 0) {
-				if (this.botState === TradingBotState.STARTING) this.SetState(TradingBotState.WAITING);
-				await this.makeDecision();
-			}
+			if (this.IsBotPriceUpdatable() && this.lastPublishedPrice !== currentPrice) {
+				console.log('Price Check');
+				this.currentTradeData.UpdatePrice(currentPrice);
 
-			// if (currentPrice !== 0) console.log(`CURRENT PRICE IS ${this.priceListener.Price()}`);
-			// else console.log('PRICE is still 0');
-
-			if (this.lastPublishedPrice !== currentPrice) {
-				this.tradeData.UpdatePrice(currentPrice);
-
-				RedisActions.set(`bot#${this.getBotId()}/price-percentage-difference`, this.tradeData.percentageDifference.toString());
-				RedisActions.set(`bot#${this.getBotId()}/price-percentage-from-high`, this.tradeData.percentageDroppedFromHigh.toString());
+				RedisActions.set(`bot#${this.getBotId()}/price-percentage-difference`, this.currentTradeData.percentageDifference.toString());
+				RedisActions.set(`bot#${this.getBotId()}/price-percentage-from-high`, this.currentTradeData.percentageDroppedFromHigh.toString());
 
 				this.publishDataToClients({
 					botId: this.botId,
 					price: currentPrice,
 					botUpdate: this.BOT_DETAILS(),
-					tradeData: this.tradeData
+					tradeData: this.currentTradeData
 				});
 
 				this.lastPublishedPrice = currentPrice;
 			}
+
+			if (currentPrice !== 0) {
+				await this.makeDecision();
+			}
 		}, this.priceChangeInterval);
 	}
+
+	private IsBotPriceUpdatable = (): boolean =>
+		this.getBotState() === TradingBotState.WAITING || this.getBotState() === TradingBotState.TRADING
 
 	private SetState = (state: TradingBotState): void => {
 		this.botState = state;
@@ -127,38 +143,66 @@ export default class ShortTermTraderBot {
 
 	private saveTradeData = async (): Promise<void> => {
 		if (ENV.BOT_TEST_MODE_ON) return;
-		return CrudServiceBots.SaveBotTradeData(this.tradeData);
+		await CrudServiceBots.SaveBotTradeData(this.currentTradeData);
+		this.previousTradeDatas.push(this.currentTradeData);
+		// RedisActions.set(`bot#${this.getBotId()}/current-trade`, 'null');
 	}
 
 	private makeDecision = async (): Promise<void> => {
-		if (this.botState === TradingBotState.WAITING) {
+		if (this.botState === TradingBotState.STARTING) {
+			this.SetState(TradingBotState.WAITING);
+		}
+
+		if (this.botState === TradingBotState.WAITING || this.botState === TradingBotState.WAITING_TO_REPEAT) {
+			console.log('BUY');
 			await this.BuyCurrency(this.quoteQty);
 		}
 
 		if (this.botState === TradingBotState.TRADING) {
-			if (this.tradeData.percentageDroppedFromHigh <= -this.sellAtLossPercentage) {
+			console.log('TRADE CHECK');
+			if (this.currentTradeData.percentageDroppedFromHigh <= -this.sellAtLossPercentage) {
 				this.publishDataToClients({
 					botLog: JSON.stringify({
-						log: `Profit / Loss is at -${this.sellAtLossPercentage}%\nBot is selling ${this.tradeData.base}`,
+						log: `Profit / Loss is at -${this.sellAtLossPercentage}%\nBot is selling ${this.currentTradeData.base}`,
 						time: new Date().toISOString()
 					})
 				});
 
 				await this.SellCurrency();
 
-				if (!this.repeatedlyTrade) {
-					this.SetState(TradingBotState.FINISHED); // TEMPORARY
-				}
+				if (this.repeatedlyTrade) this.SetState(TradingBotState.BETWEEN_TRADES);
+				else this.SetState(TradingBotState.FINISHED);
 			}
+		}
+
+		if (this.botState === TradingBotState.BETWEEN_TRADES) {
+			console.log('REPEAT');
+			this.RepeatTrade();
+		}
+
+		if (this.botState === TradingBotState.SETTING_UP_TRADE) {
+			// Skip and wait
 		}
 
 		if (this.botState === TradingBotState.FINISHED) {
 			console.log('FINISHING & STOPPING');
 
-			this.tradeData.Finish();
+			this.currentTradeData.Finish();
 			// await this.saveTradeData();
 			await this.Stop(false);
 		}
+	}
+
+	private RepeatTrade = (): void => {
+		this.ClearPreviousTradingData();
+		this.SetState(TradingBotState.SETTING_UP_TRADE);
+		this.CreateTradeData();
+		this.SetState(TradingBotState.WAITING_TO_REPEAT);
+	}
+
+	private ClearPreviousTradingData = (): void => {
+		this.currentPrice = 0;
+		this.lastPublishedPrice = 0;
 	}
 
 	private BuyCurrency = async (quantity: number): Promise<ExchangeCurrencyTransactionFull> => {
@@ -171,13 +215,13 @@ export default class ShortTermTraderBot {
 			{ success: true, transaction: { response: FakeBuyTransaction_CELO } } :
 			await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote, quantity.toString());
 
-		if (buy.success && buy.transaction && this.tradeData) {
+		if (buy.success && buy.transaction && this.currentTradeData) {
 			this.SetState(TradingBotState.TRADING);
-			this.tradeData.SortBuyData(buy.transaction.response);
+			this.currentTradeData.SortBuyData(buy.transaction.response);
 
 			this.publishDataToClients({
 				botLog: JSON.stringify({
-					log: `Bought ${this.tradeData.baseQty} ${this.tradeData.base} with ${this.tradeData.quoteQty} ${this.tradeData.quote}`,
+					log: `Bought ${this.currentTradeData.baseQty} ${this.currentTradeData.base} with ${this.currentTradeData.quoteQty} ${this.currentTradeData.quote}`,
 					time: new Date().toISOString()
 				})
 			});
@@ -191,22 +235,22 @@ export default class ShortTermTraderBot {
 	private SellCurrency = async (): Promise<ExchangeCurrencyTransactionFull> => {
 		// if (!this.tradeData) return Logger.error('The Trade Data object for this bot does not exist');
 
-		const sellQty: string = this.tradeData.GetSellQuantity();
+		const sellQty: string = this.currentTradeData.GetSellQuantity();
 		if (!sellQty) throw Error(`Unable to sell ${this.base} - Invalid sell quantity: ${sellQty}`);
-		Logger.info(`SELLING ${sellQty} ${this.tradeData.base}`);
+		Logger.info(`SELLING ${sellQty} ${this.currentTradeData.base}`);
 
 		const sell: TransactionResponseDto =
 			ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON ?
 			{ success: true, transaction: { response: FakeSellTransaction_CELO } } :
-			await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.tradeData.GetSellQuantity());
+			await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.currentTradeData.GetSellQuantity());
 
-		if (sell.success && sell.transaction && this.tradeData) {
+		if (sell.success && sell.transaction && this.currentTradeData) {
 			this.SetState(TradingBotState.PAUSED);
-			this.tradeData.SortSellData(sell.transaction.response);
+			this.currentTradeData.SortSellData(sell.transaction.response);
 
 			this.publishDataToClients({
 				botLog: JSON.stringify({
-					log: `Sold ${this.tradeData.sellQty} ${this.tradeData.base}`,
+					log: `Sold ${this.currentTradeData.sellQty} ${this.currentTradeData.base}`,
 					time: new Date().toISOString()
 				})
 			});

@@ -31,11 +31,9 @@ export class BotManager {
 				currency, quoteAmount, repeatedlyTrade, exchangeInfo.info,
 				percentageLoss, clientSocketId ? [ clientSocketId ] : undefined);
 
-			RedisActions.set(`bot#${bot.getBotId()}`, 'true');
-
 			if (bot) clonedBot = { ...bot } as ShortTermTraderBot;
 			BotManager.deployedBots.push(bot);
-			await bot.Start();
+			bot.Start();
 		}
 
 		return clonedBot;
@@ -43,9 +41,8 @@ export class BotManager {
 
 	public static shutdownBot = async (botId: string): Promise<void> => {
 		const botIndex: number = BotManager.getBotIndex(botId);
-		console.log('Stopping bot at index ' + botIndex);
+
 		if (botIndex > -1) {
-			console.log('2) Stopping bot at index ' + botIndex);
 			await BotManager.deployedBots[botIndex].Stop(true);
 			BotManager.deployedBots.splice(botIndex, 1);
 		}

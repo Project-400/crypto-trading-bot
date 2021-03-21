@@ -14,7 +14,7 @@ export class FakePriceSocket {
 		FakePriceSocket.messageInterval = setInterval((): void => {
 			symbols.map((s: SymbolPriceData): void => {
 				const currentPrice: number = FakePriceSocket.prevPrices[s.symbol];
-				const newPrice: number = currentPrice + (currentPrice * 0.005);
+				const newPrice: number = currentPrice - (currentPrice * 0.005);
 				FakePriceSocket.prevPrices[s.symbol] = newPrice;
 				receiveFunc({
 					data: `{"u":123,"s":"${s.symbol}","b":"${newPrice}","B":"0","a":"${newPrice}","A":"0"}`

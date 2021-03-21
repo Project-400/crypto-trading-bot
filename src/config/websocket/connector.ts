@@ -32,4 +32,4 @@ export default class SocketConnection {
 
 }
 
-export type SocketMessage = MessageEvent;
+export type SocketMessage = Partial<MessageEvent>;

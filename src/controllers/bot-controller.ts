@@ -15,7 +15,6 @@ export class BotController {
 		const botId: string = req.body.botId.toString();
 		let bot: ShortTermTraderBot | undefined;
 
-		console.log(1);
 		try {
 			bot = await BotManager.deployNewBot('GTOBTC', 0.0001, false);
 			console.log(2);
@@ -143,7 +142,7 @@ export class BotController {
 		const bot: ShortTermTraderBot | undefined = BotManager.getBot(botId);
 
 		if (!bot) return res.status(404).json({ error: 'Bot not found' });
-		const tradeData: BotTradeData = bot.getTradeData();
+		const tradeData: BotTradeData[] = bot.getAllTradeData();
 
 		return res.status(200).json({ success: true, tradeData });
 	}
