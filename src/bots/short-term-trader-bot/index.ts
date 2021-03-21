@@ -210,10 +210,10 @@ export default class ShortTermTraderBot {
 
 		// if (!quantity) return Logger.error(`Unable to buy ${this.base} - Invalid buy quantity: ${quantity}`);
 
-		const buy: TransactionResponseDto =
-			ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON ?
-			{ success: true, transaction: { response: FakeBuyTransaction_CELO } } :
-			await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote, quantity.toString());
+		const buy: TransactionResponseDto = await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote,
+				quantity.toString(), ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON);
+
+		console.log(buy);
 
 		if (buy.success && buy.transaction && this.currentTradeData) {
 			this.SetState(TradingBotState.TRADING);
@@ -239,10 +239,8 @@ export default class ShortTermTraderBot {
 		if (!sellQty) throw Error(`Unable to sell ${this.base} - Invalid sell quantity: ${sellQty}`);
 		Logger.info(`SELLING ${sellQty} ${this.currentTradeData.base}`);
 
-		const sell: TransactionResponseDto =
-			ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON ?
-			{ success: true, transaction: { response: FakeSellTransaction_CELO } } :
-			await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote, this.currentTradeData.GetSellQuantity());
+		const sell: TransactionResponseDto = await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote,
+				this.currentTradeData.GetSellQuantity(), ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON);
 
 		if (sell.success && sell.transaction && this.currentTradeData) {
 			this.SetState(TradingBotState.PAUSED);
