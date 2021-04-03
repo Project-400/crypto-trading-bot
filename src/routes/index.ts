@@ -14,7 +14,6 @@ indexRouter.put('/trader-bot/stop', BotController.stopBot);
 indexRouter.put('/trader-bot/pause', BotController.pauseBot);
 indexRouter.put('/trader-bot/shutdown-all', BotController.shutdownBots);
 indexRouter.post('/connect', BotController.openConnection);
-indexRouter.get('/unsubscribe', BotController.unsubscribe);
 
 /*
 	*
@@ -22,6 +21,7 @@ indexRouter.get('/unsubscribe', BotController.unsubscribe);
 	*
 	* */
 
-indexRouter.post('/create-bot', BotController.createBot);
+indexRouter.post('/bot', BotController.createBot);
+indexRouter.delete('/bot', BotController.removeBot);
 
 export default indexRouter;
