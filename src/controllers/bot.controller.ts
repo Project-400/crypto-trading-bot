@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { BotManager } from '../bots/bot-manager';
+import { BotConductor } from '../bots/bot-conductor';
 import ShortTermTraderBot from '../bots/short-term-trader-bot';
 
 export class BotController {
@@ -18,21 +18,22 @@ export class BotController {
 
 		// const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
 		// const bot: ShortTermTraderBot | undefined =
-		// 	await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId, percentageLoss);
+		// 	await BotConductor.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId, percentageLoss);
 		const bot: ShortTermTraderBot | undefined =
-			await BotManager.deployNewBot(botId, currency, quoteAmount, repeatedlyTrade, percentageLoss);
+			await BotConductor.deployNewBot(botId, currency, quoteAmount, repeatedlyTrade, percentageLoss);
 
 		if (!bot) return res.status(500).json({ success: false });
 
 		return res.status(200).json({ success: true, bot: bot?.BOT_DETAILS() });
 	}
 
-	public static removeBot = async (req: Request, res: Response): Promise<Response> => {
+	public static stopBot = async (req: Request, res: Response): Promise<Response> => {
+		console.log(req.query);
 		if (!req.body || !req.query.botId) return res.status(400).json({ error: 'Invalid request params' });
 		const botId: string = req.query.botId.toString();
 
 		try {
-			const shutdown: boolean = await BotManager.shutdownBot(botId);
+			const shutdown: boolean = await BotConductor.shutdownBot(botId);
 			if (!shutdown) return res.status(404).json({ success: false });
 		} catch (e) {
 			return res.status(500).json({ success: false });

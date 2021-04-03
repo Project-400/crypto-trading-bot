@@ -10,7 +10,7 @@ indexRouter.get('/health', HealthController.health);
 // Bot Endpoints
 
 indexRouter.post('/bot', BotController.createBot);
-indexRouter.delete('/bot', BotController.removeBot);
+indexRouter.delete('/bot', BotController.stopBot);
 
 // Connection Endpoints
 

@@ -97,11 +97,11 @@ export default class ShortTermTraderBot {
 
 	private BeginCheckingUpdates = (): void => {
 		this.updateChecker = setInterval(async (): Promise<void> => {
-			console.log('Iterate', this.botState);
+			// console.log('Iterate', this.botState);
 			const currentPrice: number = Number(MultiPriceListener.GetPrice(this.tradingPairSymbol));
 
 			if (this.IsBotPriceUpdatable() && this.lastPublishedPrice !== currentPrice) {
-				console.log('Price Check');
+				// console.log('Price Check');
 				this.currentTradeData.UpdatePrice(currentPrice);
 
 				RedisActions.set(`bot#${this.getBotId()}/price-percentage-difference`, this.currentTradeData.percentageDifference.toString());
