@@ -29,6 +29,7 @@ export const AWS_ACCESS_KEY_ID: string = process.env.AWS_ACCESS_KEY_ID as string
 export const AWS_SECRET_ACCESS_KEY_ID: string = process.env.AWS_SECRET_ACCESS_KEY_ID as string;
 
 export const AWS_PRICE_SUGGESTIONS_SNS_TOPIC: string = process.env.AWS_PRICE_SUGGESTIONS_SNS_TOPIC as string;
+export const AWS_AUTO_DELETED_BOTS_SNS_TOPIC: string = process.env.AWS_AUTO_DELETED_BOTS_SNS_TOPIC as string;
 export const AWS_REDIS_URL: string = process.env.AWS_REDIS_URL as string;
 
 export const PRICE_SUGGESTION_EXPIRATION_CHECK_INTERVAL: number = Number(process.env.PRICE_SUGGESTION_EXPIRATION_CHECK_INTERVAL);

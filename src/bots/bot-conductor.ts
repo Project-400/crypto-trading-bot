@@ -1,6 +1,7 @@
 import ShortTermTraderBot from './short-term-trader-bot';
 import CrudServiceExchangeInfo, { GetExchangeInfoResponseDto } from '../external-api/crud-service/services/exchange-info';
 import { TradingBotState } from '@crypto-tracker/common-types';
+import { SNSPublish } from '../sns-sqs/publish';
 
 export class BotConductor {
 
@@ -92,6 +93,8 @@ export class BotConductor {
 				console.log(botId);
 				BotConductor.deleteBot(botId);
 			});
+
+			SNSPublish.sendAutoDeletedBots(completedBotIds);
 
 			console.log(BotConductor.deployedBots.length);
 		}, 10000);
