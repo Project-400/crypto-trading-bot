@@ -15,6 +15,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.disable('etag');
 // app.use(session({ secret: 'test-secret' }));
 app.use('/v1', indexRouter);
 
