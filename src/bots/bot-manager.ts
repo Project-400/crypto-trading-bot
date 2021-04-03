@@ -21,10 +21,15 @@ export class BotManager {
 	// clientSocketId?: string, percentageLoss?: number): Promise<ShortTermTraderBot | undefined> => {
 	public static deployNewBot = async (botId: string, currency: string, quoteAmount: number, repeatedlyTrade: boolean, percentageLoss: number = 1)
 		: Promise<ShortTermTraderBot | undefined> => {
+		let exchangeInfo: GetExchangeInfoResponseDto;
 
-		const exchangeInfo: GetExchangeInfoResponseDto = await CrudServiceExchangeInfo.GetExchangeInfo(currency);
+		try {
+			exchangeInfo = await CrudServiceExchangeInfo.GetExchangeInfo(currency);
+		} catch (e) {
+			console.error('Error: Failed to retrieve exchange info from CRUD service');
+			return undefined;
+		}
 
-		// const exchangeInfo: any = { success: true, info: true };
 		let bot: ShortTermTraderBot | undefined;
 		let clonedBot: ShortTermTraderBot | undefined;
 

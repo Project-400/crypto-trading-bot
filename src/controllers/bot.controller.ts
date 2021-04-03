@@ -22,6 +22,8 @@ export class BotController {
 		const bot: ShortTermTraderBot | undefined =
 			await BotManager.deployNewBot(botId, currency, quoteAmount, repeatedlyTrade, percentageLoss);
 
+		if (!bot) return res.status(500).json({ success: false });
+
 		return res.status(200).json({ success: true, bot: bot?.BOT_DETAILS() });
 	}
 

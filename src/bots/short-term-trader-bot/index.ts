@@ -205,11 +205,18 @@ export default class ShortTermTraderBot {
 		this.lastPublishedPrice = 0;
 	}
 
-	private BuyCurrency = async (quantity: number): Promise<ExchangeCurrencyTransactionFull> => {
+	private BuyCurrency = async (quantity: number): Promise<ExchangeCurrencyTransactionFull | undefined> => {
 		Logger.info(`BUYING ${this.base} with ${quantity} ${this.quote}`);
 
-		const buy: TransactionResponseDto = await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote,
+		let buy: TransactionResponseDto;
+
+		try {
+			buy = await CrudServiceTransactions.BuyCurrency(this.tradingPairSymbol, this.base, this.quote,
 				quantity.toString(), ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON);
+		} catch (e) {
+			console.error('Error: Failed to buy currency');
+			return;
+		}
 
 		if (buy.success && buy.transaction && this.currentTradeData) {
 			this.SetState(TradingBotState.TRADING);
@@ -228,15 +235,22 @@ export default class ShortTermTraderBot {
 		return buy.transaction.response;
 	}
 
-	private SellCurrency = async (): Promise<ExchangeCurrencyTransactionFull> => {
+	private SellCurrency = async (): Promise<ExchangeCurrencyTransactionFull | undefined> => {
 		// if (!this.tradeData) return Logger.error('The Trade Data object for this bot does not exist');
 
 		const sellQty: string = this.currentTradeData.GetSellQuantity();
 		if (!sellQty) throw Error(`Unable to sell ${this.base} - Invalid sell quantity: ${sellQty}`);
 		Logger.info(`SELLING ${sellQty} ${this.currentTradeData.base}`);
 
-		const sell: TransactionResponseDto = await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote,
+		let sell: TransactionResponseDto;
+
+		try {
+			sell = await CrudServiceTransactions.SellCurrency(this.tradingPairSymbol, this.base, this.quote,
 				this.currentTradeData.GetSellQuantity(), ENV.FAKE_TRANSACTIONS_ON || ENV.BOT_TEST_MODE_ON);
+		} catch (e) {
+			console.error('Error: Failed to buy currency');
+			return;
+		}
 
 		if (sell.success && sell.transaction && this.currentTradeData) {
 			this.SetState(TradingBotState.PAUSED);
