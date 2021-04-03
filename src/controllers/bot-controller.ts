@@ -106,27 +106,6 @@ export class BotController {
 	}
 
 	/* Temp for testing bot */
-	public static subscribe = async (req: Request, res: Response): Promise<Response> => {
-		if (!req.body || !req.query.currency || !req.query.quoteAmount || !req.query.repeatedlyTrade || !req.query.clientSocketId)
-			return res.status(400).json({ error: 'Invalid request params' });
-
-		const currency: string = req.query.currency.toString();
-		const quoteAmount: number = parseFloat(req.query.quoteAmount.toString());
-		const clientSocketId: string = req.query.clientSocketId.toString();
-		const repeatedlyTrade: boolean = req.query.repeatedlyTrade.toString() === 'true';
-
-		let percentageLoss: number;
-		if (req.query.percentageLoss) percentageLoss = parseFloat(req.query.percentageLoss.toString());
-
-		const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
-		// tslint:disable-next-line:ban-ts-ignore
-		// @ts-ignore
-		const bot: ShortTermTraderBot | undefined = await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId, percentageLoss);
-
-		return res.status(200).json({ success: true, subscribed: true, bot: bot?.BOT_DETAILS(), priceInfo });
-	}
-
-	/* Temp for testing bot */
 	public static unsubscribe = async (req: Request, res: Response): Promise<Response> => {
 		if (!req.body || !req.query.botId) return res.status(400).json({ error: 'Invalid request params' });
 		const botId: string = req.query.botId.toString();
@@ -145,6 +124,32 @@ export class BotController {
 		const tradeData: BotTradeData[] = bot.getAllTradeData();
 
 		return res.status(200).json({ success: true, tradeData });
+	}
+
+	/*
+	*
+	* New set of endpoints. Above to be removed
+	* */
+
+	public static createBot = async (req: Request, res: Response): Promise<Response> => {
+		// || !req.query.clientSocketId
+		if (!req.body || !req.body.botId || !req.body.currency || !req.body.quoteAmount || !req.body.repeatedlyTrade)
+			return res.status(400).json({ error: 'Invalid request params' });
+		//
+		const botId: string = req.body.botId.toString();
+		const currency: string = req.body.currency.toString();
+		const quoteAmount: number = parseFloat(req.body.quoteAmount.toString());
+		const repeatedlyTrade: boolean = req.body.repeatedlyTrade.toString() === 'true';
+		const percentageLoss: number = req.query.percentageLoss ? parseFloat(req.query.percentageLoss.toString()) : 1;
+		// const clientSocketId: string = req.query.clientSocketId.toString();
+
+		// const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
+		// const bot: ShortTermTraderBot | undefined =
+		// 	await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId, percentageLoss);
+		const bot: ShortTermTraderBot | undefined =
+			await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, percentageLoss);
+
+		return res.status(200).json({ success: true, bot: bot?.BOT_DETAILS() });
 	}
 
 }

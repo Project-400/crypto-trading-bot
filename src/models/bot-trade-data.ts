@@ -9,6 +9,7 @@ import {
 } from '@crypto-tracker/common-types';
 import Calculations from '../utils/calculations';
 import { FillPriceCalculations } from '../interfaces/interfaces';
+import { v4 as uuid } from 'uuid';
 
 /*
 *
@@ -19,6 +20,7 @@ import { FillPriceCalculations } from '../interfaces/interfaces';
 
 export class BotTradeData implements IBotTradeData { // New version of SymbolTraderData
 
+	public tradeDataId: string;									// The unique ID for this instance of trade data
 	public botId: string;										// The unique Bot ID
 	public symbol: string;										// Trading pair symbol, eg. BTCUSDT
 	public base: string;										// Base currency (The currency being bought), eg. BTC
@@ -28,6 +30,7 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 	public buyDataSet: boolean = false;							// Flag to indicate if buy has occurred and data is set
 	public sellDataSet: boolean = false;						// Flag to indicate if sell has occurred and data is set
 	public baseQty: number = 0;									// Amount of base currency currently being traded
+	public staticBaseQty: number = 0;			 // TEMP						// Amount of base currency currently being traded
 	public quoteQty: number = 0;								// Amount of quote currency being used to trade with (Limit set by bot)
 	public profit: number = 0;									// Current / final amount of profit made (measured in the quote currency)
 	public startPrice: number = 0;								// Price of the base (measured in quote) for the initial trade
@@ -42,7 +45,9 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 	public highestSellPrice: number = 0;						// Highest price received for selling the base currency
 	public lowestSellPrice: number = 0;							// Lowest price received for selling the base currency
 	public averageSellPrice: number = 0;						// Average price received for selling the base currency
-	public priceDifference: number = 0;							// Difference in price of the base from the start to the current
+	// tslint:disable-next-line:ban-ts-ignore
+	// @ts-ignore
+	public priceDifference: string = '0';						// Difference in price of the base from the start to the current
 	public percentageDifference: number = 0;					// Percentage difference in price of the base from the start to the current
 	public percentageDroppedFromHigh: number = 0;				// Percentage difference in price of the base from the highest price to the current
 	public buyFills: TransactionFill[] = [];					// A list of buy fills (sub-transactions that make up the total transaction) by Binance
@@ -81,6 +86,7 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 		priceChangeInterval: number,
 		exchangeInfo: ExchangeInfoSymbol
 	) {
+		this.tradeDataId = uuid();
 		this.botId = botId;
 		this.symbol = symbol;
 		this.base = base;
@@ -112,6 +118,7 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 			this.CalculateBuyPrices(this.buyFills, time);
 
 			this.baseQty += Number(transaction.executedQty);
+			this.staticBaseQty += Number(transaction.executedQty);
 			this.quoteQty -= Number(transaction.cummulativeQuoteQty);
 			this.buyTransactionType = transaction.type;
 			this.times.buyTransactionAt = new Date(transaction.transactTime).toISOString();
@@ -173,7 +180,7 @@ export class BotTradeData implements IBotTradeData { // New version of SymbolTra
 			this.times.lastPriceUpdateAt = time;
 		}
 
-		if (this.startPrice) this.priceDifference = Calculations.PriceDifference(price, this.startPrice, this.baseAssetPrecision);
+		if (this.startPrice) this.priceDifference = Calculations.PriceDifference(this.startPrice, price, this.baseAssetPrecision);
 		this.UpdateHighPrices(price, time);
 		this.UpdateLowPrices(price, time);
 		this.currentPrice = price;

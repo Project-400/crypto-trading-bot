@@ -14,7 +14,14 @@ indexRouter.put('/trader-bot/stop', BotController.stopBot);
 indexRouter.put('/trader-bot/pause', BotController.pauseBot);
 indexRouter.put('/trader-bot/shutdown-all', BotController.shutdownBots);
 indexRouter.post('/connect', BotController.openConnection);
-indexRouter.get('/subscribe', BotController.subscribe);
 indexRouter.get('/unsubscribe', BotController.unsubscribe);
+
+/*
+	*
+	* New set of endpoints. Above to be removed
+	*
+	* */
+
+indexRouter.post('/create-bot', BotController.createBot);
 
 export default indexRouter;

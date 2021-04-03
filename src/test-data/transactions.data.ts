@@ -200,7 +200,7 @@ export const FakeBuyTransaction_CELO: ExchangeCurrencyTransactionFull = {
 	side: BinanceTransactionSide.BUY,
 	fills: [
 		{
-			price: '0.00008999',
+			price: '2.5',
 			qty: '11.50000000',
 			commission: '0.00055652',
 			commissionAsset: 'BNB',
