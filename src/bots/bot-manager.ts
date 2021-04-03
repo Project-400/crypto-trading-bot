@@ -19,9 +19,8 @@ export class BotManager {
 
 	// public static deployNewBot = async (currency: string, quoteAmount: number, repeatedlyTrade: boolean,
 	// clientSocketId?: string, percentageLoss?: number): Promise<ShortTermTraderBot | undefined> => {
-	public static deployNewBot = async (currency: string, quoteAmount: number, repeatedlyTrade: boolean, percentageLoss?: number)
+	public static deployNewBot = async (botId: string, currency: string, quoteAmount: number, repeatedlyTrade: boolean, percentageLoss: number = 1)
 		: Promise<ShortTermTraderBot | undefined> => {
-		const botId: string = uuid();
 
 		const exchangeInfo: GetExchangeInfoResponseDto = await CrudServiceExchangeInfo.GetExchangeInfo(currency);
 

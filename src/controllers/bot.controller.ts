@@ -6,7 +6,7 @@ export class BotController {
 
 	public static createBot = async (req: Request, res: Response): Promise<Response> => {
 		// || !req.query.clientSocketId
-		if (!req.body || !req.body.botId || !req.body.currency || !req.body.quoteAmount || !req.body.repeatedlyTrade)
+		if (!req.body || !req.body.botId || !req.body.currency || !req.body.quoteAmount || req.body.repeatedlyTrade === undefined)
 			return res.status(400).json({ error: 'Invalid request params' });
 		//
 		const botId: string = req.body.botId.toString();
@@ -20,7 +20,7 @@ export class BotController {
 		// const bot: ShortTermTraderBot | undefined =
 		// 	await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId, percentageLoss);
 		const bot: ShortTermTraderBot | undefined =
-			await BotManager.deployNewBot(currency, quoteAmount, repeatedlyTrade, percentageLoss);
+			await BotManager.deployNewBot(botId, currency, quoteAmount, repeatedlyTrade, percentageLoss);
 
 		return res.status(200).json({ success: true, bot: bot?.BOT_DETAILS() });
 	}
