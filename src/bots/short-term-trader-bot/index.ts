@@ -4,7 +4,6 @@ import { BotTradeData } from '../../models/bot-trade-data';
 import CrudServiceTransactions, { TransactionResponseDto } from '../../external-api/crud-service/services/transactions';
 import CrudServiceBots from '../../external-api/crud-service/services/bots';
 import { WebsocketProducer } from '../../config/websocket/producer';
-import { FakeBuyTransaction_CELO, FakeSellTransaction_CELO } from '../../test-data/transactions.data';
 import { RedisActions } from '../../redis/redis';
 import { ENV } from '../../environment';
 import { MultiPriceListener } from '../../services/multi-price-listener';

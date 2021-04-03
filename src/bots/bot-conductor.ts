@@ -1,9 +1,11 @@
 import ShortTermTraderBot from './short-term-trader-bot';
 import CrudServiceExchangeInfo, { GetExchangeInfoResponseDto } from '../external-api/crud-service/services/exchange-info';
+import { TradingBotState } from '@crypto-tracker/common-types';
 
 export class BotConductor {
 
 	private static deployedBots: ShortTermTraderBot[] = [];
+	private static interval: NodeJS.Timeout;
 
 	public static getAllBots = (): ShortTermTraderBot[] => BotConductor.deployedBots;
 
@@ -46,10 +48,16 @@ export class BotConductor {
 	}
 
 	public static shutdownBot = async (botId: string): Promise<boolean> => {
+		const bot: ShortTermTraderBot | undefined = BotConductor.deployedBots.find((b: ShortTermTraderBot) => b.getBotId() === botId);
+		if (bot) await bot.Stop(true);
+
+		return BotConductor.deleteBot(botId);
+	}
+
+	public static deleteBot = (botId: string): boolean => {
 		const botIndex: number = BotConductor.getBotIndex(botId);
 
 		if (botIndex > -1) {
-			await BotConductor.deployedBots[botIndex].Stop(true);
 			BotConductor.deployedBots.splice(botIndex, 1);
 			return true;
 		}
@@ -69,6 +77,24 @@ export class BotConductor {
 		BotConductor.deployedBots = [];
 
 		return count;
+	}
+
+	public static monitorCompletedBots = (): void => {
+		BotConductor.interval = setInterval((): void => {
+			console.log('REMOVE BOTS');
+			console.log(BotConductor.deployedBots.length);
+			const completedBotIds: string[] =
+				BotConductor.deployedBots
+					.filter((b: ShortTermTraderBot): boolean => b.getBotState() === TradingBotState.FINISHED)
+					.map((b: ShortTermTraderBot): string => b.getBotId());
+
+			completedBotIds.map((botId: string): void => {
+				console.log(botId);
+				BotConductor.deleteBot(botId);
+			});
+
+			console.log(BotConductor.deployedBots.length);
+		}, 10000);
 	}
 
 }

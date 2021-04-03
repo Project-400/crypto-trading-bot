@@ -8,6 +8,7 @@ import { CurrencySuggestionsManager } from './services/currency-suggestions-mana
 import { InstanceManagement } from './services/instance-management';
 import { RedisActions } from './redis/redis';
 import { MultiPriceListener } from './services/multi-price-listener';
+import { BotConductor } from './bots/bot-conductor';
 
 const app: express.Application = express();
 
@@ -25,6 +26,8 @@ InstanceManagement.SetInstanceId().then(async (): Promise<void> => {
 	RedisActions.SetupRedisConnection();
 
 	RedisActions.set(`running-instance#${InstanceManagement.InstanceId}`, 'true');
+
+	BotConductor.monitorCompletedBots();
 });
 
 WebsocketProducer.setup(app);
