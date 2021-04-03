@@ -1,50 +1,8 @@
 import { Request, Response } from 'express';
-// import { LongTradeBot } from '../bots/_retired/long-trade-bot';
 import { BotManager } from '../bots/bot-manager';
 import ShortTermTraderBot from '../bots/short-term-trader-bot';
-import { Logger } from '../config/logger/logger';
-import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api';
-import { BotTradeData } from '../models/bot-trade-data';
 
 export class BotController {
-
-	public static getBot = (req: Request, res: Response): Response => {
-		if (!req.query || !req.query.botId) return res.status(400).json({ error: 'Invalid request parameters' });
-
-		const botId: string = req.query.botId.toString();
-		const bot: ShortTermTraderBot | undefined = BotManager.getBot(botId);
-
-		if (!bot) return res.status(404).json({ error: 'Bot not found' });
-
-		return res.status(200).json({ success: true, bot });
-	}
-
-	public static shutdownBots = (req: Request, res: Response): Response => {
-		const count: number = BotManager.shutdownAllBots();
-
-		return res.status(200).json({ success: true, message: 'Shutdown all bots', count });
-	}
-
-	public static openConnection = (req: Request, res: Response): Response => {
-		return res.status(200).json({ success: true, connected: true });
-	}
-
-	public static getBotTradeData = async (req: Request, res: Response): Promise<Response> => {
-		if (!req.body || !req.query.botId) return res.status(400).json({ error: 'Invalid request params' });
-		const botId: string = req.query.botId.toString();
-
-		const bot: ShortTermTraderBot | undefined = BotManager.getBot(botId);
-
-		if (!bot) return res.status(404).json({ error: 'Bot not found' });
-		const tradeData: BotTradeData[] = bot.getAllTradeData();
-
-		return res.status(200).json({ success: true, tradeData });
-	}
-
-	/*
-	*
-	* New set of endpoints. Above to be removed
-	* */
 
 	public static createBot = async (req: Request, res: Response): Promise<Response> => {
 		// || !req.query.clientSocketId

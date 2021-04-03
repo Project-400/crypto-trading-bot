@@ -43,13 +43,16 @@ export class BotManager {
 		return clonedBot;
 	}
 
-	public static shutdownBot = async (botId: string): Promise<void> => {
+	public static shutdownBot = async (botId: string): Promise<boolean> => {
 		const botIndex: number = BotManager.getBotIndex(botId);
 
 		if (botIndex > -1) {
 			await BotManager.deployedBots[botIndex].Stop(true);
 			BotManager.deployedBots.splice(botIndex, 1);
+			return true;
 		}
+
+		return false;
 	}
 
 	public static pauseBot = (botId: string): void => {

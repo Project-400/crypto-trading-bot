@@ -1,27 +1,28 @@
 import express, { Router } from 'express';
-import { HealthController, BotController } from '../controllers';
+import { HealthController, BotController, TestController, ConnectionController } from '../controllers';
 
 const indexRouter: Router = express.Router();
 
+// Health Endpoints
+
 indexRouter.get('/health', HealthController.health);
 
-indexRouter.get('/trader-bot', BotController.getBot);
-indexRouter.get('/trader-bot/trade-data', BotController.getBotTradeData);
-indexRouter.get('/trader-bot/all', BotController.getAllBots);
-indexRouter.get('/trader-bot/count', BotController.getBotCount);
-indexRouter.post('/trader-bot', BotController.deployBot);
-indexRouter.put('/trader-bot/stop', BotController.stopBot);
-indexRouter.put('/trader-bot/pause', BotController.pauseBot);
-indexRouter.put('/trader-bot/shutdown-all', BotController.shutdownBots);
-indexRouter.post('/connect', BotController.openConnection);
-
-/*
-	*
-	* New set of endpoints. Above to be removed
-	*
-	* */
+// Bot Endpoints
 
 indexRouter.post('/bot', BotController.createBot);
 indexRouter.delete('/bot', BotController.removeBot);
+
+// Connection Endpoints
+
+indexRouter.post('/connect', ConnectionController.openConnection);
+
+// Test Endpoints
+
+indexRouter.get('/test/bot', TestController.getBot);
+indexRouter.get('/test/bot/trade-data', TestController.getBotTradeData);
+indexRouter.get('/test/bot/all', TestController.getAllBots);
+indexRouter.get('/test/bot/count', TestController.getBotCount);
+indexRouter.put('/test/bot/pause', TestController.pauseBot);
+indexRouter.put('/test/bot/shutdown-all', TestController.shutdownBots);
 
 export default indexRouter;
