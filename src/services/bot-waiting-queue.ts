@@ -7,7 +7,7 @@ interface WaitingBot {
 	quoteAmount: number;
 	repeatedlyTrade: boolean;
 	percentageLoss?: number;
-	deployed: boolean;
+	deployed?: boolean;
 }
 
 export class BotWaitingQueue {
@@ -15,22 +15,26 @@ export class BotWaitingQueue {
 	public static waitingBots: WaitingBot[] = [];
 
 	public static AddBot = (bot: WaitingBot): void => {
+		bot.deployed = false;
 		BotWaitingQueue.waitingBots.push(bot);
 	}
 
 	public static SetupBotReadyIntervalChecker = (): void => {
-		setInterval((): void => {
+		setInterval(async (): Promise<void> => {
 			if (!BotWaitingQueue.waitingBots.length) return;
 			const suggestions: CurrencySuggestion[] = CurrencySuggestionsManager.suggestions;
 			if (!suggestions.length) return;
 
 			const latestSuggestedCurrency: CurrencySuggestion = suggestions[suggestions.length - 1];
 
-			BotWaitingQueue.waitingBots.forEach(async (b: WaitingBot): Promise<void> => {
-				await BotConductor.deployNewBot(b.botId, latestSuggestedCurrency.symbol, b.quoteAmount, b.repeatedlyTrade, b.percentageLoss);
+			await Promise.all(
+				BotWaitingQueue.waitingBots.map(async (b: WaitingBot): Promise<void> => {
+					console.log(`The bot ${b.botId} will trade ${latestSuggestedCurrency.symbol}`);
+					await BotConductor.deployNewBot(b.botId, latestSuggestedCurrency.symbol, b.quoteAmount, b.repeatedlyTrade, b.percentageLoss);
 
-				b.deployed = true;
-			});
+					b.deployed = true;
+				})
+			);
 
 			BotWaitingQueue.waitingBots = BotWaitingQueue.waitingBots.filter((b: WaitingBot): boolean => !b.deployed); // Remove deployed bots
 		}, 5000);

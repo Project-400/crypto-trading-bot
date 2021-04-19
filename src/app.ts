@@ -9,6 +9,7 @@ import { InstanceManagement } from './services/instance-management';
 import { RedisActions } from './redis/redis';
 import { MultiPriceListener } from './services/multi-price-listener';
 import { BotConductor } from './bots/bot-conductor';
+import { BotWaitingQueue } from './services/bot-waiting-queue';
 
 const app: express.Application = express();
 
@@ -32,6 +33,7 @@ InstanceManagement.SetInstanceId().then(async (): Promise<void> => {
 
 WebsocketProducer.setup(app);
 CurrencySuggestionsManager.SetupExpirationChecker();
+BotWaitingQueue.SetupBotReadyIntervalChecker();
 MultiPriceListener.ConnectAndListen();
 
 app.listen(3001, '0.0.0.0', (): void => {
