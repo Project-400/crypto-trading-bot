@@ -38,20 +38,22 @@ export default class ShortTermTraderBot {
 	private priceChangeInterval: number = 1000;						// The interval gap between expected price updates
 	private subscribedClients: string[] = [];						// Websocket Client Ids listening for bot updates
 	private lastPublishedPrice: number = 0;							// Last time the price has been published to clients
-	private botLogs: string[] = [];									// TODO: History of bot logs
+	private currencyPreChosen: boolean = true;						// Has the user chosen the currency (true) or bot auto picked currency (false)
+	// private botLogs: string[] = [];									// TODO: History of bot logs
 
 	public getBotId = (): string => this.botId;
 	public getBotState = (): TradingBotState => this.botState;
 	public getAllTradeData = (): BotTradeData[] => this.previousTradeDatas;
 	public getCurrentTradeData = (): BotTradeData => this.currentTradeData;
 
-	public constructor(botId: string, base: string, quote: string, tradingPairSymbol: string, quoteQty: number,
+	public constructor(botId: string, base: string, quote: string, currencyPreChosen: boolean, tradingPairSymbol: string, quoteQty: number,
 					   repeatedlyTrade: boolean, exchangeInfo: ExchangeInfoSymbol,
 					   sellAtLossPercentage?: number, clientSocketIds?: string[]) {
 		this.botId = botId;
 		this.tradingPairSymbol = tradingPairSymbol;
 		this.base = base;
 		this.quote = quote;
+		this.currencyPreChosen = currencyPreChosen;
 		this.quoteQty = quoteQty;
 		this.repeatedlyTrade = repeatedlyTrade;
 		this.exchangeInfo = exchangeInfo;

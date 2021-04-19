@@ -25,7 +25,7 @@ export class BotController {
 
 		if (currencyPreChosen) {
 			const bot: ShortTermTraderBot | undefined =
-				await BotConductor.deployNewBot(botId, currency, quoteAmount, repeatedlyTrade, percentageLoss);
+				await BotConductor.deployNewBot(botId, true, currency, quoteAmount, repeatedlyTrade, percentageLoss);
 
 			if (!bot) return res.status(500).json({ success: false });
 		} else {

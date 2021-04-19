@@ -30,7 +30,7 @@ export class BotWaitingQueue {
 			await Promise.all(
 				BotWaitingQueue.waitingBots.map(async (b: WaitingBot): Promise<void> => {
 					console.log(`The bot ${b.botId} will trade ${latestSuggestedCurrency.symbol}`);
-					await BotConductor.deployNewBot(b.botId, latestSuggestedCurrency.symbol, b.quoteAmount, b.repeatedlyTrade, b.percentageLoss);
+					await BotConductor.deployNewBot(b.botId, false, latestSuggestedCurrency.symbol, b.quoteAmount, b.repeatedlyTrade, b.percentageLoss);
 
 					b.deployed = true;
 				})

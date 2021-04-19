@@ -20,7 +20,7 @@ export class BotConductor {
 
 	// public static deployNewBot = async (currency: string, quoteAmount: number, repeatedlyTrade: boolean,
 	// clientSocketId?: string, percentageLoss?: number): Promise<ShortTermTraderBot | undefined> => {
-	public static deployNewBot = async (botId: string, currency: string, quoteAmount: number, repeatedlyTrade: boolean, percentageLoss: number = 1)
+	public static deployNewBot = async (botId: string, currencyPreChosen: boolean, currency: string, quoteAmount: number, repeatedlyTrade: boolean, percentageLoss: number = 1)
 		: Promise<ShortTermTraderBot | undefined> => {
 		let exchangeInfo: GetExchangeInfoResponseDto;
 
@@ -36,7 +36,7 @@ export class BotConductor {
 
 		if (exchangeInfo.success) {
 			bot = new ShortTermTraderBot(botId, exchangeInfo.info.baseAsset, exchangeInfo.info.quoteAsset,
-				currency, quoteAmount, repeatedlyTrade, exchangeInfo.info,
+				currencyPreChosen, currency, quoteAmount, repeatedlyTrade, exchangeInfo.info,
 				percentageLoss, []);
 				// percentageLoss, clientSocketId ? [ clientSocketId ] : undefined);
 
