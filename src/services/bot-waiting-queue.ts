@@ -21,6 +21,8 @@ export class BotWaitingQueue {
 
 	public static SetupBotReadyIntervalChecker = (): void => {
 		setInterval(async (): Promise<void> => {
+			console.log('WAITING QUEUE CHECK');
+			console.log(`${BotWaitingQueue.waitingBots.length} bots waiting`);
 			if (!BotWaitingQueue.waitingBots.length) return;
 			const suggestions: CurrencySuggestion[] = CurrencySuggestionsManager.suggestions;
 			if (!suggestions.length) return;

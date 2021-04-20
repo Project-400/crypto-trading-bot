@@ -7,6 +7,7 @@ export class BotController {
 
 	public static createBot = async (req: Request, res: Response): Promise<Response> => {
 		// || !req.query.clientSocketId
+		console.log(req.body);
 		if (!req.body || !req.body.botId || !req.body.quoteAmount || req.body.repeatedlyTrade === undefined || req.body.currencyPreChosen === undefined)
 			return res.status(400).json({ error: 'Invalid request params' });
 		//
@@ -16,7 +17,7 @@ export class BotController {
 
 		const quoteAmount: number = parseFloat(req.body.quoteAmount.toString());
 		const repeatedlyTrade: boolean = req.body.repeatedlyTrade.toString() === 'true';
-		const percentageLoss: number = req.query.percentageLoss ? parseFloat(req.query.percentageLoss.toString()) : 1;
+		const percentageLoss: number = req.body.percentageLoss ? parseFloat(req.body.percentageLoss.toString()) : 1;
 		// const clientSocketId: string = req.query.clientSocketId.toString();
 
 		// const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
@@ -24,19 +25,19 @@ export class BotController {
 		// 	await BotConductor.deployNewBot(currency, quoteAmount, repeatedlyTrade, clientSocketId, percentageLoss);
 
 		if (currencyPreChosen) {
-			const bot: ShortTermTraderBot | undefined =
+			const response: any =
 				await BotConductor.deployNewBot(botId, true, currency, quoteAmount, repeatedlyTrade, percentageLoss);
 
-			if (!bot) return res.status(500).json({ success: false });
-		} else {
-			BotWaitingQueue.AddBot({
-				botId,
-				quoteAmount,
-				repeatedlyTrade,
-				percentageLoss
-			});
+			if (!response) return response.status(500).json({ success: false });
+			return res.status(200).json({ success: true, ...response });
 		}
 
+		BotWaitingQueue.AddBot({
+			botId,
+			quoteAmount,
+			repeatedlyTrade,
+			percentageLoss
+		});
 		return res.status(200).json({ success: true });
 	}
 

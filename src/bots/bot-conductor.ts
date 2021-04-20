@@ -2,6 +2,7 @@ import ShortTermTraderBot from './short-term-trader-bot';
 import CrudServiceExchangeInfo, { GetExchangeInfoResponseDto } from '../external-api/crud-service/services/exchange-info';
 import { TradingBotState } from '@crypto-tracker/common-types';
 import { SNSPublish } from '../sns-sqs/publish';
+import { BinanceApi, GetSymbolPriceTickerDto } from '../external-api/binance-api';
 
 export class BotConductor {
 
@@ -21,7 +22,7 @@ export class BotConductor {
 	// public static deployNewBot = async (currency: string, quoteAmount: number, repeatedlyTrade: boolean,
 	// clientSocketId?: string, percentageLoss?: number): Promise<ShortTermTraderBot | undefined> => {
 	public static deployNewBot = async (botId: string, currencyPreChosen: boolean, currency: string, quoteAmount: number, repeatedlyTrade: boolean, percentageLoss: number = 1)
-		: Promise<ShortTermTraderBot | undefined> => {
+		: Promise<any> => {
 		let exchangeInfo: GetExchangeInfoResponseDto;
 
 		try {
@@ -45,7 +46,13 @@ export class BotConductor {
 			bot.Start();
 		}
 
-		return clonedBot;
+		if (currencyPreChosen) {
+			const priceInfo: GetSymbolPriceTickerDto = await BinanceApi.getCurrentPrice(currency);
+
+			return { bot: clonedBot?.BOT_DETAILS(), priceInfo };
+		}
+
+		return { bot: clonedBot?.BOT_DETAILS() };
 	}
 
 	public static shutdownBot = async (botId: string): Promise<boolean> => {
